@@ -1,0 +1,11 @@
+// Private signing template. Copy outside version control and adapt to the
+// repository's Kotlin Gradle DSL before use. Never commit the copied file,
+// keystore, or passwords.
+
+// Required environment variables:
+// DHWINRIDE_RELEASE_KEYSTORE_PATH
+// DHWINRIDE_RELEASE_STORE_PASSWORD
+// DHWINRIDE_RELEASE_KEY_ALIAS
+// DHWINRIDE_RELEASE_KEY_PASSWORD
+
+// This file is documentation only. It is not applied automatically.

@@ -1,0 +1,31 @@
+*.iml
+.gradle/
+.android-build-home/
+.android-sdk-home/
+.kotlin/
+.idea/
+local.properties
+build/
+*/build/
+captures/
+.externalNativeBuild/
+.cxx/
+*.jks
+*.keystore
+google-services.json
+secrets.properties
+release-signing.gradle
+release-signing/release.keystore
+node_modules/
+sites/*/.env.local
+supabase/functions/.env
+# Local Android/IDE caches
+.android/
+.android-user-home/
+
+# Environment variables and secrets
+*.env
+.env.local
+.env.production
+secrets.properties
+supabase/.temp/
