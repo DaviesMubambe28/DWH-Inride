@@ -3,14 +3,14 @@
 :root {
   --navy: #071a4d;
   --navy-2: #0b255f;
-  --orange: #f97316;
-  --orange-dark: #d85408;
+  --orange: #b84600;
+  --orange-dark: #a13d00;
   --ink: #13213c;
-  --muted: #64748b;
+  --muted: #526176;
   --line: #e5e9f2;
   --surface: #f5f7fb;
-  --green: #14966f;
-  --blue: #3579e8;
+  --green: #087656;
+  --blue: #245cb5;
   --red: #dc3f4d;
   --shadow: 0 8px 24px rgba(28, 43, 74, 0.06);
 }
@@ -175,3 +175,68 @@ td strong { color: var(--ink); }.route-cell { max-width: 230px; display: block; 
 }
 
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; animation: none !important; } }
+
+/* Operations hierarchy and accessible controls. */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.skip-link { position: fixed; top: 8px; left: 8px; z-index: 100; padding: 12px 16px; background: white; color: var(--navy); transform: translateY(-160%); }
+.skip-link:focus { transform: translateY(0); }
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+.sidebar { overflow-y: auto; }
+.sidebar-footer { padding-top: 24px; }
+.nav-item, .icon-button, .primary-action, .secondary-action, .error-banner button { min-height: 44px; }
+.icon-button { min-width: 44px; }
+.workspace-title { flex: 1; }
+.system-live { color: var(--muted); font-size: 12px; }
+.navigation-dialog { width: min(360px, calc(100% - 32px)); max-height: calc(100dvh - 32px); margin: auto; padding: 24px; border: 0; border-radius: 16px; background: var(--navy); color: white; }
+.navigation-dialog::backdrop { background: rgb(7 26 77 / 65%); }
+.navigation-dialog .icon-button { color: white; }
+.navigation-dialog .side-nav { gap: 8px; }
+.navigation-dialog .nav-item { min-height: 48px; }
+.data-scope { color: var(--muted); font-size: 12px; line-height: 1.6; margin: -8px 0 20px; }
+.attention-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; border-left: 4px solid var(--orange); }
+.attention-summary > div { flex: 1 1 240px; }
+.attention-summary h2 { font-size: 16px; margin: 0 0 6px; }
+.attention-summary p { margin: 0; color: var(--muted); line-height: 1.6; }
+.trip-controls { display: flex; align-items: end; flex-wrap: wrap; gap: 16px; }
+.trip-controls label { display: grid; gap: 8px; flex: 1 1 200px; font-weight: 700; }
+.trip-controls input, .trip-controls select { width: 100%; min-width: 0; min-height: 44px; border: 1px solid #7b879a; border-radius: 8px; background: white; color: var(--ink); padding: 10px 12px; }
+.trip-controls > span { flex-basis: 100%; color: var(--muted); }
+.badge { min-height: 28px; font-size: 12px; }
+.next-step { display: block; max-width: 240px; white-space: normal; line-height: 1.6; margin-top: 8px; color: var(--muted); }
+.route-cell { max-width: 260px; white-space: normal; overflow-wrap: anywhere; line-height: 1.7; }
+.route-cell b { font-size: 11px; color: var(--muted); }
+th { color: #536176; font-size: 11px; }
+.empty-state { padding: 40px 16px; display: grid; justify-items: center; gap: 12px; text-align: center; color: var(--muted); line-height: 1.7; }
+.empty-state strong { color: var(--ink); font-size: 16px; }
+.loading-lines { display: grid; gap: 12px; }
+.loading-lines span { min-height: 24px; border-radius: 6px; background: var(--line); }
+.loading-lines span:last-child { width: 65%; }
+.panel-header p, .page-heading p { line-height: 1.6; }
+.person-details small, .person-details span { font-size: 12px; overflow-wrap: anywhere; }
+.verification-row .secondary-action, .verification-row .primary-action { min-height: 44px; }
+.error-banner { flex-wrap: wrap; line-height: 1.6; }
+.error-banner > span { flex: 1 1 200px; }
+.setup-card { min-width: 0; }
+.setup-card pre { max-width: 100%; white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (max-width: 900px) {
+  body { padding-bottom: 0; }
+  .sidebar { display: none; }
+  .system-live { display: block; }
+}
+@media (max-width: 650px) {
+  .topbar { height: auto; min-height: 64px; flex-wrap: wrap; padding: 12px; }
+  .workspace-title { font-size: 13px; }
+  .system-live { flex-basis: 100%; order: 4; }
+  .refresh-action { padding: 0 10px; }
+  .attention-summary { align-items: stretch; }
+  .attention-summary button { width: 100%; }
+  .trip-controls { align-items: stretch; }
+  .trip-controls label, .trip-controls button { flex-basis: 100%; }
+  .kpi-icon { position: static; margin-bottom: 12px; }
+  .kpi-card > strong { overflow-wrap: anywhere; }
+  .mobile-trip, .person-details, .setup-card { overflow-wrap: anywhere; }
+  .mobile-trip .next-step { max-width: none; font-weight: 400; }
+  .verification-review { grid-template-columns: 40px minmax(0, 1fr); }
+  .verification-row > .badge { grid-column: 2; grid-row: auto; }
+  .setup-page { padding: 16px; }
+}

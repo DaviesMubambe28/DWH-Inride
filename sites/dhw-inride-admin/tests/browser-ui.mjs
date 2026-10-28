@@ -1,0 +1,122 @@
+import { createRequire } from 'node:module';
+import path from 'node:path';
+const require = createRequire(path.join(process.env.UI_TEST_TOOLS || '/workspace/ui-test-tools', 'package.json'));
+const { chromium } = require('playwright-core');
+const AxeBuilder = require('@axe-core/playwright').default;
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+
+const browser = await chromium.launch({executablePath:'/usr/bin/chromium',headless:true,args:['--no-sandbox']});
+const userId='11111111-1111-4111-8111-111111111111';
+const riderId='22222222-2222-4222-8222-222222222222';
+const passengerId='33333333-3333-4333-8333-333333333333';
+const user={id:userId,aud:'authenticated',role:'authenticated',email:'operations@example.invalid',app_metadata:{provider:'email',providers:['email']},user_metadata:{},created_at:new Date().toISOString()};
+const profiles=[{id:userId,role:'admin',full_name:'Test Operator'}, {id:riderId,role:'rider',full_name:'Test Rider',phone_number:'Fixture phone',approval_status:'pending',is_online:true}, {id:passengerId,role:'passenger',full_name:'Test Passenger'}];
+const trips=['requesting','accepted','arrived','in_progress','completed','cancelled'].map((status,i)=>({id:`fixture-trip-${i}`,passenger_id:passengerId,rider_id:i===0?null:riderId,status,pickup_address:'Chongwe market',dropoff_address:'Chongwe clinic',fare_amount:35,payment_method:'cash',payment_status:'pending',created_at:new Date().toISOString(),completed_at:null}));
+let fail=false, delay=1000, allowed=true;
+const errors=[];
+const context=await browser.newContext();
+await context.route('**/*',async route=>{
+ const url=new URL(route.request().url());
+ if (url.hostname==='127.0.0.1') return route.continue();
+ if (url.hostname!=='ui-test.supabase.co') return route.abort();
+ if(delay) await new Promise(r=>setTimeout(r,delay));
+ if(url.pathname.includes('/auth/v1/user')) return route.fulfill({json:user});
+ if(url.pathname.includes('/storage/v1/object/sign/')) return route.fulfill({json:{signedURL:'/object/sign/rider-documents/fixture/document?token=fixture-only'}});
+ if(url.pathname.includes('/rest/v1/')) {
+  if(fail) return route.fulfill({status:503,json:{message:'Test service unavailable'}});
+  const table=url.pathname.split('/').at(-1);
+  return route.fulfill({json:table==='profiles'?profiles.map(p=>p.id===userId&&!allowed?{...p,role:'passenger'}:p):table==='authorized_trip_details'?trips:table==='rider_documents'?[{id:'fixture-document',rider_id:riderId,document_type:'national_id',storage_url:'fixture/document',verification_status:'pending',submitted_at:new Date().toISOString()}]:[]});
+ }
+ return route.fulfill({json:{}});
+});
+await context.routeWebSocket('wss://ui-test.supabase.co/**', ws=>{});
+await context.addInitScript(({user,userId})=>{
+ const exp=Math.floor(Date.now()/1000)+3600;
+ const encode=x=>btoa(JSON.stringify(x)).replaceAll('+','-').replaceAll('/','_').replaceAll('=','');
+ localStorage.setItem('sb-ui-test-auth-token',JSON.stringify({access_token:`${encode({alg:'HS256',typ:'JWT'})}.${encode({sub:userId,aud:'authenticated',role:'authenticated',exp})}.fixture`,refresh_token:'fixture-only',expires_at:exp,expires_in:3600,token_type:'bearer',user}));
+},{user,userId});
+try {
+const page=await context.newPage();
+page.on('pageerror',e=>errors.push(e.message));
+await page.goto('http://127.0.0.1:3000');
+await page.getByRole('heading',{name:'Loading operations',exact:true}).waitFor();
+delay=0;
+await page.getByRole('heading',{name:'Overview',exact:true}).waitFor();
+await fs.mkdir('/workspace/ui-review',{recursive:true});
+for(const width of [320,768,1024,1440]) {
+ await page.setViewportSize({width,height:900});
+ assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`overflow at ${width}`);
+ if(width<901) {
+  const open=page.getByRole('button',{name:'Open navigation'});await open.click();
+  await page.getByRole('dialog').waitFor();
+  await page.keyboard.press('Escape');
+  assert.equal(await page.getByRole('dialog').count(),0);
+  assert.equal(await open.evaluate(el=>document.activeElement===el),true,'focus returns to menu');
+ }
+ const axe=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze();
+ assert.deepEqual(axe.violations.map(v=>({id:v.id,impact:v.impact,nodes:v.nodes.map(n=>n.target)})),[],`axe at ${width}`);
+ await page.screenshot({path:`/workspace/ui-review/dashboard-${width}.png`,fullPage:true});
+}
+await page.getByRole('button',{name:'Pending verification · 1'}).click();
+await page.getByRole('heading',{name:'Rider verification',exact:true}).waitFor();
+await page.getByRole('button',{name:'Get national id for Test Rider'}).click();
+await page.getByRole('link',{name:'Open national id in a new tab'}).waitFor();
+fail=true;
+await page.getByRole('button',{name:'Approve application for Test Rider'}).click();
+await page.locator('.error-banner[role=alert]').waitFor();
+assert.equal(await page.getByRole('button',{name:'Approve application for Test Rider'}).isDisabled(),false);
+fail=false;
+await page.getByRole('button',{name:'Approve application for Test Rider'}).click();
+await page.getByText('Rider application approved.',{exact:true}).waitFor();
+const verifyAxe=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze();
+assert.deepEqual(verifyAxe.violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>n.target)})),[]);
+await page.getByRole('button',{name:'Overview',exact:true}).click();
+await page.getByRole('button',{name:'Awaiting rider · 1'}).click();
+await page.getByRole('heading',{name:'Live operations',exact:true}).waitFor();
+assert.equal(await page.getByRole('combobox',{name:'Trip status'}).inputValue(),'requesting');
+await page.getByRole('searchbox',{name:'Search trips'}).fill('no such place');
+await page.getByText('No trips found',{exact:true}).waitFor();
+await page.getByRole('button',{name:'Clear filters'}).click();
+assert.equal(await page.getByRole('combobox').inputValue(),'all');
+await page.getByRole('combobox').selectOption('active');
+assert.equal(await page.locator('tbody tr').count(),4);
+fail=true;
+await page.getByRole('button',{name:'Refresh',exact:true}).click();
+await page.locator('.error-banner[role=alert]').waitFor();
+assert.equal(await page.locator('tbody tr').count(),4,'retain successful records on refresh failure');
+fail=false;
+await page.getByRole('button',{name:'Retry',exact:true}).click();
+await page.locator('.error-banner[role=alert]').waitFor({state:'hidden'});
+await context.setOffline(true);
+await page.getByText('You’re offline. Showing the last loaded records. Reconnect, then refresh.').waitFor();
+assert.equal(await page.getByRole('button',{name:'Refresh',exact:true}).isDisabled(),true);
+await context.setOffline(false);
+fail=true;
+await page.reload();
+await page.getByRole('heading',{name:'Operations data unavailable'}).waitFor();
+fail=false;
+await page.getByRole('button',{name:'Retry',exact:true}).click();
+await page.getByRole('heading',{name:'Overview',exact:true}).waitFor();
+allowed=false;
+await page.getByRole('button',{name:'Refresh',exact:true}).click();
+await page.getByRole('heading',{name:'Admin access required'}).waitFor();
+allowed=true;
+const signedOut=await browser.newContext();
+await signedOut.route('**/*',r=>new URL(r.request().url()).hostname==='127.0.0.1'?r.continue():r.abort());
+const signInPage=await signedOut.newPage();
+await signInPage.goto('http://127.0.0.1:3000');
+await signInPage.getByRole('heading',{name:'Operations sign in'}).waitFor();
+assert.equal(await signInPage.getByLabel('Email').count(),1);
+assert.equal(await signInPage.getByLabel('Password').count(),1);
+await signInPage.getByLabel('Email').fill('operator@example.invalid');
+await signInPage.getByLabel('Password').fill('fixture-only-password');
+await signInPage.getByRole('button',{name:'Sign in',exact:true}).click();
+await signInPage.locator('.form-error[role=alert]').waitFor();
+assert.equal(await signInPage.getByRole('button',{name:'Sign in',exact:true}).isDisabled(),false);
+const signInAxe=await new AxeBuilder({page:signInPage}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze();
+assert.deepEqual(signInAxe.violations.map(v=>v.id),[]);
+await signedOut.close();
+assert.deepEqual(errors,[],'no JavaScript runtime errors');
+console.log('PASS: 4 viewport/axe checks, modal keyboard/focus, filters/search/clear, refresh recovery, offline state, initial loading/error recovery, access-denied/sign-in states, sign-in failure recovery, document links, verification feedback, no runtime errors. All operational data is intercepted fixture data.');
+} finally { await browser.close(); }
