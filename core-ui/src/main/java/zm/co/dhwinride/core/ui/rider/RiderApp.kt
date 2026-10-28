@@ -62,9 +62,15 @@ import zm.co.dhwinride.core.ui.DhwMuted
 import zm.co.dhwinride.core.ui.DhwNavy
 import zm.co.dhwinride.core.ui.DhwOrange
 import zm.co.dhwinride.core.ui.DhwSurface
+import zm.co.dhwinride.core.ui.ErrorNotice
 import zm.co.dhwinride.core.ui.InfoRow
 import zm.co.dhwinride.core.ui.LaunchAccessFlow
 import zm.co.dhwinride.core.ui.ListDivider
+import zm.co.dhwinride.core.ui.TripMap
+import zm.co.dhwinride.core.ui.TripStage
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.Role
 import zm.co.dhwinride.core.ui.LiveMap
 import zm.co.dhwinride.core.ui.LoadingState
 import zm.co.dhwinride.core.ui.PrimaryButton
@@ -139,79 +145,75 @@ fun RiderApp(viewModel: RiderViewModel, authRepository: AuthRepository) {
             }
         },
     ) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding)) {
-            when (screen) {
-                RiderNavScreen.Home -> RiderHome(
-                    online = uiState.isOnline,
-                    earnings = uiState.earnings,
-                    availableRequestCount = uiState.availableRequests.size,
-                    isLoadingRequests = uiState.isLoadingRequests,
-                    onOnline = { viewModel.toggleOnline(it) },
-                    onViewRequests = { viewModel.navigateTo(RiderNavScreen.Request) },
-                )
-                RiderNavScreen.Request -> IncomingRequest(
-                    trip = uiState.selectedRequest,
-                    requests = uiState.availableRequests,
-                    isLoading = uiState.isLoadingRequests,
-                    accepting = uiState.acceptingTripId != null,
-                    onSelect = { viewModel.selectRequest(it) },
-                    onAccept = { viewModel.acceptRequest() },
-                    onDecline = { viewModel.declineRequest() },
-                )
-                RiderNavScreen.Pickup -> PickupNavigation(
-                    trip = uiState.activeTrip,
-                    onArrive = { viewModel.confirmArrival() },
-                )
-                RiderNavScreen.Arrival -> ArrivalScreen(
-                    trip = uiState.activeTrip,
-                    onContinue = { viewModel.navigateTo(RiderNavScreen.Pin) },
-                )
-                RiderNavScreen.Pin -> RiderPinScreen(
-                    trip = uiState.activeTrip,
-                    pin = uiState.pinInput,
-                    onKey = { viewModel.appendPinDigit(it) },
-                )
-                RiderNavScreen.ActiveTrip -> RiderActiveTrip(
-                    trip = uiState.activeTrip,
-                    onComplete = { viewModel.completeTrip() },
-                )
-                RiderNavScreen.Complete -> CompleteTrip(
-                    trip = uiState.activeTrip,
-                    onContinue = { viewModel.navigateTo(RiderNavScreen.Cash) },
-                )
-                RiderNavScreen.Cash -> CashConfirmation(
-                    trip = uiState.activeTrip,
-                    received = uiState.paymentReceived,
-                    onToggleReceived = { viewModel.togglePaymentReceived() },
-                    onDone = { viewModel.finishCashConfirmation() },
-                )
-                RiderNavScreen.Earnings -> EarningsScreen(earnings = uiState.earnings)
-                RiderNavScreen.History -> RiderHistory(history = uiState.tripHistory)
-                RiderNavScreen.Profile -> RiderProfile(
-                    profile = uiState.profile,
-                    onRegistration = { viewModel.navigateTo(RiderNavScreen.Registration) },
-                    onVerification = { viewModel.navigateTo(RiderNavScreen.Verification) },
-                    onSafety = { viewModel.navigateTo(RiderNavScreen.Safety) },
-                )
-                RiderNavScreen.Registration -> RegistrationScreen(
-                    profile = uiState.profile,
-                    onSave = { make, model, year, plate, color ->
-                        viewModel.saveMotorcycle(make, model, year, plate, color) { viewModel.navigateTo(RiderNavScreen.Verification) }
-                    },
-                )
-                RiderNavScreen.Verification -> VerificationScreen(
-                    submittedDocuments = uiState.submittedDocuments,
-                    onPick = { documentType -> pendingDocumentType = documentType; documentPicker.launch("image/*") },
-                    onDone = { viewModel.navigateTo(RiderNavScreen.Profile) },
-                )
-                RiderNavScreen.Safety -> RiderSafety()
-            }
-            uiState.errorMessage?.let { message ->
-                Surface(
-                    color = Color(0xFFFFE8E8),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.align(Alignment.TopCenter).padding(12.dp),
-                ) { Text(message, color = Color(0xFF9B1C1C), modifier = Modifier.padding(12.dp), fontSize = 12.sp) }
+        Column(Modifier.fillMaxSize().padding(padding)) {
+            uiState.errorMessage?.let { message -> ErrorNotice(message, onRefresh = viewModel::refreshOnForeground) }
+            Box(Modifier.weight(1f)) {
+                when (screen) {
+                    RiderNavScreen.Home -> RiderHome(
+                        online = uiState.isOnline,
+                        earnings = uiState.earnings,
+                        availableRequestCount = uiState.availableRequests.size,
+                        isLoadingRequests = uiState.isLoadingRequests,
+                        onOnline = { viewModel.toggleOnline(it) },
+                        onViewRequests = { viewModel.navigateTo(RiderNavScreen.Request) },
+                    )
+                    RiderNavScreen.Request -> IncomingRequest(
+                        trip = uiState.selectedRequest,
+                        requests = uiState.availableRequests,
+                        isLoading = uiState.isLoadingRequests,
+                        accepting = uiState.acceptingTripId != null,
+                        onSelect = { viewModel.selectRequest(it) },
+                        onAccept = { viewModel.acceptRequest() },
+                        onDecline = { viewModel.declineRequest() },
+                    )
+                    RiderNavScreen.Pickup -> PickupNavigation(
+                        trip = uiState.activeTrip,
+                        onArrive = { viewModel.confirmArrival() },
+                    )
+                    RiderNavScreen.Arrival -> ArrivalScreen(
+                        trip = uiState.activeTrip,
+                        onContinue = { viewModel.navigateTo(RiderNavScreen.Pin) },
+                    )
+                    RiderNavScreen.Pin -> RiderPinScreen(
+                        trip = uiState.activeTrip,
+                        pin = uiState.pinInput,
+                        onKey = { viewModel.appendPinDigit(it) },
+                    )
+                    RiderNavScreen.ActiveTrip -> RiderActiveTrip(
+                        trip = uiState.activeTrip,
+                        onComplete = { viewModel.completeTrip() },
+                    )
+                    RiderNavScreen.Complete -> CompleteTrip(
+                        trip = uiState.activeTrip,
+                        onContinue = { viewModel.navigateTo(RiderNavScreen.Cash) },
+                    )
+                    RiderNavScreen.Cash -> CashConfirmation(
+                        trip = uiState.activeTrip,
+                        received = uiState.paymentReceived,
+                        onToggleReceived = { viewModel.togglePaymentReceived() },
+                        onDone = { viewModel.finishCashConfirmation() },
+                    )
+                    RiderNavScreen.Earnings -> EarningsScreen(earnings = uiState.earnings)
+                    RiderNavScreen.History -> RiderHistory(history = uiState.tripHistory)
+                    RiderNavScreen.Profile -> RiderProfile(
+                        profile = uiState.profile,
+                        onRegistration = { viewModel.navigateTo(RiderNavScreen.Registration) },
+                        onVerification = { viewModel.navigateTo(RiderNavScreen.Verification) },
+                        onSafety = { viewModel.navigateTo(RiderNavScreen.Safety) },
+                    )
+                    RiderNavScreen.Registration -> RegistrationScreen(
+                        profile = uiState.profile,
+                        onSave = { make, model, year, plate, color ->
+                            viewModel.saveMotorcycle(make, model, year, plate, color) { viewModel.navigateTo(RiderNavScreen.Verification) }
+                        },
+                    )
+                    RiderNavScreen.Verification -> VerificationScreen(
+                        submittedDocuments = uiState.submittedDocuments,
+                        onPick = { documentType -> pendingDocumentType = documentType; documentPicker.launch("image/*") },
+                        onDone = { viewModel.navigateTo(RiderNavScreen.Profile) },
+                    )
+                    RiderNavScreen.Safety -> RiderSafety()
+                }
             }
         }
     }
@@ -241,6 +243,7 @@ private fun RiderHome(
                 }
                 Switch(
                     checked = online,
+                    modifier = Modifier.semantics { contentDescription = "Available for ride requests" },
                     onCheckedChange = onOnline,
                     colors = SwitchDefaults.colors(checkedTrackColor = DhwGreen, checkedThumbColor = Color.White),
                 )
@@ -351,20 +354,15 @@ private fun IncomingRequest(
 private fun PickupNavigation(trip: Trip?, onArrive: () -> Unit) {
     val passenger = trip?.passenger
     Column(Modifier.fillMaxSize()) {
-        Surface(color = DhwBlue) {
-            Text("EN ROUTE TO PICKUP", color = Color.White, fontWeight = FontWeight.Black, modifier = Modifier.fillMaxWidth().padding(14.dp), textAlign = TextAlign.Center)
-        }
-        LiveMap(Modifier.weight(1f).fillMaxWidth(), label = "${passenger?.name ?: "Passenger"} • ${trip?.pickupLocation ?: "Pickup"}")
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        TripStage("Travel to pickup", "Stop safely at the pickup point, then confirm you have arrived.")
+        TripMap(trip, Modifier.weight(1f).fillMaxWidth())
+        Column(Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             DhwCard {
                 Text("Passenger pickup", fontWeight = FontWeight.Black, fontSize = 18.sp)
                 Text(passenger?.name ?: "Passenger", color = DhwMuted)
                 InfoRow("Pickup location", trip?.pickupLocation ?: "Chongwe")
                 InfoRow("Your earnings", "K${formatZmw(trip?.fare?.driverFare ?: 0)}", DhwGreen)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    StatusPill("Call", DhwBlue)
-                    StatusPill("Message", DhwBlue)
-                }
+                Text("Wait at the agreed pickup point before verifying the passenger PIN.", color = DhwNavy)
             }
             PrimaryButton("I have arrived", onArrive)
         }
@@ -373,7 +371,7 @@ private fun PickupNavigation(trip: Trip?, onArrive: () -> Unit) {
 
 @Composable
 private fun ArrivalScreen(trip: Trip?, onContinue: () -> Unit) {
-    Column(Modifier.fillMaxSize().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(18.dp)) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(18.dp)) {
         Spacer(Modifier.height(40.dp))
         Box(Modifier.size(90.dp).background(DhwGreen.copy(alpha = .14f), CircleShape), contentAlignment = Alignment.Center) {
             Text("✓", color = DhwGreen, fontSize = 46.sp, fontWeight = FontWeight.Black)
@@ -391,17 +389,17 @@ private fun ArrivalScreen(trip: Trip?, onContinue: () -> Unit) {
 @Composable
 private fun RiderPinScreen(trip: Trip?, pin: String, onKey: (String) -> Unit) {
     val passenger = trip?.passenger
-    Column(Modifier.fillMaxSize().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(18.dp)) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(18.dp)) {
         Spacer(Modifier.height(32.dp))
         ScreenTitle("Verify passenger PIN", "Ask ${passenger?.name ?: "passenger"} for the 4-digit PIN")
         Surface(color = Color.White, shape = RoundedCornerShape(18.dp), shadowElevation = 3.dp) {
-            Text(if (pin.isEmpty()) "– – – –" else pin.chunked(1).joinToString(" "), fontSize = 36.sp, fontWeight = FontWeight.Black, color = DhwNavy, modifier = Modifier.padding(horizontal = 36.dp, vertical = 24.dp))
+            Text(if (pin.isEmpty()) "––––" else pin, fontSize = 36.sp, fontWeight = FontWeight.Black, color = DhwNavy, modifier = Modifier.padding(horizontal = 24.dp, vertical = 24.dp))
         }
         listOf(listOf("1", "2", "3"), listOf("4", "5", "6"), listOf("7", "8", "9"), listOf("⌫", "0", "✓")).forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 row.forEach { key ->
                     Surface(
-                        modifier = Modifier.size(68.dp).clickable { onKey(key) },
+                        modifier = Modifier.size(68.dp).semantics { contentDescription = when (key) { "⌫" -> "Delete last digit"; "✓" -> "Verify trip PIN"; else -> key } }.clickable(role = Role.Button) { onKey(key) },
                         color = if (key == "✓") DhwOrange else Color.White,
                         shape = CircleShape,
                         shadowElevation = 2.dp,
@@ -418,11 +416,9 @@ private fun RiderPinScreen(trip: Trip?, pin: String, onKey: (String) -> Unit) {
 private fun RiderActiveTrip(trip: Trip?, onComplete: () -> Unit) {
     val passenger = trip?.passenger
     Column(Modifier.fillMaxSize()) {
-        Surface(color = DhwGreen) {
-            Text("ACTIVE TRIP • DRIVE SAFELY", color = Color.White, fontWeight = FontWeight.Black, modifier = Modifier.fillMaxWidth().padding(14.dp), textAlign = TextAlign.Center)
-        }
-        LiveMap(Modifier.weight(1f).fillMaxWidth(), label = trip?.destination ?: "Destination")
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        TripStage("Trip in progress", "Drive safely. Complete the trip only after reaching the destination.")
+        TripMap(trip, Modifier.weight(1f).fillMaxWidth())
+        Column(Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             DhwCard {
                 InfoRow("Passenger", passenger?.name ?: "Passenger")
                 InfoRow("Destination", trip?.destination ?: "Destination")
@@ -437,7 +433,7 @@ private fun RiderActiveTrip(trip: Trip?, onComplete: () -> Unit) {
 @Composable
 private fun CompleteTrip(trip: Trip?, onContinue: () -> Unit) {
     val fare = trip?.fare
-    Column(Modifier.fillMaxSize().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(18.dp)) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(18.dp)) {
         Spacer(Modifier.height(40.dp))
         Box(Modifier.size(96.dp).background(DhwGreen, CircleShape), contentAlignment = Alignment.Center) {
             Text("✓", color = Color.White, fontSize = 48.sp, fontWeight = FontWeight.Black)

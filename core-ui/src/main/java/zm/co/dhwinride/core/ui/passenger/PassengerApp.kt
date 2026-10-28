@@ -6,6 +6,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -74,10 +76,13 @@ import zm.co.dhwinride.core.ui.DhwMuted
 import zm.co.dhwinride.core.ui.DhwNavy
 import zm.co.dhwinride.core.ui.DhwOrange
 import zm.co.dhwinride.core.ui.DhwSurface
+import zm.co.dhwinride.core.ui.ErrorNotice
 import zm.co.dhwinride.core.ui.InfoRow
 import zm.co.dhwinride.core.ui.LaunchAccessFlow
 import zm.co.dhwinride.core.ui.ListDivider
 import zm.co.dhwinride.core.ui.LoadingState
+import zm.co.dhwinride.core.ui.TripMap
+import zm.co.dhwinride.core.ui.TripStage
 import zm.co.dhwinride.core.ui.LiveMap
 import zm.co.dhwinride.core.ui.MapLocationPicker
 import zm.co.dhwinride.core.ui.PrimaryButton
@@ -174,100 +179,98 @@ fun PassengerApp(viewModel: PassengerViewModel, authRepository: AuthRepository) 
             }
         },
     ) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding)) {
-            when (screen) {
-                PassengerNavScreen.Home -> HomeScreen(
-                    history = uiState.tripHistory,
-                    onDestination = { viewModel.navigateTo(PassengerNavScreen.Destination) },
-                )
-                PassengerNavScreen.Destination -> DestinationScreen(
-                    choosingPickup = uiState.pickup == null,
-                    mapSelection = uiState.mapSelection,
-                    isResolvingMapSelection = uiState.isResolvingMapSelection,
-                    initialLatitude = uiState.pickup?.latitude ?: -15.3292,
-                    initialLongitude = uiState.pickup?.longitude ?: 28.6821,
-                    isFetchingLocation = uiState.isFetchingLocation,
-                    onMapCenterChanging = { viewModel.onMapCenterChanging() },
-                    onMapCenterChanged = { latitude, longitude -> viewModel.resolveMapCenter(latitude, longitude) },
-                    onChoose = { viewModel.choosePlace(it) },
-                    onBack = { viewModel.navigateTo(PassengerNavScreen.Home) },
-                    onUseCurrentLocation = {
-                        val fineGranted = ContextCompat.checkSelfPermission(
-                            context,
-                            Manifest.permission.ACCESS_FINE_LOCATION,
-                        ) == PackageManager.PERMISSION_GRANTED
-                        val coarseGranted = ContextCompat.checkSelfPermission(
-                            context,
-                            Manifest.permission.ACCESS_COARSE_LOCATION,
-                        ) == PackageManager.PERMISSION_GRANTED
-                        if (fineGranted || coarseGranted) {
-                            viewModel.fetchCurrentLocation()
-                        } else {
-                            locationPermissionLauncher.launch(
-                                arrayOf(
-                                    Manifest.permission.ACCESS_FINE_LOCATION,
-                                    Manifest.permission.ACCESS_COARSE_LOCATION,
-                                ),
-                            )
-                        }
-                    },
-                )
-                PassengerNavScreen.Estimate -> EstimateScreen(
-                    destination = uiState.destination,
-                    estimate = uiState.fareEstimate,
-                    selectedPayment = uiState.paymentMethod,
-                    isLoading = uiState.isLoading,
-                    hasSelectedLocations = uiState.pickup != null && uiState.dropoff != null,
-                    onPaymentSelected = { viewModel.setPaymentMethod(it) },
-                    onBook = { viewModel.requestRide() },
-                )
-                PassengerNavScreen.Finding -> FindingScreen(
-                    onCancel = { viewModel.cancelRequest() },
-                )
-                PassengerNavScreen.Confirmed -> ConfirmedScreen(
-                    activeTrip = uiState.activeTrip,
-                    onTrack = { viewModel.navigateTo(PassengerNavScreen.Tracking) },
-                )
-                PassengerNavScreen.Tracking -> TrackingScreen(
-                    activeTrip = uiState.activeTrip,
-                    riderLocation = uiState.riderLocation,
-                )
-                PassengerNavScreen.Pin -> PinScreen(
-                    activeTrip = uiState.activeTrip,
-                    onConfirm = { viewModel.verifyPin() },
-                )
-                PassengerNavScreen.ActiveTrip -> ActiveTripScreen(
-                    activeTrip = uiState.activeTrip,
-                    paymentMethod = uiState.paymentMethod,
-                    riderLocation = uiState.riderLocation,
-                )
-                PassengerNavScreen.Receipt -> ReceiptScreen(
-                    activeTrip = uiState.activeTrip,
-                    paymentMethod = uiState.paymentMethod,
-                    markedPaid = uiState.activeTrip?.passengerMarkedPaid ?: false,
-                    onMarkPaid = { viewModel.markPaymentSent() },
-                    onRate = { viewModel.navigateTo(PassengerNavScreen.Rating) },
-                    onHome = { viewModel.navigateTo(PassengerNavScreen.Home) },
-                )
-                PassengerNavScreen.Rating -> RatingScreen(
-                    activeTrip = uiState.activeTrip,
-                    onDone = { rating -> viewModel.submitRating(rating) },
-                )
-                PassengerNavScreen.History -> HistoryScreen(
-                    history = uiState.tripHistory,
-                    onReceipt = { viewModel.navigateTo(PassengerNavScreen.Receipt) },
-                )
-                PassengerNavScreen.Profile -> ProfileScreen(
-                    profile = uiState.passengerProfile,
-                )
-                PassengerNavScreen.Safety -> SafetyScreen()
-            }
-            uiState.errorMessage?.let { message ->
-                Surface(
-                    color = Color(0xFFFFE8E8),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.align(Alignment.TopCenter).padding(12.dp),
-                ) { Text(message, color = Color(0xFF9B1C1C), modifier = Modifier.padding(12.dp), fontSize = 12.sp) }
+        Column(Modifier.fillMaxSize().padding(padding)) {
+            uiState.errorMessage?.let { message -> ErrorNotice(message, onRefresh = viewModel::refreshOnForeground) }
+            Box(Modifier.weight(1f)) {
+                when (screen) {
+                    PassengerNavScreen.Home -> HomeScreen(
+                        history = uiState.tripHistory,
+                        onDestination = { viewModel.navigateTo(PassengerNavScreen.Destination) },
+                    )
+                    PassengerNavScreen.Destination -> DestinationScreen(
+                        choosingPickup = uiState.pickup == null,
+                        mapSelection = uiState.mapSelection,
+                        isResolvingMapSelection = uiState.isResolvingMapSelection,
+                        initialLatitude = uiState.pickup?.latitude ?: -15.3292,
+                        initialLongitude = uiState.pickup?.longitude ?: 28.6821,
+                        isFetchingLocation = uiState.isFetchingLocation,
+                        onMapCenterChanging = { viewModel.onMapCenterChanging() },
+                        onMapCenterChanged = { latitude, longitude -> viewModel.resolveMapCenter(latitude, longitude) },
+                        onChoose = { viewModel.choosePlace(it) },
+                        onBack = { viewModel.navigateTo(PassengerNavScreen.Home) },
+                        onUseCurrentLocation = {
+                            val fineGranted = ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.ACCESS_FINE_LOCATION,
+                            ) == PackageManager.PERMISSION_GRANTED
+                            val coarseGranted = ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.ACCESS_COARSE_LOCATION,
+                            ) == PackageManager.PERMISSION_GRANTED
+                            if (fineGranted || coarseGranted) {
+                                viewModel.fetchCurrentLocation()
+                            } else {
+                                locationPermissionLauncher.launch(
+                                    arrayOf(
+                                        Manifest.permission.ACCESS_FINE_LOCATION,
+                                        Manifest.permission.ACCESS_COARSE_LOCATION,
+                                    ),
+                                )
+                            }
+                        },
+                    )
+                    PassengerNavScreen.Estimate -> EstimateScreen(
+                        destination = uiState.destination,
+                        pickup = uiState.pickup,
+                        dropoff = uiState.dropoff,
+                        estimate = uiState.fareEstimate,
+                        selectedPayment = uiState.paymentMethod,
+                        isLoading = uiState.isLoading,
+                        hasSelectedLocations = uiState.pickup != null && uiState.dropoff != null,
+                        onPaymentSelected = { viewModel.setPaymentMethod(it) },
+                        onBook = { viewModel.requestRide() },
+                    )
+                    PassengerNavScreen.Finding -> FindingScreen(
+                        onCancel = { viewModel.cancelRequest() },
+                    )
+                    PassengerNavScreen.Confirmed -> ConfirmedScreen(
+                        activeTrip = uiState.activeTrip,
+                        onTrack = { viewModel.navigateTo(PassengerNavScreen.Tracking) },
+                    )
+                    PassengerNavScreen.Tracking -> TrackingScreen(
+                        activeTrip = uiState.activeTrip,
+                        riderLocation = uiState.riderLocation,
+                    )
+                    PassengerNavScreen.Pin -> PinScreen(
+                        activeTrip = uiState.activeTrip,
+                        onConfirm = { viewModel.verifyPin() },
+                    )
+                    PassengerNavScreen.ActiveTrip -> ActiveTripScreen(
+                        activeTrip = uiState.activeTrip,
+                        paymentMethod = uiState.paymentMethod,
+                        riderLocation = uiState.riderLocation,
+                    )
+                    PassengerNavScreen.Receipt -> ReceiptScreen(
+                        activeTrip = uiState.activeTrip,
+                        paymentMethod = uiState.paymentMethod,
+                        markedPaid = uiState.activeTrip?.passengerMarkedPaid ?: false,
+                        onMarkPaid = { viewModel.markPaymentSent() },
+                        onRate = { viewModel.navigateTo(PassengerNavScreen.Rating) },
+                        onHome = { viewModel.navigateTo(PassengerNavScreen.Home) },
+                    )
+                    PassengerNavScreen.Rating -> RatingScreen(
+                        activeTrip = uiState.activeTrip,
+                        onDone = { rating -> viewModel.submitRating(rating) },
+                    )
+                    PassengerNavScreen.History -> HistoryScreen(
+                        history = uiState.tripHistory,
+                        onReceipt = { viewModel.navigateTo(PassengerNavScreen.Receipt) },
+                    )
+                    PassengerNavScreen.Profile -> ProfileScreen(
+                        profile = uiState.passengerProfile,
+                    )
+                    PassengerNavScreen.Safety -> SafetyScreen()
+                }
             }
         }
     }
@@ -441,6 +444,8 @@ private fun DestinationScreen(
 @Composable
 private fun EstimateScreen(
     destination: String,
+    pickup: Place?,
+    dropoff: Place?,
     estimate: FareEstimate,
     selectedPayment: RidePaymentMethod,
     isLoading: Boolean,
@@ -449,8 +454,13 @@ private fun EstimateScreen(
     onBook: () -> Unit,
 ) {
     Column(Modifier.fillMaxSize()) {
-        LiveMap(Modifier.weight(1f).fillMaxWidth(), label = destination)
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        TripMap(
+            trip = Trip(pickupLocation = pickup?.name ?: "Pickup", destination = destination,
+                pickupLatitude = pickup?.latitude ?: Double.NaN, pickupLongitude = pickup?.longitude ?: Double.NaN,
+                dropoffLatitude = dropoff?.latitude ?: Double.NaN, dropoffLongitude = dropoff?.longitude ?: Double.NaN),
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+        )
+        Column(Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             DhwCard {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Column {
@@ -464,7 +474,7 @@ private fun EstimateScreen(
                 Text("Payment after arrival", fontWeight = FontWeight.Bold)
                 RidePaymentMethod.entries.forEach { method ->
                     Surface(
-                        modifier = Modifier.fillMaxWidth().clickable { onPaymentSelected(method) },
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).selectable(selected = method == selectedPayment, role = Role.RadioButton, onClick = { onPaymentSelected(method) }),
                         color = if (selectedPayment == method) DhwOrange.copy(alpha = .12f) else DhwSurface,
                         shape = RoundedCornerShape(14.dp),
                     ) {
@@ -515,7 +525,7 @@ private fun FindingScreen(onCancel: () -> Unit) {
                 }
             }
         }
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(Modifier.heightIn(max = 320.dp).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text("Notifying nearby riders in Chongwe...", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center, color = DhwNavy, fontWeight = FontWeight.Bold)
             SecondaryButton("Cancel request", onCancel)
         }
@@ -526,8 +536,9 @@ private fun FindingScreen(onCancel: () -> Unit) {
 private fun ConfirmedScreen(activeTrip: Trip?, onTrack: () -> Unit) {
     val rider = activeTrip?.rider
     Column(Modifier.fillMaxSize()) {
-        LiveMap(Modifier.weight(1f).fillMaxWidth(), label = "Rider assigned")
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        TripStage("Rider assigned", "Check the rider and motorcycle, then follow their location.")
+        TripMap(activeTrip, Modifier.weight(1f).fillMaxWidth())
+        Column(Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             DhwCard {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.size(58.dp).background(DhwNavy, CircleShape), contentAlignment = Alignment.Center) {
@@ -559,22 +570,14 @@ private fun ConfirmedScreen(activeTrip: Trip?, onTrack: () -> Unit) {
 private fun TrackingScreen(activeTrip: Trip?, riderLocation: TripLocation?) {
     val rider = activeTrip?.rider
     Column(Modifier.fillMaxSize()) {
-        Surface(color = DhwOrange) {
-            Row(Modifier.fillMaxWidth().padding(14.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("LIVE TRACKING", color = Color.White, fontWeight = FontWeight.Black)
-                Text("En route", color = Color.White, fontWeight = FontWeight.Bold)
-            }
-        }
-        LiveMap(Modifier.weight(1f).fillMaxWidth(), label = if (riderLocation == null) "Waiting for rider location" else "Rider location updated")
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        TripStage("Rider on the way", "Wait at your pickup point. Share your PIN only after the rider arrives.")
+        TripMap(activeTrip, Modifier.weight(1f).fillMaxWidth(), riderLocation)
+        Column(Modifier.heightIn(max = 320.dp).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             DhwCard {
                 Text("${rider?.name ?: "Rider"} is on the way", fontWeight = FontWeight.Black, fontSize = 18.sp)
                 Text("${rider?.motorcycleModel ?: "Motorcycle"} • ${rider?.plateNumber ?: ""}", color = DhwMuted)
                 RiderLocationReadout(riderLocation)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    StatusPill("Call", DhwBlue)
-                    StatusPill("Message", DhwBlue)
-                }
+                Text("Wait in a safe, visible place at your pickup point.", color = DhwNavy)
             }
         }
     }
@@ -582,7 +585,7 @@ private fun TrackingScreen(activeTrip: Trip?, riderLocation: TripLocation?) {
 
 @Composable
 private fun PinScreen(activeTrip: Trip?, onConfirm: () -> Unit) {
-    val pinCode = activeTrip?.pin?.chunked(1)?.joinToString(" ") ?: "– – – –"
+    val pinCode = activeTrip?.pin?.takeIf { it.isNotBlank() } ?: "––––"
     val rider = activeTrip?.rider
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
@@ -593,7 +596,7 @@ private fun PinScreen(activeTrip: Trip?, onConfirm: () -> Unit) {
         StatusPill("Rider has arrived")
         ScreenTitle("Your trip PIN", "Share this PIN with your rider to start the trip")
         Surface(color = DhwNavy, shape = RoundedCornerShape(24.dp), shadowElevation = 8.dp) {
-            Text(pinCode, color = Color.White, fontSize = 42.sp, fontWeight = FontWeight.Black, letterSpacing = 8.sp, modifier = Modifier.padding(30.dp))
+            Text(pinCode, color = Color.White, fontSize = 36.sp, fontWeight = FontWeight.Black, letterSpacing = 4.sp, modifier = Modifier.padding(24.dp))
         }
         DhwCard {
             InfoRow("Rider", rider?.name ?: "Rider")
@@ -608,14 +611,9 @@ private fun PinScreen(activeTrip: Trip?, onConfirm: () -> Unit) {
 @Composable
 private fun ActiveTripScreen(activeTrip: Trip?, paymentMethod: RidePaymentMethod, riderLocation: TripLocation?) {
     Column(Modifier.fillMaxSize()) {
-        Surface(color = DhwGreen) {
-            Row(Modifier.fillMaxWidth().padding(14.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("TRIP IN PROGRESS", color = Color.White, fontWeight = FontWeight.Black)
-                Text("In progress", color = Color.White)
-            }
-        }
-        LiveMap(Modifier.weight(1f).fillMaxWidth(), label = if (riderLocation == null) activeTrip?.destination ?: "Destination" else "Rider location updated")
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        TripStage("Trip in progress", "Keep your helmet on. Pay your rider after reaching the destination.")
+        TripMap(activeTrip, Modifier.weight(1f).fillMaxWidth(), riderLocation)
+        Column(Modifier.heightIn(max = 320.dp).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             DhwCard {
                 InfoRow("Destination", activeTrip?.destination ?: "Destination")
                 InfoRow("Amount due", "K${formatZmw(activeTrip?.fare?.fareAmount ?: 0)}", DhwOrange)
@@ -632,7 +630,7 @@ private fun RiderLocationReadout(location: TripLocation?) {
         Text("Waiting for the rider's first location update.", color = DhwMuted, fontSize = 12.sp)
     } else {
         Text(
-            "Last location: ${"%.5f".format(location.latitude)}, ${"%.5f".format(location.longitude)}",
+            "Last rider update: ${location.recordedAt}. The position may be delayed.",
             color = DhwMuted,
             fontSize = 12.sp,
         )
@@ -686,19 +684,20 @@ private fun ReceiptScreen(
 private fun RatingScreen(activeTrip: Trip?, onDone: (Int) -> Unit) {
     var rating by remember { mutableIntStateOf(5) }
     val rider = activeTrip?.rider
-    Column(Modifier.fillMaxSize().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(18.dp)) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(18.dp)) {
         Spacer(Modifier.height(30.dp))
         Box(Modifier.size(76.dp).background(DhwNavy, CircleShape), contentAlignment = Alignment.Center) {
             Text(rider?.name?.take(2)?.uppercase() ?: "RD", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Black)
         }
         ScreenTitle("How was your ride?", "Your feedback keeps Chongwe rides safe")
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
             (1..5).forEach { value ->
                 Text(
                     if (value <= rating) "★" else "☆",
                     color = DhwOrange,
                     fontSize = 40.sp,
-                    modifier = Modifier.clickable { rating = value },
+                    modifier = Modifier.weight(1f).heightIn(min = 48.dp).semantics { contentDescription = "$value out of 5 stars" }.selectable(selected = rating == value, role = Role.RadioButton, onClick = { rating = value }),
+                    textAlign = TextAlign.Center,
                 )
             }
         }

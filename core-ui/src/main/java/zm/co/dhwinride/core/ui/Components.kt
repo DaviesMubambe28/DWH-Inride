@@ -1,9 +1,26 @@
 package zm.co.dhwinride.core.ui
 
 import android.util.Log
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
+import com.mapbox.maps.plugin.annotation.annotations
+import com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions
+import com.mapbox.maps.plugin.annotation.generated.createPointAnnotationManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -117,7 +134,7 @@ fun BrandHeader(
             Surface(
                 color = Color.White.copy(alpha = .12f),
                 shape = RoundedCornerShape(50),
-                modifier = Modifier.clickable(enabled = onTrailingClick != null) { onTrailingClick?.invoke() },
+                modifier = Modifier.heightIn(min = 48.dp).clickable(enabled = onTrailingClick != null, role = Role.Button) { onTrailingClick?.invoke() },
             ) {
                 Text(trailing, color = Color.White, modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp))
             }
@@ -135,7 +152,7 @@ fun PrimaryButton(
     Button(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.fillMaxWidth().height(54.dp),
+        modifier = modifier.fillMaxWidth().heightIn(min = 54.dp),
         shape = RoundedCornerShape(14.dp),
         colors = ButtonDefaults.buttonColors(containerColor = DhwOrange),
     ) {
@@ -148,7 +165,7 @@ fun SecondaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modi
     OutlinedButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.fillMaxWidth().height(52.dp),
+        modifier = modifier.fillMaxWidth().heightIn(min = 52.dp),
         shape = RoundedCornerShape(14.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, DhwNavy),
         colors = ButtonDefaults.outlinedButtonColors(contentColor = DhwNavy),
@@ -163,7 +180,7 @@ fun DhwCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 5.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             content()
@@ -174,7 +191,7 @@ fun DhwCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -
 @Composable
 fun ScreenTitle(title: String, subtitle: String? = null) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black, color = DhwInk)
+        Text(title, modifier = Modifier.semantics { heading() }, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black, color = DhwInk)
         subtitle?.let { Text(it, color = DhwMuted, fontSize = 14.sp) }
     }
 }
@@ -182,8 +199,8 @@ fun ScreenTitle(title: String, subtitle: String? = null) {
 @Composable
 fun InfoRow(label: String, value: String, valueColor: Color = DhwInk) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(label, color = DhwMuted)
-        Text(value, color = valueColor, fontWeight = FontWeight.Bold, textAlign = TextAlign.End)
+        Text(label, color = DhwMuted, modifier = Modifier.weight(1f).padding(end = 12.dp))
+        Text(value, modifier = Modifier.weight(1f), color = valueColor, fontWeight = FontWeight.Bold, textAlign = TextAlign.End)
     }
 }
 
@@ -228,7 +245,7 @@ fun BottomNav(items: List<String>, selected: String, onSelected: (String) -> Uni
         ) {
             items.forEach { item ->
                 Column(
-                    modifier = Modifier.weight(1f).clickable { onSelected(item) }.padding(vertical = 5.dp),
+                    modifier = Modifier.weight(1f).heightIn(min = 56.dp).selectable(selected = selected == item, role = Role.Tab, onClick = { onSelected(item) }).padding(vertical = 8.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Box(
@@ -239,7 +256,7 @@ fun BottomNav(items: List<String>, selected: String, onSelected: (String) -> Uni
                         item,
                         fontSize = 11.sp,
                         fontWeight = if (selected == item) FontWeight.Bold else FontWeight.Medium,
-                        color = if (selected == item) DhwOrange else DhwMuted,
+                        color = if (selected == item) DhwNavy else DhwMuted,
                     )
                 }
             }
@@ -252,13 +269,18 @@ fun LiveMap(
     modifier: Modifier = Modifier,
     showRoute: Boolean = true,
     label: String = "Chongwe",
+    latitude: Double = -15.3292,
+    longitude: Double = 28.6821,
+    zoom: Double = if (showRoute) 13.5 else 12.5,
+    markers: List<MapMarker> = emptyList(),
 ) {
     Box(modifier = modifier.fillMaxSize().background(DhwMap)) {
         NativeMap(
             modifier = Modifier.fillMaxSize(),
-            latitude = -15.3292,
-            longitude = 28.6821,
-            zoom = if (showRoute) 13.5 else 12.5,
+            latitude = latitude,
+            longitude = longitude,
+            zoom = zoom,
+            markers = markers,
         )
         Surface(
             color = Color.White.copy(alpha = .92f),
@@ -283,13 +305,17 @@ private fun NativeMap(
     longitude: Double,
     zoom: Double,
     onCameraChanged: ((latitude: Double, longitude: Double) -> Unit)? = null,
+    markers: List<MapMarker> = emptyList(),
 ) {
+    var mapError by remember { mutableStateOf(false) }
+    var retryCount by remember { mutableStateOf(0) }
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val initialCamera = CameraOptions.Builder()
         .center(Point.fromLngLat(longitude, latitude))
         .zoom(zoom)
         .build()
+    val currentCameraChanged by rememberUpdatedState(onCameraChanged)
     val mapView = remember(context) {
         MapView(
             context,
@@ -304,21 +330,55 @@ private fun NativeMap(
         ).also { view ->
             view.mapboxMap.addOnMapLoadErrorListener(object : OnMapLoadErrorListener {
                 override fun onMapLoadError(eventData: MapLoadingErrorEventData) {
-                    Log.e("DhwMapbox", "Could not load $DEFAULT_MAPBOX_STYLE: $eventData")
+                    mapError = true
+                    Log.e("DhwMapbox", "Map style could not be loaded.")
                 }
             })
             view.mapboxMap.addOnCameraChangeListener {
                 val center = view.mapboxMap.cameraState.center
-                onCameraChanged?.invoke(center.latitude(), center.longitude())
+                currentCameraChanged?.invoke(center.latitude(), center.longitude())
             }
             view.mapboxMap.loadStyleUri(DEFAULT_MAPBOX_STYLE)
         }
     }
 
-    AndroidView(
-        modifier = modifier.fillMaxSize(),
-        factory = { mapView },
-    )
+    val markerManager = remember(mapView) { mapView.annotations.createPointAnnotationManager() }
+    LaunchedEffect(markers) {
+        markerManager.deleteAll()
+        markers.forEach { marker ->
+            val bitmap = Bitmap.createBitmap(64, 64, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bitmap)
+            val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+            paint.color = android.graphics.Color.WHITE
+            canvas.drawCircle(32f, 32f, 30f, paint)
+            paint.color = android.graphics.Color.rgb(8, 44, 103)
+            canvas.drawCircle(32f, 32f, 25f, paint)
+            paint.color = android.graphics.Color.WHITE
+            paint.textSize = 30f
+            paint.textAlign = Paint.Align.CENTER
+            paint.isFakeBoldText = true
+            canvas.drawText(marker.label, 32f, 43f, paint)
+            markerManager.create(PointAnnotationOptions().withPoint(Point.fromLngLat(marker.longitude, marker.latitude)).withIconImage(bitmap))
+        }
+    }
+    LaunchedEffect(latitude, longitude, zoom) {
+        if (onCameraChanged == null) mapView.mapboxMap.setCamera(initialCamera)
+    }
+    LaunchedEffect(retryCount) {
+        if (retryCount > 0) mapView.mapboxMap.loadStyleUri(DEFAULT_MAPBOX_STYLE)
+    }
+    Box(modifier = modifier) {
+        AndroidView(modifier = Modifier.fillMaxSize(), factory = { mapView })
+        if (mapError) {
+            Surface(color = Color.White, modifier = Modifier.align(Alignment.Center).padding(16.dp)) {
+                Column(Modifier.semantics { liveRegion = LiveRegionMode.Polite }.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Map unavailable", fontWeight = FontWeight.Bold)
+                    Text("Check your connection. Trip details are still available below.", color = DhwMuted)
+                    TextButton(onClick = { mapError = false; retryCount++ }) { Text("Retry map") }
+                }
+            }
+        }
+    }
 
     DisposableEffect(lifecycleOwner, mapView) {
         var destroyed = false
@@ -348,7 +408,7 @@ private fun NativeMap(
 @Composable
 fun LoadingState(text: String) {
     Column(
-        modifier = Modifier.fillMaxWidth().padding(32.dp),
+        modifier = Modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite }.padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
@@ -359,3 +419,19 @@ fun LoadingState(text: String) {
 
 @Composable
 fun ListDivider() = HorizontalDivider(color = DhwLine)
+
+@Composable
+fun ErrorNotice(message: String, onRefresh: () -> Unit) {
+    var dismissed by remember(message) { mutableStateOf(false) }
+    if (dismissed) return
+    Surface(color = MaterialTheme.colorScheme.errorContainer) {
+        Column(Modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Assertive }.padding(12.dp)) {
+            Text("Something needs your attention", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onErrorContainer)
+            Text(message, color = MaterialTheme.colorScheme.onErrorContainer)
+            Row {
+                TextButton(onClick = onRefresh) { Text("Refresh trip details") }
+                TextButton(onClick = { dismissed = true }) { Text("Dismiss") }
+            }
+        }
+    }
+}
