@@ -29,6 +29,7 @@
         <div class="nav-links">
           <a href="#features">Why inRide</a>
           <a href="#how">How it works</a>
+          <a class="admin-entry" href="#admin-access">Admin login</a>
           <a class="nav-cta" href="#download">Get the app</a>
         </div>
       </nav>
@@ -141,23 +142,36 @@
         </div>
       </section>
 
-      <section id="download" class="section download">
+      <section id="download" class="section download" aria-labelledby="download-title">
         <div class="shell download-card reveal">
           <div class="download-copy">
-            <p class="eyebrow">Your next ride</p>
-            <h2>Chongwe is closer<br />on two wheels.</h2>
-            <p>Be first to know when the DHW-inRide passenger and rider apps are ready to download.</p>
-            <div class="store-buttons" aria-label="App download options">
-              <button class="store-button" type="button" data-store="App Store">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.1 12.6c0-2.5 2-3.7 2.1-3.8a4.6 4.6 0 0 0-3.6-1.9c-1.5-.2-3 .9-3.7.9-.8 0-2-.9-3.2-.8a4.8 4.8 0 0 0-4.1 2.5c-1.8 3-.5 7.5 1.2 10 .9 1.2 1.9 2.6 3.2 2.5 1.3-.1 1.8-.8 3.4-.8 1.5 0 2 .8 3.4.8 1.4 0 2.3-1.2 3.1-2.5a11 11 0 0 0 1.4-2.9 4.4 4.4 0 0 1-3.2-4Zm-2.5-7.3A4.4 4.4 0 0 0 15.7 2a4.6 4.6 0 0 0-3 1.6 4.2 4.2 0 0 0-1.1 3.2 3.8 3.8 0 0 0 3-1.5Z" /></svg>
-                <span><small>Download on the</small>App Store</span>
-              </button>
-              <button class="store-button" type="button" data-store="Google Play">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3.7 2.4 10.7 9.5L3.7 21.6a2 2 0 0 1-.7-1.5V3.9c0-.6.3-1.1.7-1.5Zm12 10.7 2.5 2.2-11.7 6.4 9.2-8.6Zm3.9-3 1.4.8c1.3.7 1.3 1.5 0 2.2l-1.5.8-2.7-2.4 2.8-2.4ZM6.5 2.3l11.8 6.5-2.5 2.3-9.3-8.8Z" /></svg>
-                <span><small>Get it on</small>Google Play</span>
-              </button>
+            <p class="eyebrow">Android · Chongwe, Zambia</p>
+            <h2 id="download-title">Download the app.</h2>
+            <p>Book your next motorbike ride, or get ready to ride with DHW-inRide.</p>
+            <div class="app-downloads" aria-label="App download options">
+              <article class="app-release" data-app="passenger" aria-labelledby="passenger-title">
+                <h3 id="passenger-title">For passengers</h3>
+                <p>Request rides and keep your trip details in one place.</p>
+                <button class="download-action" type="button" disabled aria-describedby="passenger-status">Download Passenger App</button>
+                <p class="release-status" id="passenger-status">Coming soon · Android 8.0 or later</p>
+              </article>
+              <article class="app-release" data-app="rider" aria-labelledby="rider-title">
+                <h3 id="rider-title">For riders</h3>
+                <p>Manage your availability and assigned trips.</p>
+                <button class="download-action" type="button" disabled aria-describedby="rider-status">Download Rider App</button>
+                <p class="release-status" id="rider-status">Coming soon · Android 8.0 or later</p>
+              </article>
             </div>
-            <p class="availability">Apps coming soon • Chongwe, Zambia</p>
+            <p class="availability">Public downloads will open when verified releases are published.</p>
+            <details class="install-help">
+              <summary>How to install an Android APK</summary>
+              <ol>
+                <li>When a release is available, download the correct app on your Android phone.</li>
+                <li>Open the downloaded APK. If prompted, allow this browser to install unknown apps.</li>
+                <li>Tap Install, then open the app. Turn off that installation permission afterwards.</li>
+              </ol>
+              <p>Only install official DHW-inRide releases linked here. For a Google Play release, follow the store’s installation steps.</p>
+            </details>
           </div>
           <div class="download-visual" aria-hidden="true">
             <div class="orange-orbit"></div>
@@ -169,17 +183,25 @@
           </div>
         </div>
       </section>
+      <section id="admin-access" class="section admin-access" aria-labelledby="admin-title">
+        <div class="shell">
+          <p class="eyebrow">Operations</p>
+          <h2 id="admin-title">Admin access</h2>
+          <p id="admin-status">Admin login is not available from this page yet. The hosted operations address must be configured.</p>
+          <p>Operations tools require a signed-in, authorized admin account.</p>
+        </div>
+      </section>
     </main>
 
     <footer>
       <div class="shell footer-inner">
         <a class="mini-brand" href="#top"><span aria-hidden="true">🏍</span><span><b>DHW</b>-inRide</span></a>
         <p>Motorbike taxi service for Chongwe, Zambia.</p>
+        <a class="admin-entry" href="#admin-access">Admin login</a>
         <p>© <span id="year"></span> DHW-inRide</p>
       </div>
     </footer>
 
-    <div class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
-    <script src="script.js"></script>
+    <script type="module" src="script.js"></script>
   </body>
 </html>
