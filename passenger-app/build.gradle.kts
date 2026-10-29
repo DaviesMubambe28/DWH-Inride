@@ -16,6 +16,8 @@ val localProperties = Properties().apply {
 fun configuredValue(name: String): String {
     val legacyKey = if (name == "SUPABASE_ANON_KEY") "SUPABASE_PUBLISHABLE_KEY" else name
     return providers.gradleProperty(name).orNull
+        ?: providers.environmentVariable(name).orNull
+        ?: providers.environmentVariable(legacyKey).orNull
         ?: localProperties.getProperty(name)?.takeIf(String::isNotBlank)
         ?: localProperties.getProperty(legacyKey)?.takeIf(String::isNotBlank)
         ?: localSecrets.getProperty(name)?.takeIf(String::isNotBlank)

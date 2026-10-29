@@ -1,0 +1,105 @@
+name: Pilot quality gates
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_call:
+permissions:
+  contents: read
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  dashboard:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: sites/dhw-inride-admin
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24.19.0
+          cache: npm
+          cache-dependency-path: sites/dhw-inride-admin/package-lock.json
+      - run: npm ci --ignore-scripts --no-fund
+      - run: npm run lint
+      - run: npm test
+      - run: npm audit --audit-level=high
+      - run: ./node_modules/.bin/next typegen && npm run typecheck && npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+      - name: Install isolated browser test tools
+        run: npm install --prefix "$RUNNER_TEMP/ui-tools" --ignore-scripts --no-audit --no-fund playwright-core@1.64.1 @axe-core/playwright@4.11.1
+      - name: Browser and accessibility regression checks
+        env:
+          UI_TEST_TOOLS: ${{ runner.temp }}/ui-tools
+          UI_TEST_ARTIFACTS: ${{ runner.temp }}/ui-review
+          CHROMIUM_PATH: /usr/bin/google-chrome
+          NEXT_TELEMETRY_DISABLED: "1"
+          NEXT_PUBLIC_SUPABASE_URL: https://ui-test.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ui_test_fixture
+        run: |
+          set -euo pipefail
+          setsid npm run dev -- --hostname 127.0.0.1 --port 3000 >"$RUNNER_TEMP/dashboard.log" 2>&1 &
+          web_pid=$!
+          trap 'kill -- "-$web_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:3000/ >/dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:3000/ >/dev/null
+          npm run test:browser
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: failure()
+        with:
+          name: browser-fixture-screenshots
+          path: ${{ runner.temp }}/ui-review
+          if-no-files-found: ignore
+  database:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24.19.0
+          cache: npm
+      - run: npm ci --ignore-scripts --no-fund
+      - run: npm audit --audit-level=high
+      - run: node --test --test-isolation=none supabase/functions/tests/*.test.mjs
+      - run: python3 -m unittest discover -s scripts/tests
+      - name: Install official isolated Edge checker
+        run: npm install --prefix "$RUNNER_TEMP/edge-tools" --ignore-scripts --no-audit --no-fund deno@2.9.6
+      - name: Check and audit locked Edge dependencies
+        run: |
+          "$RUNNER_TEMP/edge-tools/node_modules/.bin/deno" check --frozen --config supabase/functions/request-trip/deno.json --lock supabase/functions/request-trip/deno.lock supabase/functions/request-trip/index.ts
+          "$RUNNER_TEMP/edge-tools/node_modules/.bin/deno" audit --lock supabase/functions/request-trip/deno.lock --level high
+      - name: Start isolated Supabase services
+        env:
+          SUPABASE_INTERNAL_IMAGE_REGISTRY: docker.io
+          DO_NOT_TRACK: "1"
+        run: ./node_modules/.bin/supabase start -x studio,imgproxy,postgres-meta,mailpit,logflare,vector,supavisor,edge-runtime >"$RUNNER_TEMP/supabase-start.log" 2>&1
+      - run: ./node_modules/.bin/supabase db test --local
+      - name: Stop only this job's local stack
+        if: always()
+        run: ./node_modules/.bin/supabase stop --no-backup
+  android-core:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
+      - run: sdkmanager "platforms;android-37.0" "build-tools;37.0.0"
+      - run: bash gradlew :core-ui:testDebugUnitTest :core-ui:lintDebug --no-daemon --max-workers=2
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: android-core-reports
+          path: core-ui/build/reports/
+          if-no-files-found: error

@@ -62,4 +62,4 @@ The shared unit-test attempt reached dependency resolution but failed before Kot
 
 ## Remaining release work
 
-The prior dependency audit found critical advisories in the locked Next.js 16.4.0 package. This UI change does not upgrade dependencies or clear those advisories. Keep development servers on loopback and resolve the dependency finding before deployment.
+The subsequent pilot preparation patched Next.js to 16.4.3 and the dashboard audit now reports zero vulnerabilities. See `PILOT_STATUS.md` for current evidence and remaining release gates. UI/browser checks use fixtures and do not establish live-trip readiness.

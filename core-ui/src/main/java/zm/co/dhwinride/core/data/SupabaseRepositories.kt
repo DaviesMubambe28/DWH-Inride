@@ -59,6 +59,7 @@ import zm.co.dhwinride.core.model.RiderProfile
 import zm.co.dhwinride.core.model.Trip
 import zm.co.dhwinride.core.model.TripStatus
 import zm.co.dhwinride.core.model.TripLocation
+import zm.co.dhwinride.core.model.PilotServiceStatus
 import zm.co.dhwinride.core.domain.FareCalculator
 import zm.co.dhwinride.core.push.FcmTokenRegistrar
 
@@ -145,6 +146,9 @@ private data class DbTrip(
     @SerialName("rider_name") val riderName: String? = null,
     @SerialName("rider_phone") val riderPhone: String? = null,
 )
+
+@Serializable
+private data class DbPilotServiceStatus(val available: Boolean, val message: String)
 
 @Serializable
 private data class DbTripLocation(
@@ -453,6 +457,18 @@ class SupabaseTripRepository(
         return trip
     }
 
+    override suspend fun cancelRiderTrip(tripId: String, reason: String) {
+        val cancelled = try {
+            client.postgrest.rpc("cancel_pilot_trip", buildJsonObject { put("p_trip_id", tripId); put("p_reason", reason) }).decodeAs<Boolean>()
+        } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+        catch (_: Exception) {
+            throw IntegrationRequiredException("Cancellation could not be confirmed. For passenger no-show, wait five minutes after arrival. Refresh trip details or contact pilot support.")
+        }
+        check(cancelled) { "The trip is no longer eligible for cancellation. Refresh trip details." }
+        if (_activeTrip.value?.id == tripId) _activeTrip.value = null
+        _availableRequests.value = _availableRequests.value.filterNot { it.id == tripId }
+    }
+
     override suspend fun cancelTrip(tripId: String) {
         val cancelled = client.postgrest.rpc(
             "cancel_trip",
@@ -554,6 +570,17 @@ class SupabaseTripRepository(
 
     override suspend fun getNearbyPlaces(query: String): List<Place> {
         return searchLocations(query)
+    }
+
+    override suspend fun getPilotServiceStatus(): PilotServiceStatus {
+        val status = client.postgrest.rpc("pilot_service_status").decodeAs<DbPilotServiceStatus>()
+        return PilotServiceStatus(status.available, status.message)
+    }
+
+    override suspend fun recordRiderAvailability(latitude: Double, longitude: Double) {
+        client.postgrest.rpc("record_pilot_rider_presence", buildJsonObject {
+            put("p_lat", latitude); put("p_lng", longitude)
+        })
     }
 
     override suspend fun recordRiderLocation(tripId: String, latitude: Double, longitude: Double) {

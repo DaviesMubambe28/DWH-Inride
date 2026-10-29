@@ -5,7 +5,10 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --max-warnings=0",
+    "test": "node --test --test-isolation=none tests/*.test.mjs",
+    "test:browser": "node tests/browser-ui.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.58.0",
@@ -18,6 +21,8 @@
     "@types/node": "^22.10.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
+    "eslint": "10.13.0",
+    "eslint-config-next": "16.4.3",
     "typescript": "^5.9.0"
   }
 }

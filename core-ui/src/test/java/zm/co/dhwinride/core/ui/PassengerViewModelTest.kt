@@ -44,6 +44,28 @@ class PassengerViewModelTest {
     }
 
     @Test
+    fun `closed pilot cannot create a new trip`() = runTest {
+        chooseBookingLocations()
+        repository.pilotAvailable = false
+        viewModel.refreshOnForeground()
+        testDispatcher.scheduler.advanceUntilIdle()
+        viewModel.requestRide()
+        testDispatcher.scheduler.advanceUntilIdle()
+        assertNull(viewModel.uiState.value.activeTrip)
+        assertEquals("Service currently unavailable", viewModel.uiState.value.errorMessage)
+    }
+
+    @Test
+    fun `pilot rejects mobile money instead of silently changing payment`() = runTest {
+        chooseBookingLocations()
+        viewModel.setPaymentMethod(RidePaymentMethod.MobileMoney)
+        viewModel.requestRide()
+        testDispatcher.scheduler.advanceUntilIdle()
+        assertNull(viewModel.uiState.value.activeTrip)
+        assertTrue(viewModel.uiState.value.errorMessage.orEmpty().contains("cash only"))
+    }
+
+    @Test
     fun `selectDestination updates destination and navigates to Estimate`() = runTest {
         viewModel.selectDestination("Chongwe Hospital")
         testDispatcher.scheduler.advanceUntilIdle()
@@ -56,13 +78,13 @@ class PassengerViewModelTest {
     @Test
     fun `requestRide creates active trip and navigates to Finding`() = runTest {
         chooseBookingLocations()
-        viewModel.setPaymentMethod(RidePaymentMethod.MobileMoney)
+        viewModel.setPaymentMethod(RidePaymentMethod.Cash)
         viewModel.requestRide()
         testDispatcher.scheduler.advanceUntilIdle()
 
         val activeTrip = viewModel.uiState.value.activeTrip
         assertNotNull(activeTrip)
-        assertEquals(RidePaymentMethod.MobileMoney, viewModel.uiState.value.paymentMethod)
+        assertEquals(RidePaymentMethod.Cash, viewModel.uiState.value.paymentMethod)
         assertEquals(PassengerNavScreen.Finding, viewModel.uiState.value.screen)
         assertTrue(activeTrip!!.pin.length == 4)
     }

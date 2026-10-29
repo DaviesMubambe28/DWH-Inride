@@ -7,11 +7,11 @@ This directory documents release signing without containing a keystore, password
 1. Select the distribution path and signing owner.
 2. Generate a production keystore outside the repository and back it up securely.
 3. Store the keystore path and passwords in the CI/local secret manager.
-4. Configure the Android modules through the project's Kotlin Gradle build files or an approved private Gradle convention.
+4. Provide the names below as secure environment variables or entries in ignored root `secrets.properties`. Environment values take precedence.
 5. Build both release artifacts and verify their signatures with `apksigner`.
 6. Install the signed artifacts on a test device and verify upgrade compatibility.
 
-Do not commit the keystore, passwords, or the copied private signing script. The repository currently has no release signing configuration and no signed artifact is claimed.
+Do not commit the keystore, passwords, or the copied private signing script. Both app modules use the shared guarded release configuration. No signed artifact is claimed.
 
 ## Suggested secret names
 

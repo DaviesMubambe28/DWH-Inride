@@ -1,0 +1,27 @@
+{
+  "launch_target": "controlled_pilot",
+  "owner_approved": false,
+  "operator_name": "DHW-inRide Core Operations Team",
+  "legal_entity": "",
+  "support_phone": "+260971793185",
+  "support_email": "garumitech@gmail.com",
+  "safety_contact": "DHW-inRide Core Operations Team via +260971793185 or garumitech@gmail.com",
+  "privacy_url": "",
+  "terms_url": "",
+  "service_area": {
+    "center_latitude": -15.3292,
+    "center_longitude": 28.682,
+    "radius_km": 4.0
+  },
+  "fare": {
+    "model": "flat",
+    "flat_zmw": 20
+  },
+  "cancellation": {
+    "late_fee_mode": "warning_only",
+    "free_after_acceptance_seconds": 120,
+    "rider_no_show_wait_seconds": 300
+  },
+  "operating_policy_approved": true,
+  "support_secondary_phone": "+260761741656"
+}

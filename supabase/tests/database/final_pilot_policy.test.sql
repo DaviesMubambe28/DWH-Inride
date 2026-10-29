@@ -1,0 +1,18 @@
+begin;
+create extension if not exists pgtap with schema extensions;
+select no_plan();
+select is((select fare_amount from private.calculate_trip_financials(500, 120)), 20::numeric, 'short pilot trip costs exactly ZMW 20');
+select is((select fare_amount from private.calculate_trip_financials(12000, 3600)), 20::numeric, 'distance and duration never change the flat pilot fare');
+select is((select service_fee + driver_fare from private.calculate_trip_financials(4000, 600)), 20::numeric, 'internal split does not add a passenger charge');
+select is((select center_latitude from private.pilot_service_settings), -15.3292::double precision, 'approved centre latitude is installed');
+select is((select center_longitude from private.pilot_service_settings), 28.6820::double precision, 'approved centre longitude is installed');
+select is((select radius_km from private.pilot_service_settings), 4::double precision, 'approved radius is exactly four kilometres');
+select is((select support_phone from private.pilot_service_settings), '+260971793185', 'primary monitored support number is installed');
+select is((select support_email from private.pilot_service_settings), 'garumitech@gmail.com', 'monitored support email is installed');
+select is((select enabled from private.pilot_service_settings), false, 'approved parameters do not automatically enable real trips');
+select ok(private.pilot_point_allowed(-15.3292 + degrees(3.999 / 6371.0088), 28.6820), 'point just inside four kilometres is allowed');
+select is(private.pilot_point_allowed(-15.3292 + degrees(4.001 / 6371.0088), 28.6820), false, 'point just outside four kilometres is denied');
+select has_function('public', 'cancel_pilot_trip', array['uuid','text'], 'reasoned cancellation RPC exists');
+select is(has_function_privilege('anon', 'public.cancel_pilot_trip(uuid,text)', 'EXECUTE'), false, 'anonymous cancellation is denied');
+select * from finish();
+rollback;

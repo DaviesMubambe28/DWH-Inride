@@ -122,14 +122,19 @@ fun LaunchAccessFlow(role: AppUserRole, authRepository: AuthRepository, onReady:
             AccessStage.Welcome -> {
                 ScreenTitle(
                     title = if (role == AppUserRole.Rider) "Ride. Earn. Safe." else "Your boda, minutes away",
-                    subtitle = "Create an account or sign in to continue in Chongwe.",
+                    subtitle = if (role == AppUserRole.Rider) "Pilot riders are provisioned and verified by operations." else "Create an account or sign in to continue in Chongwe.",
                 )
                 DhwCard {
                     Text("Secure account", fontWeight = FontWeight.Black)
                     Text("Email verification and role-based access protect passenger, rider and trip information.", color = DhwMuted)
                 }
-                PrimaryButton("Create ${role.label.lowercase()} account", { stage = AccessStage.SignUp })
-                SecondaryButton("I already have an account", { stage = AccessStage.SignIn })
+                if (role == AppUserRole.Passenger) {
+                    PrimaryButton("Create passenger account", { stage = AccessStage.SignUp })
+                    SecondaryButton("I already have an account", { stage = AccessStage.SignIn })
+                } else {
+                    Text("Bring your NRC, Class A licence, motorcycle registration and insurance to operations for the in-person safety and device checks.", color = DhwMuted)
+                    PrimaryButton("Sign in to rider account", { stage = AccessStage.SignIn })
+                }
             }
 
             AccessStage.SignIn, AccessStage.SignUp -> {

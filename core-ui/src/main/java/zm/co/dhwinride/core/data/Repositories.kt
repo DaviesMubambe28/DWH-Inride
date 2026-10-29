@@ -10,8 +10,15 @@ import zm.co.dhwinride.core.model.RiderProfile
 import zm.co.dhwinride.core.model.Trip
 import zm.co.dhwinride.core.model.Place
 import zm.co.dhwinride.core.model.TripLocation
+import zm.co.dhwinride.core.model.PilotServiceStatus
 
 interface TripRepository {
+    suspend fun getPilotServiceStatus(): PilotServiceStatus {
+        throw IntegrationRequiredException("Pilot service availability is not configured.")
+    }
+    suspend fun recordRiderAvailability(latitude: Double, longitude: Double) {
+        throw IntegrationRequiredException("Pilot rider availability is not configured.")
+    }
     fun getActiveTrip(): Flow<Trip?>
     fun getAvailableRequests(): Flow<List<Trip>>
     fun observeAvailableTrips(): Flow<List<Trip>> = getAvailableRequests()
@@ -37,6 +44,9 @@ interface TripRepository {
     suspend fun estimateFare(destination: String): FareEstimate
     suspend fun requestTrip(destination: String, paymentMethod: RidePaymentMethod, passenger: PassengerProfile = PassengerProfile()): Trip
     suspend fun requestTrip(pickup: Place, dropoff: Place, paymentMethod: RidePaymentMethod, passenger: PassengerProfile): Trip
+    suspend fun cancelRiderTrip(tripId: String, reason: String) {
+        throw IntegrationRequiredException("Pilot cancellation is not configured.")
+    }
     suspend fun cancelTrip(tripId: String)
     suspend fun assignRider(tripId: String, rider: RiderProfile = RiderProfile()): Trip
     suspend fun confirmRiderArrival(tripId: String)

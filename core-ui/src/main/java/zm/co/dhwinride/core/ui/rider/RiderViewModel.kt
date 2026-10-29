@@ -41,6 +41,7 @@ data class RiderUiState(
     val errorMessage: String? = null,
     val isLoadingRequests: Boolean = false,
     val acceptingTripId: String? = null,
+    val cancellingTrip: Boolean = false,
 )
 
 class RiderViewModel(
@@ -78,11 +79,13 @@ class RiderViewModel(
         viewModelScope.launch {
             riderRepository.isOnline().collect { online ->
                 updateState { it.copy(isOnline = online) }
+                syncRiderLocation(_uiState.value.activeTrip)
             }
         }
         viewModelScope.launch {
             riderRepository.getRiderProfile().collect { profile ->
                 updateState { it.copy(profile = profile) }
+                syncRiderLocation(_uiState.value.activeTrip)
             }
         }
         viewModelScope.launch {
@@ -185,6 +188,7 @@ class RiderViewModel(
     fun refreshOnForeground() {
         viewModelScope.launch {
             runCatching { riderRepository.refreshRiderState(); tripRepository.refreshRiderTrips() }
+                .onSuccess { syncRiderLocation(_uiState.value.activeTrip) }
                 .onFailure { error -> updateState { it.copy(availableRequests = emptyList(), errorMessage = error.message ?: "Could not refresh ride requests.") } }
         }
     }
@@ -291,6 +295,20 @@ class RiderViewModel(
         }
     }
 
+    fun cancelPilotTrip(reason: String) {
+        if (_uiState.value.cancellingTrip) return
+        val trip = _uiState.value.activeTrip ?: return
+        updateState { it.copy(cancellingTrip = true, errorMessage = null) }
+        viewModelScope.launch {
+            try {
+                tripRepository.cancelRiderTrip(trip.id, reason)
+                updateState { it.copy(activeTrip = null, selectedRequest = null, screen = RiderNavScreen.Home) }
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (error: Exception) { updateState { it.copy(errorMessage = error.message ?: "Cancellation could not be confirmed. Refresh trip details.") } }
+            finally { updateState { it.copy(cancellingTrip = false) } }
+        }
+    }
+
     fun updateProfile(name: String, phone: String, motorcycleModel: String, plateNumber: String) {
         viewModelScope.launch {
             riderRepository.updateRiderProfile(name, phone, motorcycleModel, plateNumber)
@@ -324,27 +342,35 @@ class RiderViewModel(
 
     private fun syncRiderLocation(trip: Trip?) {
         locationUpdateJob?.cancel()
-        if (trip == null || trip.status !in setOf(
-                TripStatus.RIDER_ASSIGNED,
-                TripStatus.RIDER_ARRIVED,
-                TripStatus.TRIP_IN_PROGRESS,
-            )) return
+        val activeTrip = trip?.takeIf { it.status in setOf(
+            TripStatus.RIDER_ASSIGNED, TripStatus.RIDER_ARRIVED, TripStatus.TRIP_IN_PROGRESS,
+        ) }
+        val state = _uiState.value
+        if (activeTrip == null && (!state.isOnline || !state.profile.isVerified)) return
         val tracker = locationTracker ?: return
         locationUpdateJob = viewModelScope.launch {
             try {
                 tracker.getLocationUpdates().collect { location ->
-                    runCatching {
-                        tripRepository.recordRiderLocation(trip.id, location.latitude, location.longitude)
-                    }.onFailure { error ->
-                        updateState { state ->
-                            if (state.errorMessage == null) state.copy(errorMessage = "Rider location could not be shared.") else state
+                    if (_uiState.value.isOnline) {
+                        try {
+                            tripRepository.recordRiderAvailability(location.latitude, location.longitude)
+                        } catch (cancelled: CancellationException) { throw cancelled }
+                        catch (_: Exception) {
+                            updateState { it.copy(errorMessage = "Your pilot location could not be updated. Dispatch pauses until a fresh in-zone position is received.") }
+                        }
+                    }
+                    if (activeTrip != null) {
+                        try {
+                            tripRepository.recordRiderLocation(activeTrip.id, location.latitude, location.longitude)
+                        } catch (cancelled: CancellationException) { throw cancelled }
+                        catch (_: Exception) {
+                            updateState { it.copy(errorMessage = "Rider location could not be shared.") }
                         }
                     }
                 }
-            } catch (cancelled: CancellationException) {
-                throw cancelled
-            } catch (error: Exception) {
-                updateState { it.copy(errorMessage = error.message ?: "Rider location is unavailable.") }
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (_: Exception) {
+                updateState { it.copy(errorMessage = "Rider location is unavailable. Enable location permission and refresh trip details.") }
             }
         }
     }

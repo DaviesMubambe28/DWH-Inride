@@ -7,6 +7,8 @@ import {
 } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { CancellationReviews, type CancellationReview } from "@/components/cancellation-review";
+import { RiderProvisionForm } from "@/components/rider-provision-form";
 import { matchesTripFilter, tripPresentation } from "@/lib/trip-presentation";
 import { getSupabaseBrowserClient, getSupabaseConfig } from "@/lib/supabase";
 
@@ -17,9 +19,9 @@ type Profile = { id: string; role: "passenger" | "rider" | "admin"; full_name: s
 type Trip = { id: string; passenger_id: string; rider_id: string | null; status: string; pickup_address: string; dropoff_address: string; fare_amount: number | null; payment_method: string; payment_status: string; created_at: string; completed_at: string | null };
 type RiderDocument = { id: string; rider_id: string; document_type: string; storage_url: string; verification_status: string; submitted_at: string };
 type TripLocation = { id: number; trip_id: string; rider_id: string; lat: number; lng: number; recorded_at: string };
-type DashboardData = { profiles: Profile[]; trips: Trip[]; documents: RiderDocument[]; locations: TripLocation[] };
+type DashboardData = { profiles: Profile[]; trips: Trip[]; documents: RiderDocument[]; locations: TripLocation[]; cancellations: CancellationReview[] };
 
-const emptyData: DashboardData = { profiles: [], trips: [], documents: [], locations: [] };
+const emptyData: DashboardData = { profiles: [], trips: [], documents: [], locations: [], cancellations: [] };
 const navItems = [
   { id: "overview" as Section, label: "Overview", icon: LayoutDashboard },
   { id: "verification" as Section, label: "Rider verification", icon: ClipboardCheck },
@@ -75,14 +77,36 @@ function elapsed(iso: string) { const minutes = Math.max(0, Math.floor((Date.now
 
 export function AdminDashboard() {
   const { configured } = getSupabaseConfig();
-  const [user, setUser] = useState<User | null>(null); const [checkingSession, setCheckingSession] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
+  const [checkingSession, setCheckingSession] = useState(true);
+  useEffect(() => {
+    if (!configured) return;
+    const client = getSupabaseBrowserClient()!;
+    let active = true;
+    client.auth.getUser().then(({ data }) => {
+      if (active) { setUser(data.user ?? null); setCheckingSession(false); }
+    }).catch(() => { if (active) { setUser(null); setCheckingSession(false); } });
+    const { data: listener } = client.auth.onAuthStateChange((_event, session) => {
+      if (active) setUser(session?.user ?? null);
+    });
+    return () => { active = false; listener.subscription.unsubscribe(); };
+  }, [configured]);
+  if (!configured) return <SetupRequired />;
+  if (checkingSession) return <LoadingScreen title="Checking your session" detail="Confirming access to operations tools." />;
+  if (!user) return <SignIn onSignedIn={setUser} />;
+  return <OperationsDashboard key={user.id} user={user} />;
+}
+
+function OperationsDashboard({ user }: { user: User }) {
   const [section, setSection] = useState<Section>("overview"); const [drawerOpen, setDrawerOpen] = useState(false);
   const [search, setSearch] = useState(""); const [data, setData] = useState<DashboardData>(emptyData);
-  const [loading, setLoading] = useState(false); const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true); const [error, setError] = useState("");
   const [authorized, setAuthorized] = useState<boolean | null>(null);
   const [filter, setFilter] = useState("active");
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [online, setOnline] = useState(true);
+  const [pauseBusy, setPauseBusy] = useState(false);
+  const [pauseMessage, setPauseMessage] = useState("");
   const menuRef = useRef<HTMLDialogElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const loadVersion = useRef(0);
@@ -98,56 +122,58 @@ export function AdminDashboard() {
     if (drawerOpen) menuRef.current?.showModal();
     else menuRef.current?.close();
   }, [drawerOpen]);
+  async function pausePilot() {
+    if (!window.confirm("Pause all new pilot bookings? Existing active trips can still finish.")) return;
+    const client = getSupabaseBrowserClient();
+    if (!client) return;
+    setPauseBusy(true); setPauseMessage("");
+    try {
+      const { error } = await client.rpc("admin_pause_pilot");
+      if (error) throw error;
+      setPauseMessage("New pilot bookings are paused. Continue supporting active trips.");
+    } catch { setPauseMessage("Pause could not be confirmed. Contact the responsible operator immediately and retry."); }
+    finally { setPauseBusy(false); }
+  }
   function navigate(next: Section) {
     setSection(next); setDrawerOpen(false);
     requestAnimationFrame(() => titleRef.current?.focus());
   }
 
 
-  const load = useCallback(async () => {
+  const load = useCallback(() => {
     const client = getSupabaseBrowserClient(); if (!client || !user) return;
     const version = ++loadVersion.current;
-    setLoading(true); setError("");
-    try {
-      const [profileResult, tripsResult, docsResult, locationsResult] = await Promise.all([
+    return Promise.all([
         client.from("profiles").select("id,role,full_name,phone_number,is_online,rating,total_trips,approval_status").order("created_at", { ascending: false }),
         client.from("authorized_trip_details").select("id,passenger_id,rider_id,status,pickup_address,dropoff_address,fare_amount,payment_method,payment_status,created_at,completed_at").order("created_at", { ascending: false }).limit(500),
         client.from("rider_documents").select("id,rider_id,document_type,storage_url,verification_status,submitted_at").order("submitted_at", { ascending: false }),
         client.from("trip_locations").select("id,trip_id,rider_id,lat,lng,recorded_at").order("recorded_at", { ascending: false }).limit(500),
-      ]);
+        client.from("pilot_cancellation_reviews").select("trip_id,actor_id,reason,late_warning,review_required,created_at,reviewed_at").order("created_at", { ascending: false }).limit(200),
+      ]).then(([profileResult, tripsResult, docsResult, locationsResult, cancellationsResult]) => {
       if (version !== loadVersion.current) return;
       if (profileResult.error) throw profileResult.error;
       const ownProfile = profileResult.data?.find((profile) => profile.id === user.id);
       if (ownProfile?.role !== "admin") { setAuthorized(false); setData(emptyData); setLastUpdated(null); return; }
       setAuthorized(true);
-      const firstError = tripsResult.error ?? docsResult.error ?? locationsResult.error;
+      const firstError = tripsResult.error ?? docsResult.error ?? locationsResult.error ?? cancellationsResult.error;
       if (firstError) throw firstError;
-      setData({ profiles: (profileResult.data ?? []) as Profile[], trips: (tripsResult.data ?? []) as Trip[], documents: (docsResult.data ?? []) as RiderDocument[], locations: (locationsResult.data ?? []) as TripLocation[] });
-      setLastUpdated(new Date());
-    } catch {
+      setData({ profiles: (profileResult.data ?? []) as Profile[], trips: (tripsResult.data ?? []) as Trip[], documents: (docsResult.data ?? []) as RiderDocument[], locations: (locationsResult.data ?? []) as TripLocation[], cancellations: (cancellationsResult.data ?? []) as CancellationReview[] });
+      setLastUpdated(new Date()); setError("");
+    }).catch(() => {
       if (version === loadVersion.current) setError("We couldn’t refresh operations data. Check your connection and try again.");
-    } finally {
+    }).finally(() => {
       if (version === loadVersion.current) setLoading(false);
-    }
+    });
   }, [user]);
 
-  useEffect(() => {
-    if (!configured) { setCheckingSession(false); return; }
-    const client = getSupabaseBrowserClient()!;
-    client.auth.getUser().then(({ data: authData }) => { setUser(authData.user ?? null); setCheckingSession(false); });
-    const { data: listener } = client.auth.onAuthStateChange((_event, session) => setUser(session?.user ?? null));
-    return () => listener.subscription.unsubscribe();
-  }, [configured]);
-  useEffect(() => {
-    setAuthorized(null); setData(emptyData); setLastUpdated(null);
-    if (user) void load();
-    return () => { loadVersion.current++; };
-  }, [user, load]);
+  const refresh = useCallback(() => { setLoading(true); setError(""); void load(); }, [load]);
+  useEffect(() => { void load(); }, [load]);
+
   useEffect(() => {
     const client = getSupabaseBrowserClient(); if (!client || !user || authorized !== true) return;
-    const channel = client.channel("admin-dashboard").on("postgres_changes", { event: "*", schema: "public" }, () => void load()).subscribe();
+    const channel = client.channel("admin-dashboard").on("postgres_changes", { event: "*", schema: "public" }, () => refresh()).subscribe();
     return () => { void client.removeChannel(channel); };
-  }, [user, authorized, load]);
+  }, [user, authorized, refresh]);
 
   const profilesById = useMemo(() => new Map(data.profiles.map((profile) => [profile.id, profile])), [data.profiles]);
   const activeTrips = data.trips.filter((trip) => !["completed", "cancelled"].includes(trip.status));
@@ -157,11 +183,8 @@ export function AdminDashboard() {
   const shownTrips = searchedTrips.filter((trip) => matchesTripFilter(trip.status, filter));
   const copy = sectionCopy[section];
 
-  if (!configured) return <SetupRequired />;
-  if (checkingSession) return <LoadingScreen title="Checking your session" detail="Confirming access to operations tools." />;
-  if (!user) return <SignIn onSignedIn={setUser} />;
   if (lastUpdated === null && !error && authorized !== false) return <LoadingScreen title="Loading operations" detail="Fetching trips, rider records, and verification requests." />;
-  if (lastUpdated === null && error) return <main className="setup-page"><section className="panel setup-card"><ShieldAlert size={32} /><h1>Operations data unavailable</h1><p role="alert">{error}</p><button className="primary-action full" onClick={() => void load()}>Retry</button></section></main>;
+  if (lastUpdated === null && error) return <main className="setup-page"><section className="panel setup-card"><ShieldAlert size={32} /><h1>Operations data unavailable</h1><p role="alert">{error}</p><button className="primary-action full" onClick={() => refresh()}>Retry</button></section></main>;
   if (authorized === false) return <main className="setup-page"><section className="panel setup-card"><ShieldAlert size={32} /><h1>Admin access required</h1><p>This signed-in account is not authorized to use operations tools.</p><button className="secondary-action full" onClick={() => void getSupabaseBrowserClient()?.auth.signOut()}>Sign out</button></section></main>;
 
   const navigation = <nav className="side-nav" aria-label="Operations sections">{navItems.map((item) => {
@@ -185,16 +208,18 @@ export function AdminDashboard() {
         <button className="icon-button menu-button" onClick={() => setDrawerOpen(true)} aria-label="Open navigation" aria-haspopup="dialog" aria-expanded={drawerOpen}><Menu size={21} /></button>
         <strong className="workspace-title">Chongwe operations</strong>
         <span className="system-live" role="status">{!online ? "Offline · updates paused" : loading ? "Refreshing…" : lastUpdated ? `Updated ${lastUpdated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : "Waiting for data"}</span>
-        <button className="secondary-action refresh-action" disabled={loading || !online} onClick={() => void load()}><RefreshCw aria-hidden="true" className={loading ? "spin" : ""} size={18} /><span>{loading ? "Refreshing…" : "Refresh"}</span></button>
+        <button className="secondary-action" disabled={pauseBusy || !online} onClick={() => void pausePilot()}>{pauseBusy ? "Pausing…" : "Pause new bookings"}</button>
+        <button className="secondary-action refresh-action" disabled={loading || !online} onClick={() => refresh()}><RefreshCw aria-hidden="true" className={loading ? "spin" : ""} size={18} /><span>{loading ? "Refreshing…" : "Refresh"}</span></button>
       </header>
       <div className="page-content" aria-busy={loading}>
         <section className="page-heading"><div><span className="eyebrow">{copy.eyebrow}</span><h1 ref={titleRef} tabIndex={-1}>{copy.title}</h1><p>{copy.description}</p></div></section>
         {!online ? <div className="error-banner" role="status"><AlertTriangle size={18} />You’re offline. Showing the last loaded records. Reconnect, then refresh.</div> : null}
-        {error ? <div className="error-banner" role="alert"><AlertTriangle size={18} /><span>{error} Previously loaded records are shown below.</span><button disabled={loading || !online} onClick={() => void load()}>Retry</button></div> : null}
+        {error ? <div className="error-banner" role="alert"><AlertTriangle size={18} /><span>{error} Previously loaded records are shown below.</span><button disabled={loading || !online} onClick={() => refresh()}>Retry</button></div> : null}
+        {pauseMessage ? <p className="panel" role="status">{pauseMessage}</p> : null}
         <p className="data-scope">Latest {data.trips.length} trips loaded (maximum 500). Totals describe this loaded set.</p>
         {section === "overview" ? <Overview trips={data.trips} riders={riders} activeTrips={activeTrips} profiles={profilesById} onDispatch={() => { setFilter("requesting"); navigate("live"); }} onVerification={() => navigate("verification")} /> : null}
-        {section === "live" ? <div className="dashboard-stack"><section className="panel trip-controls" aria-label="Filter trips"><label>Search trips<input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Trip ID, person, or place" /></label><label>Trip status<select value={filter} onChange={(event) => setFilter(event.target.value)}><option value="active">Active trips</option><option value="all">All trips</option>{["requesting", "accepted", "arrived", "in_progress", "completed", "cancelled"].map((status) => <option key={status} value={status}>{tripPresentation(status).label}</option>)}</select></label><button className="secondary-action" onClick={() => { setSearch(""); setFilter("all"); }}>Clear filters</button><span role="status">{shownTrips.length} matching trips</span></section><TripsPanel trips={shownTrips} profiles={profilesById} title="Trip control" /></div> : null}
-        {section === "verification" ? <Verification riders={riders} documents={data.documents} /> : null}
+        {section === "live" ? <div className="dashboard-stack"><section className="panel trip-controls" aria-label="Filter trips"><label>Search trips<input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Trip ID, person, or place" /></label><label>Trip status<select value={filter} onChange={(event) => setFilter(event.target.value)}><option value="active">Active trips</option><option value="all">All trips</option>{["requesting", "accepted", "arrived", "in_progress", "completed", "cancelled"].map((status) => <option key={status} value={status}>{tripPresentation(status).label}</option>)}</select></label><button className="secondary-action" onClick={() => { setSearch(""); setFilter("all"); }}>Clear filters</button><span role="status">{shownTrips.length} matching trips</span></section><TripsPanel trips={shownTrips} profiles={profilesById} title="Trip control" /><CancellationReviews records={data.cancellations} onReviewed={refresh} /></div> : null}
+        {section === "verification" ? <div className="dashboard-stack"><RiderProvisionForm candidates={data.profiles.filter((p) => p.role === "passenger")} onProvisioned={refresh} /><Verification riders={riders} documents={data.documents} /></div> : null}
         {section === "finance" ? <Finance trips={data.trips} profiles={profilesById} /> : null}
         {section === "incidents" ? <Unsupported title="Incident tracking is unavailable" detail="Incident records are not connected yet. Follow your established support procedure for passenger or rider concerns." /> : null}
         {section === "analytics" ? <Analytics trips={data.trips} /> : null}
@@ -219,6 +244,7 @@ function Verification({ riders, documents }: { riders: Profile[]; documents: Rid
   const [localStatuses, setLocalStatuses] = useState<Record<string, ApprovalStatus>>({});
   const [actionError, setActionError] = useState("");
   const [actionMessage, setActionMessage] = useState("");
+  const [checks, setChecks] = useState<Record<string, Record<string, boolean>>>({});
   const [documentLink, setDocumentLink] = useState<{ url: string; label: string } | null>(null);
   const rows = [...riders].sort((a, b) => Number(b.approval_status === "pending") - Number(a.approval_status === "pending")).map((rider) => ({ rider, docs: documents.filter((doc) => doc.rider_id === rider.id) }));
   async function setApproval(riderId: string, status: ApprovalStatus) {
@@ -226,7 +252,9 @@ function Verification({ riders, documents }: { riders: Profile[]; documents: Rid
     setActionId(riderId); setActionError("");
     setActionMessage("");
     try {
-      const { error } = await client.rpc("admin_set_driver_approval", { p_rider_id: riderId, p_status: status });
+      const { error } = status === "approved"
+        ? await client.rpc("admin_activate_pilot_rider", { p_rider_id: riderId, p_documents_checked: checks[riderId]?.documents === true, p_safety_briefing_completed: checks[riderId]?.briefing === true, p_physical_device_tested: checks[riderId]?.device === true })
+        : await client.rpc("admin_set_driver_approval", { p_rider_id: riderId, p_status: status });
       if (error) throw error;
       setLocalStatuses((current) => ({ ...current, [riderId]: status }));
       setActionMessage(`Rider application ${status}.`);
@@ -244,7 +272,7 @@ function Verification({ riders, documents }: { riders: Profile[]; documents: Rid
     } catch { setActionError("The document could not be opened. Check your connection and try again."); }
     finally { setActionId(null); }
   }
-  return <section className="panel"><PanelHeader title="Rider records" subtitle="Pending applications appear first. Review documents before approving." />{actionMessage ? <p role="status">{actionMessage}</p> : null}{documentLink ? <p role="status"><a className="secondary-action" href={documentLink.url} target="_blank" rel="noopener noreferrer">Open {documentLink.label} in a new tab</a> This private link expires in 5 minutes. Request it again if it expires.</p> : null}{actionError ? <div className="error-banner" role="alert"><AlertTriangle size={18} />{actionError}</div> : null}{rows.length === 0 ? <EmptyState title="No riders found" detail="A rider appears after a real driver application is submitted." /> : <div className="verification-list">{rows.map(({ rider, docs }) => { const status = localStatuses[rider.id] ?? rider.approval_status ?? "pending"; return <article className="verification-row verification-review" key={rider.id}><span className="person-avatar">{rider.full_name.split(" ").map((part) => part[0]).join("").slice(0, 2)}</span><div className="person-details"><strong>{rider.full_name}</strong><span>{rider.phone_number}</span><small>{rider.id}</small><div className="document-actions">{docs.length === 0 ? <small>No documents submitted</small> : docs.map((doc) => <button className="secondary-action" disabled={actionId !== null} key={doc.id} aria-label={`Get ${doc.document_type.replaceAll("_", " ")} for ${rider.full_name}`} onClick={() => void openDocument(doc)}>{actionId === doc.id ? "Opening…" : `View ${doc.document_type.replaceAll("_", " ")}`}</button>)}</div></div><div className="doc-progress"><strong>{docs.length}</strong><small>Documents submitted</small></div><Badge tone={status === "approved" ? "green" : status === "rejected" ? "red" : "orange"}>{status}</Badge><div className="approval-actions"><button className="secondary-action" aria-label={`Reject application for ${rider.full_name}`} disabled={actionId !== null || status === "rejected"} onClick={() => void setApproval(rider.id, "rejected")}>Reject</button><button className="primary-action" aria-label={`Approve application for ${rider.full_name}`} disabled={actionId !== null || status === "approved"} onClick={() => void setApproval(rider.id, "approved")}>{actionId === rider.id ? "Saving…" : "Approve"}</button></div></article>; })}</div>}</section>;
+  return <section className="panel"><PanelHeader title="Rider records" subtitle="Pending applications appear first. Review documents before approving." />{actionMessage ? <p role="status">{actionMessage}</p> : null}{documentLink ? <p role="status"><a className="secondary-action" href={documentLink.url} target="_blank" rel="noopener noreferrer">Open {documentLink.label} in a new tab</a> This private link expires in 5 minutes. Request it again if it expires.</p> : null}{actionError ? <div className="error-banner" role="alert"><AlertTriangle size={18} />{actionError}</div> : null}{rows.length === 0 ? <EmptyState title="No riders found" detail="A rider appears after a real driver application is submitted." /> : <div className="verification-list">{rows.map(({ rider, docs }) => { const status = localStatuses[rider.id] ?? rider.approval_status ?? "pending"; return <article className="verification-row verification-review" key={rider.id}><span className="person-avatar">{rider.full_name.split(" ").map((part) => part[0]).join("").slice(0, 2)}</span><div className="person-details"><strong>{rider.full_name}</strong><span>{rider.phone_number}</span><small>{rider.id}</small><div className="document-actions">{docs.length === 0 ? <small>No documents submitted</small> : docs.map((doc) => <button className="secondary-action" disabled={actionId !== null} key={doc.id} aria-label={`Get ${doc.document_type.replaceAll("_", " ")} for ${rider.full_name}`} onClick={() => void openDocument(doc)}>{actionId === doc.id ? "Opening…" : `View ${doc.document_type.replaceAll("_", " ")}`}</button>)}</div>{status !== "approved" ? <fieldset className="onboarding-checks"><legend>In-person activation checks</legend>{[["documents", "Verified NRC, Class A licence, registration and insurance"], ["briefing", "Completed safety briefing"], ["device", "Tested the rider’s physical device"]].map(([key, label]) => <label key={key}><input type="checkbox" checked={checks[rider.id]?.[key] ?? false} disabled={actionId !== null} onChange={(event) => setChecks((current) => ({ ...current, [rider.id]: { ...current[rider.id], [key]: event.target.checked } }))} />{label}</label>)}</fieldset> : null}</div><div className="doc-progress"><strong>{docs.length}</strong><small>Documents submitted</small></div><Badge tone={status === "approved" ? "green" : status === "rejected" ? "red" : "orange"}>{status}</Badge><div className="approval-actions"><button className="secondary-action" aria-label={`Reject application for ${rider.full_name}`} disabled={actionId !== null || status === "rejected"} onClick={() => void setApproval(rider.id, "rejected")}>Reject</button><button className="primary-action" aria-label={`Approve application for ${rider.full_name}`} disabled={actionId !== null || status === "approved" || !checks[rider.id]?.documents || !checks[rider.id]?.briefing || !checks[rider.id]?.device} onClick={() => void setApproval(rider.id, "approved")}>{actionId === rider.id ? "Saving…" : "Approve"}</button></div></article>; })}</div>}</section>;
 }
 
 function Finance({ trips, profiles }: { trips: Trip[]; profiles: Map<string, Profile> }) {

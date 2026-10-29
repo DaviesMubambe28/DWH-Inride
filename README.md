@@ -6,7 +6,7 @@ DHW-inRide is a Chongwe, Zambia motorbike-taxi product with two Android apps, a 
 
 **Not ready for public trip operations.** The Android apps, backend, dashboard, and landing page are present, but the production-readiness record and release checklist identify unresolved launch gates. Real passenger or rider use must wait until the intended Supabase project is confirmed, migrations and row-level security are verified there, the live trip lifecycle is exercised with separate passenger/rider/admin accounts, and operational and store ownership is in place.
 
-The current code includes server-side trip creation and database RPCs for dispatch and trip state changes. That implementation has not been verified against the intended hosted project in this workspace. The rider and passenger APKs are version `0.1.0` and do not have a release signing configuration here. The landing page still marks store links as coming soon.
+The current code includes server-side trip creation and database RPCs for dispatch and trip state changes. That implementation has not been verified against the intended hosted project in this workspace. The rider and passenger APKs are version `0.1.0` and have a guarded release signing configuration that requires local secure inputs. The landing page still marks store links as coming soon.
 
 ## Project map
 

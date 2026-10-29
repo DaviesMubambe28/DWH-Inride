@@ -29,3 +29,6 @@ supabase/functions/.env
 .env.production
 secrets.properties
 supabase/.temp/
+.pilot/
+__pycache__/
+*.pyc

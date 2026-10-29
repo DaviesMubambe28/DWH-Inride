@@ -1,5 +1,9 @@
 package zm.co.dhwinride.core.ui.rider
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -73,6 +77,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.Role
 import zm.co.dhwinride.core.ui.LiveMap
 import zm.co.dhwinride.core.ui.LoadingState
+import zm.co.dhwinride.core.ui.RiderCancellation
+import zm.co.dhwinride.core.ui.PilotSupport
 import zm.co.dhwinride.core.ui.PrimaryButton
 import zm.co.dhwinride.core.ui.ScreenTitle
 import zm.co.dhwinride.core.ui.SecondaryButton
@@ -91,6 +97,12 @@ fun RiderApp(viewModel: RiderViewModel, authRepository: AuthRepository) {
     var accessReady by remember { mutableStateOf(false) }
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+    val availabilityPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
+        if (permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true || permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true) {
+            viewModel.toggleOnline(true)
+        } else viewModel.showError("Location permission is required for pilot dispatch. Allow location in Android Settings, then go online again.")
+    }
+
     var pendingDocumentType by remember { mutableStateOf<String?>(null) }
     val documentPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         val documentType = pendingDocumentType
@@ -154,7 +166,12 @@ fun RiderApp(viewModel: RiderViewModel, authRepository: AuthRepository) {
                         earnings = uiState.earnings,
                         availableRequestCount = uiState.availableRequests.size,
                         isLoadingRequests = uiState.isLoadingRequests,
-                        onOnline = { viewModel.toggleOnline(it) },
+                        onOnline = { online ->
+                            val allowed = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+                                ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                            if (!online || allowed) viewModel.toggleOnline(online)
+                            else availabilityPermission.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+                        },
                         onViewRequests = { viewModel.navigateTo(RiderNavScreen.Request) },
                     )
                     RiderNavScreen.Request -> IncomingRequest(
@@ -169,19 +186,25 @@ fun RiderApp(viewModel: RiderViewModel, authRepository: AuthRepository) {
                     RiderNavScreen.Pickup -> PickupNavigation(
                         trip = uiState.activeTrip,
                         onArrive = { viewModel.confirmArrival() },
+                        cancelling = uiState.cancellingTrip,
+                        onCancel = viewModel::cancelPilotTrip,
                     )
                     RiderNavScreen.Arrival -> ArrivalScreen(
                         trip = uiState.activeTrip,
                         onContinue = { viewModel.navigateTo(RiderNavScreen.Pin) },
+                        cancelling = uiState.cancellingTrip,
+                        onCancel = viewModel::cancelPilotTrip,
                     )
                     RiderNavScreen.Pin -> RiderPinScreen(
                         trip = uiState.activeTrip,
                         pin = uiState.pinInput,
                         onKey = { viewModel.appendPinDigit(it) },
+                        cancelling = uiState.cancellingTrip, onCancel = viewModel::cancelPilotTrip,
                     )
                     RiderNavScreen.ActiveTrip -> RiderActiveTrip(
                         trip = uiState.activeTrip,
                         onComplete = { viewModel.completeTrip() },
+                        cancelling = uiState.cancellingTrip, onCancel = viewModel::cancelPilotTrip,
                     )
                     RiderNavScreen.Complete -> CompleteTrip(
                         trip = uiState.activeTrip,
@@ -239,7 +262,7 @@ private fun RiderHome(
             Row(Modifier.padding(horizontal = 18.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(if (online) "You’re online" else "You’re offline", fontWeight = FontWeight.Black, color = if (online) DhwGreen else DhwInk)
-                    Text(if (online) "Ready for trips in Chongwe" else "Go online to receive requests", color = DhwMuted, fontSize = 12.sp)
+                    Text(if (online) "Dispatch needs a fresh position inside the pilot area" else "Go online to receive requests", color = DhwMuted, fontSize = 12.sp)
                 }
                 Switch(
                     checked = online,
@@ -351,7 +374,7 @@ private fun IncomingRequest(
 }
 
 @Composable
-private fun PickupNavigation(trip: Trip?, onArrive: () -> Unit) {
+private fun PickupNavigation(trip: Trip?, onArrive: () -> Unit, cancelling: Boolean, onCancel: (String) -> Unit) {
     val passenger = trip?.passenger
     Column(Modifier.fillMaxSize()) {
         TripStage("Travel to pickup", "Stop safely at the pickup point, then confirm you have arrived.")
@@ -364,13 +387,14 @@ private fun PickupNavigation(trip: Trip?, onArrive: () -> Unit) {
                 InfoRow("Your earnings", "K${formatZmw(trip?.fare?.driverFare ?: 0)}", DhwGreen)
                 Text("Wait at the agreed pickup point before verifying the passenger PIN.", color = DhwNavy)
             }
-            PrimaryButton("I have arrived", onArrive)
+            PrimaryButton("I have arrived", onArrive, enabled = !cancelling)
+            RiderCancellation(atPickup = false, busy = cancelling, onCancel = onCancel)
         }
     }
 }
 
 @Composable
-private fun ArrivalScreen(trip: Trip?, onContinue: () -> Unit) {
+private fun ArrivalScreen(trip: Trip?, onContinue: () -> Unit, cancelling: Boolean, onCancel: (String) -> Unit) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(18.dp)) {
         Spacer(Modifier.height(40.dp))
         Box(Modifier.size(90.dp).background(DhwGreen.copy(alpha = .14f), CircleShape), contentAlignment = Alignment.Center) {
@@ -381,13 +405,14 @@ private fun ArrivalScreen(trip: Trip?, onContinue: () -> Unit) {
             InfoRow("Passenger", trip?.passenger?.name ?: "Passenger")
             InfoRow("Pickup", trip?.pickupLocation ?: "Chongwe")
         }
-        PrimaryButton("Enter trip PIN", onContinue)
+        PrimaryButton("Enter trip PIN", onContinue, enabled = !cancelling)
+        RiderCancellation(atPickup = true, busy = cancelling, onCancel = onCancel)
         Text("Do not start moving until PIN is verified.", color = DhwMuted, textAlign = TextAlign.Center)
     }
 }
 
 @Composable
-private fun RiderPinScreen(trip: Trip?, pin: String, onKey: (String) -> Unit) {
+private fun RiderPinScreen(trip: Trip?, pin: String, onKey: (String) -> Unit, cancelling: Boolean, onCancel: (String) -> Unit) {
     val passenger = trip?.passenger
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(18.dp)) {
         Spacer(Modifier.height(32.dp))
@@ -409,11 +434,12 @@ private fun RiderPinScreen(trip: Trip?, pin: String, onKey: (String) -> Unit) {
                 }
             }
         }
+        RiderCancellation(atPickup = true, busy = cancelling, onCancel = onCancel)
     }
 }
 
 @Composable
-private fun RiderActiveTrip(trip: Trip?, onComplete: () -> Unit) {
+private fun RiderActiveTrip(trip: Trip?, onComplete: () -> Unit, cancelling: Boolean, onCancel: (String) -> Unit) {
     val passenger = trip?.passenger
     Column(Modifier.fillMaxSize()) {
         TripStage("Trip in progress", "Drive safely. Complete the trip only after reaching the destination.")
@@ -425,7 +451,8 @@ private fun RiderActiveTrip(trip: Trip?, onComplete: () -> Unit) {
                 InfoRow("Amount to collect", "K${formatZmw(trip?.fare?.fareAmount ?: 0)}", DhwOrange)
                 InfoRow("Payment method", trip?.paymentMethod?.title ?: "Cash")
             }
-            PrimaryButton("Complete trip", onComplete)
+            PrimaryButton("Complete trip", onComplete, enabled = !cancelling)
+            RiderCancellation(atPickup = false, busy = cancelling, onCancel = onCancel)
         }
     }
 }
@@ -651,7 +678,7 @@ private fun RiderSafety() {
             }
         }
         ProfileOption("Report an incident", "Backend integration required", {}, enabled = false)
-        ProfileOption("Trip support", "Backend integration required", {}, enabled = false)
+        PilotSupport()
         ProfileOption("Vehicle problem", "Backend integration required", {}, enabled = false)
     }
 }

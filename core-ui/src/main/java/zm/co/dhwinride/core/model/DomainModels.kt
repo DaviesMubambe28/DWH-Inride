@@ -92,3 +92,6 @@ data class RiderEarnings(
     val monthAmount: Int = 0,
 )
 
+
+/** Server-reported pilot service availability; no client clock authority. */
+data class PilotServiceStatus(val available: Boolean, val message: String)

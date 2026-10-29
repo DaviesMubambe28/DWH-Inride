@@ -6,7 +6,8 @@ const AxeBuilder = require('@axe-core/playwright').default;
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 
-const browser = await chromium.launch({executablePath:'/usr/bin/chromium',headless:true,args:['--no-sandbox']});
+const artifactDir=process.env.UI_TEST_ARTIFACTS || '/workspace/ui-review';
+const browser = await chromium.launch({executablePath:process.env.CHROMIUM_PATH || '/usr/bin/chromium',headless:true,args:['--no-sandbox']});
 const userId='11111111-1111-4111-8111-111111111111';
 const riderId='22222222-2222-4222-8222-222222222222';
 const passengerId='33333333-3333-4333-8333-333333333333';
@@ -14,6 +15,7 @@ const user={id:userId,aud:'authenticated',role:'authenticated',email:'operations
 const profiles=[{id:userId,role:'admin',full_name:'Test Operator'}, {id:riderId,role:'rider',full_name:'Test Rider',phone_number:'Fixture phone',approval_status:'pending',is_online:true}, {id:passengerId,role:'passenger',full_name:'Test Passenger'}];
 const trips=['requesting','accepted','arrived','in_progress','completed','cancelled'].map((status,i)=>({id:`fixture-trip-${i}`,passenger_id:passengerId,rider_id:i===0?null:riderId,status,pickup_address:'Chongwe market',dropoff_address:'Chongwe clinic',fare_amount:35,payment_method:'cash',payment_status:'pending',created_at:new Date().toISOString(),completed_at:null}));
 let fail=false, delay=1000, allowed=true;
+let cancellationReviews=[{trip_id:'fixture-trip-0',actor_id:passengerId,reason:'passenger_cancelled',late_warning:true,review_required:true,created_at:new Date().toISOString(),reviewed_at:null}];
 const errors=[];
 const context=await browser.newContext();
 await context.route('**/*',async route=>{
@@ -26,11 +28,13 @@ await context.route('**/*',async route=>{
  if(url.pathname.includes('/rest/v1/')) {
   if(fail) return route.fulfill({status:503,json:{message:'Test service unavailable'}});
   const table=url.pathname.split('/').at(-1);
+  if (table==='admin_review_pilot_cancellation') { cancellationReviews=[]; return route.fulfill({json:true}); }
+  if (table==='pilot_cancellation_reviews') return route.fulfill({json:cancellationReviews});
   return route.fulfill({json:table==='profiles'?profiles.map(p=>p.id===userId&&!allowed?{...p,role:'passenger'}:p):table==='authorized_trip_details'?trips:table==='rider_documents'?[{id:'fixture-document',rider_id:riderId,document_type:'national_id',storage_url:'fixture/document',verification_status:'pending',submitted_at:new Date().toISOString()}]:[]});
  }
  return route.fulfill({json:{}});
 });
-await context.routeWebSocket('wss://ui-test.supabase.co/**', ws=>{});
+await context.routeWebSocket('wss://ui-test.supabase.co/**', ()=>{});
 await context.addInitScript(({user,userId})=>{
  const exp=Math.floor(Date.now()/1000)+3600;
  const encode=x=>btoa(JSON.stringify(x)).replaceAll('+','-').replaceAll('/','_').replaceAll('=','');
@@ -43,7 +47,7 @@ await page.goto('http://127.0.0.1:3000');
 await page.getByRole('heading',{name:'Loading operations',exact:true}).waitFor();
 delay=0;
 await page.getByRole('heading',{name:'Overview',exact:true}).waitFor();
-await fs.mkdir('/workspace/ui-review',{recursive:true});
+await fs.mkdir(artifactDir,{recursive:true});
 for(const width of [320,768,1024,1440]) {
  await page.setViewportSize({width,height:900});
  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`overflow at ${width}`);
@@ -56,12 +60,20 @@ for(const width of [320,768,1024,1440]) {
  }
  const axe=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze();
  assert.deepEqual(axe.violations.map(v=>({id:v.id,impact:v.impact,nodes:v.nodes.map(n=>n.target)})),[],`axe at ${width}`);
- await page.screenshot({path:`/workspace/ui-review/dashboard-${width}.png`,fullPage:true});
+ await page.screenshot({path:`${artifactDir}/dashboard-${width}.png`,fullPage:true});
 }
+page.once('dialog', dialog=>dialog.accept());
+await page.getByRole('button',{name:'Pause new bookings'}).click();
+await page.getByText('New pilot bookings are paused. Continue supporting active trips.').waitFor();
 await page.getByRole('button',{name:'Pending verification · 1'}).click();
 await page.getByRole('heading',{name:'Rider verification',exact:true}).waitFor();
 await page.getByRole('button',{name:'Get national id for Test Rider'}).click();
 await page.getByRole('link',{name:'Open national id in a new tab'}).waitFor();
+assert.equal(await page.getByRole('button',{name:'Approve application for Test Rider'}).isDisabled(),true);
+await page.getByLabel('Verified NRC, Class A licence, registration and insurance').check();
+await page.getByLabel('Completed safety briefing').check();
+assert.equal(await page.getByRole('button',{name:'Approve application for Test Rider'}).isDisabled(),true);
+await page.getByLabel('Tested the rider’s physical device').check();
 fail=true;
 await page.getByRole('button',{name:'Approve application for Test Rider'}).click();
 await page.locator('.error-banner[role=alert]').waitFor();
@@ -80,6 +92,8 @@ await page.getByText('No trips found',{exact:true}).waitFor();
 await page.getByRole('button',{name:'Clear filters'}).click();
 assert.equal(await page.getByRole('combobox').inputValue(),'all');
 await page.getByRole('combobox').selectOption('active');
+await page.getByRole('button',{name:'Record manual review'}).click();
+await page.getByText('No cancellation warnings awaiting review.').waitFor();
 assert.equal(await page.locator('tbody tr').count(),4);
 fail=true;
 await page.getByRole('button',{name:'Refresh',exact:true}).click();

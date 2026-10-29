@@ -14,6 +14,9 @@ import zm.co.dhwinride.core.model.Trip
 import zm.co.dhwinride.core.model.TripStatus
 
 class TestTripRepository : TripRepository {
+    var pilotAvailable = true
+    override suspend fun getPilotServiceStatus() = zm.co.dhwinride.core.model.PilotServiceStatus(pilotAvailable, if (pilotAvailable) "Pilot available" else "Service currently unavailable")
+    override suspend fun recordRiderAvailability(latitude: Double, longitude: Double) = Unit
     var failNextComplete = false
     var requestFailure: Throwable? = null
     private val active = MutableStateFlow<Trip?>(null)

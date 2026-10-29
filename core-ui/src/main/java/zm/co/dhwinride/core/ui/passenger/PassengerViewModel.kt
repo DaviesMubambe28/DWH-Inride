@@ -22,6 +22,7 @@ import zm.co.dhwinride.core.model.RidePaymentMethod
 import zm.co.dhwinride.core.model.Trip
 import zm.co.dhwinride.core.model.TripStatus
 import zm.co.dhwinride.core.model.TripLocation
+import zm.co.dhwinride.core.domain.PilotPolicy
 import zm.co.dhwinride.core.domain.FareCalculator
 import zm.co.dhwinride.core.domain.FareConfig
 import zm.co.dhwinride.core.location.LocationResult
@@ -57,6 +58,8 @@ data class PassengerUiState(
     val isFetchingLocation: Boolean = false,
     val locationError: String? = null,
     val errorMessage: String? = null,
+    val pilotAvailable: Boolean = false,
+    val pilotServiceMessage: String = "Checking pilot service availability…",
 )
 
 class PassengerViewModel(
@@ -65,9 +68,9 @@ class PassengerViewModel(
     private val savedStateHandle: SavedStateHandle = SavedStateHandle(),
     private val locationTracker: LocationTracker? = null,
     private val enableLiveLocationPolling: Boolean = true,
-    // Development-only estimate rates. The server remains authoritative; product must approve published pricing.
+    // Approved pilot flat fare. Distance is informational and never changes the price.
     private val fareCalculator: FareCalculator = FareCalculator(FareConfig(
-        baseFareZmw = BigDecimal("15.00"), perKilometerZmw = BigDecimal("5.00"), minimumFareZmw = BigDecimal("20.00"),
+        baseFareZmw = BigDecimal("20.00"), perKilometerZmw = BigDecimal.ZERO, minimumFareZmw = BigDecimal("20.00"),
     )),
 ) : ViewModel() {
 
@@ -85,6 +88,7 @@ class PassengerViewModel(
                 if (profile.id.isNotBlank()) {
                     passengerTripsJob?.cancel()
                     passengerTripsJob = viewModelScope.launch {
+                        refreshPilotAvailability()
                         tripRepository.getPassengerTrips(profile.id)
                             .onFailure { error -> updateState { it.copy(errorMessage = error.message ?: "Could not restore trips.") } }
                         tripRepository.observePassengerTrips(profile.id)
@@ -196,9 +200,21 @@ class PassengerViewModel(
         val passengerId = _uiState.value.passengerProfile.id
         if (passengerId.isBlank()) return
         viewModelScope.launch {
+            refreshPilotAvailability()
             tripRepository.getPassengerTrips(passengerId).onFailure { error ->
                 updateState { it.copy(errorMessage = error.message ?: "Could not refresh trip status.") }
             }
+        }
+    }
+
+    private suspend fun refreshPilotAvailability() {
+        try {
+            val status = tripRepository.getPilotServiceStatus()
+            updateState { it.copy(pilotAvailable = status.available, pilotServiceMessage = status.message) }
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            updateState { it.copy(pilotAvailable = false, pilotServiceMessage = "Service availability could not be checked. Reconnect and refresh trip details.") }
         }
     }
 
@@ -404,8 +420,20 @@ class PassengerViewModel(
     fun requestRide() {
         if (_uiState.value.isLoading) return
         val current = _uiState.value
+        if (!current.pilotAvailable) {
+            updateState { it.copy(errorMessage = current.pilotServiceMessage) }
+            return
+        }
+        if (current.paymentMethod != RidePaymentMethod.Cash) {
+            updateState { it.copy(errorMessage = "The pilot accepts cash only. Select cash before booking.") }
+            return
+        }
         if (current.pickup == null || current.dropoff == null) {
             updateState { it.copy(errorMessage = "Choose both a pickup and drop-off location before booking.") }
+            return
+        }
+        if (!PilotPolicy.contains(current.pickup.latitude, current.pickup.longitude) || !PilotPolicy.contains(current.dropoff.latitude, current.dropoff.longitude)) {
+            updateState { it.copy(errorMessage = "Pickup and destination must both be within 4 km of Chongwe Town Centre.") }
             return
         }
         viewModelScope.launch {

@@ -85,6 +85,8 @@ import zm.co.dhwinride.core.ui.TripMap
 import zm.co.dhwinride.core.ui.TripStage
 import zm.co.dhwinride.core.ui.LiveMap
 import zm.co.dhwinride.core.ui.MapLocationPicker
+import zm.co.dhwinride.core.ui.PassengerCancellation
+import zm.co.dhwinride.core.ui.PilotSupport
 import zm.co.dhwinride.core.ui.PrimaryButton
 import zm.co.dhwinride.core.ui.ScreenTitle
 import zm.co.dhwinride.core.ui.SecondaryButton
@@ -185,6 +187,9 @@ fun PassengerApp(viewModel: PassengerViewModel, authRepository: AuthRepository) 
                 when (screen) {
                     PassengerNavScreen.Home -> HomeScreen(
                         history = uiState.tripHistory,
+                        pilotAvailable = uiState.pilotAvailable,
+                        serviceMessage = uiState.pilotServiceMessage,
+                        onRefresh = viewModel::refreshOnForeground,
                         onDestination = { viewModel.navigateTo(PassengerNavScreen.Destination) },
                     )
                     PassengerNavScreen.Destination -> DestinationScreen(
@@ -236,14 +241,17 @@ fun PassengerApp(viewModel: PassengerViewModel, authRepository: AuthRepository) 
                     PassengerNavScreen.Confirmed -> ConfirmedScreen(
                         activeTrip = uiState.activeTrip,
                         onTrack = { viewModel.navigateTo(PassengerNavScreen.Tracking) },
+                        onCancel = viewModel::cancelRequest,
                     )
                     PassengerNavScreen.Tracking -> TrackingScreen(
                         activeTrip = uiState.activeTrip,
                         riderLocation = uiState.riderLocation,
+                        onCancel = viewModel::cancelRequest,
                     )
                     PassengerNavScreen.Pin -> PinScreen(
                         activeTrip = uiState.activeTrip,
                         onConfirm = { viewModel.verifyPin() },
+                        onCancel = viewModel::cancelRequest,
                     )
                     PassengerNavScreen.ActiveTrip -> ActiveTripScreen(
                         activeTrip = uiState.activeTrip,
@@ -279,6 +287,9 @@ fun PassengerApp(viewModel: PassengerViewModel, authRepository: AuthRepository) 
 @Composable
 private fun HomeScreen(
     history: List<Trip>,
+    pilotAvailable: Boolean,
+    serviceMessage: String,
+    onRefresh: () -> Unit,
     onDestination: () -> Unit,
 ) {
     BoxWithConstraints(Modifier.fillMaxSize()) {
@@ -303,13 +314,13 @@ private fun HomeScreen(
                     }
                 }
                 Surface(
-                    modifier = Modifier.fillMaxWidth().clickable(onClick = onDestination),
+                    modifier = Modifier.fillMaxWidth().clickable(enabled = pilotAvailable, onClick = onDestination),
                     color = DhwSurface,
                     shape = RoundedCornerShape(14.dp),
                 ) {
                     Text("Where are you going?", color = DhwMuted, fontSize = 16.sp, modifier = Modifier.padding(16.dp))
                 }
-                InfoRow("Payment", "Cash or external mobile money", DhwOrange)
+                InfoRow("Payment", "Cash only during the pilot", DhwOrange)
                 if (history.isNotEmpty()) {
                     ListDivider()
                     val lastTrip = history.first()
@@ -317,7 +328,9 @@ private fun HomeScreen(
                     InfoRow("${lastTrip.destination} • ${lastTrip.rider?.name ?: "Rider"}", "K${formatZmw(lastTrip.fare.fareAmount)}")
                 }
             }
-            PrimaryButton("Choose destination", onDestination)
+            Text(serviceMessage, color = DhwNavy)
+            PrimaryButton("Choose destination", onDestination, enabled = pilotAvailable)
+            if (!pilotAvailable) SecondaryButton("Check availability again", onRefresh)
         }
     }
 }
@@ -465,14 +478,14 @@ private fun EstimateScreen(
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Column {
                         Text("Boda ride", fontWeight = FontWeight.Black, fontSize = 18.sp)
-                        Text("Straight-line estimate • ${estimate.distanceKm} km", color = DhwMuted)
+                        Text("ZMW 20 flat pilot fare", color = DhwMuted)
                     }
-                    Text("K${formatZmw(estimate.fareAmount)}", color = DhwOrange, fontWeight = FontWeight.Black, fontSize = 25.sp)
+                    Text("K${formatZmw(zm.co.dhwinride.core.domain.PilotPolicy.FARE_NGWEE)}", color = DhwOrange, fontWeight = FontWeight.Black, fontSize = 25.sp)
                 }
                 ListDivider()
-                Text("Indicative ZMW estimate using straight-line distance; final fare is calculated by the server using road routing.", color = DhwMuted, fontSize = 12.sp)
+                Text("Cash only. ZMW 20 total for any eligible trip within the approved 4 km zone. Distance and duration do not change the fare.", color = DhwMuted, fontSize = 12.sp)
                 Text("Payment after arrival", fontWeight = FontWeight.Bold)
-                RidePaymentMethod.entries.forEach { method ->
+                listOf(RidePaymentMethod.Cash).forEach { method ->
                     Surface(
                         modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).selectable(selected = method == selectedPayment, role = Role.RadioButton, onClick = { onPaymentSelected(method) }),
                         color = if (selectedPayment == method) DhwOrange.copy(alpha = .12f) else DhwSurface,
@@ -494,14 +507,14 @@ private fun EstimateScreen(
                 }
                 if (selectedPayment == RidePaymentMethod.MobileMoney) {
                     Text(
-                        "Send K${formatZmw(estimate.fareAmount)} directly to the rider using your mobile-money app or USSD after arrival.",
+                        "Send K${formatZmw(zm.co.dhwinride.core.domain.PilotPolicy.FARE_NGWEE)} directly to the rider using your mobile-money app or USSD after arrival.",
                         color = DhwBlue,
                         fontSize = 12.sp,
                     )
                 }
             }
             PrimaryButton(
-                if (isLoading) "Requesting ride…" else "Request rider • K${formatZmw(estimate.fareAmount)}",
+                if (isLoading) "Requesting ride…" else "Request rider • K${formatZmw(zm.co.dhwinride.core.domain.PilotPolicy.FARE_NGWEE)}",
                 onBook,
                 enabled = hasSelectedLocations && !isLoading,
             )
@@ -533,7 +546,7 @@ private fun FindingScreen(onCancel: () -> Unit) {
 }
 
 @Composable
-private fun ConfirmedScreen(activeTrip: Trip?, onTrack: () -> Unit) {
+private fun ConfirmedScreen(activeTrip: Trip?, onTrack: () -> Unit, onCancel: () -> Unit) {
     val rider = activeTrip?.rider
     Column(Modifier.fillMaxSize()) {
         TripStage("Rider assigned", "Check the rider and motorcycle, then follow their location.")
@@ -562,12 +575,13 @@ private fun ConfirmedScreen(activeTrip: Trip?, onTrack: () -> Unit) {
                 Text("Check rider and motorcycle details before boarding.", color = DhwMuted, fontSize = 12.sp)
             }
             PrimaryButton("Live tracking", onTrack)
+            PassengerCancellation(onCancel)
         }
     }
 }
 
 @Composable
-private fun TrackingScreen(activeTrip: Trip?, riderLocation: TripLocation?) {
+private fun TrackingScreen(activeTrip: Trip?, riderLocation: TripLocation?, onCancel: () -> Unit) {
     val rider = activeTrip?.rider
     Column(Modifier.fillMaxSize()) {
         TripStage("Rider on the way", "Wait at your pickup point. Share your PIN only after the rider arrives.")
@@ -579,12 +593,13 @@ private fun TrackingScreen(activeTrip: Trip?, riderLocation: TripLocation?) {
                 RiderLocationReadout(riderLocation)
                 Text("Wait in a safe, visible place at your pickup point.", color = DhwNavy)
             }
+            PassengerCancellation(onCancel)
         }
     }
 }
 
 @Composable
-private fun PinScreen(activeTrip: Trip?, onConfirm: () -> Unit) {
+private fun PinScreen(activeTrip: Trip?, onConfirm: () -> Unit, onCancel: () -> Unit) {
     val pinCode = activeTrip?.pin?.takeIf { it.isNotBlank() } ?: "––––"
     val rider = activeTrip?.rider
     Column(
@@ -604,6 +619,7 @@ private fun PinScreen(activeTrip: Trip?, onConfirm: () -> Unit) {
             InfoRow("Plate", rider?.plateNumber ?: "Plate", DhwOrange)
         }
         PrimaryButton("I gave PIN to rider", onConfirm)
+        PassengerCancellation(onCancel)
         Text("Never share your PIN by phone or chat.", color = DhwMuted, fontSize = 12.sp, textAlign = TextAlign.Center)
     }
 }
@@ -773,9 +789,9 @@ private fun SafetyScreen() {
                 SecondaryButton("Emergency service integration required", {}, enabled = false)
             }
         }
-        SettingsCard("Share trip", "Send a live trip link to someone you trust")
+        PilotSupport()
         SettingsCard("Report a safety issue", "Tell our safety team what happened")
-        SettingsCard("Trip support", "Get help with a past or active ride")
+        Text("Late cancellations create a warning for manual review. No cancellation fee is collected during the pilot.", color = DhwMuted)
         SettingsCard("Lost item", "Contact support about something left behind")
     }
 }

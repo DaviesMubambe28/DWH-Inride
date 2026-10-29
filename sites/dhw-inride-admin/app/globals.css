@@ -240,3 +240,8 @@ th { color: #536176; font-size: 11px; }
   .verification-row > .badge { grid-column: 2; grid-row: auto; }
   .setup-page { padding: 16px; }
 }
+.onboarding-checks { margin: 16px 0 0; padding: 12px; border: 1px solid var(--line); border-radius: 8px; }
+.onboarding-checks legend { font-weight: 700; font-size: 12px; }
+.onboarding-checks label { min-height: 44px; display: flex; align-items: center; gap: 12px; font-size: 12px; line-height: 1.6; }
+.onboarding-checks input { width: 20px; height: 20px; flex: 0 0 20px; accent-color: var(--blue); }
+fieldset.form-grid { padding: 0; margin: 0 0 16px; border: 0; }
