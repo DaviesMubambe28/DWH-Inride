@@ -1,3 +1,52 @@
+# Staging configuration recheck — 2 November 2026 (CAT)
+
+Tested commit: `53cd67932ff90165600122fb6672639437c834d2` on `feat/release-operations`, initially clean and preserved. Time: `2026-11-02T01:57:58.063409+02:00`. **Release remains BLOCKED.** The user has authorized reviewed staging migration/function deployment once the exact staging target/access is available. Production deployment, booking enablement and APK publication remain unauthorized. No additional blanket staging approval is needed.
+
+## Current gates
+
+| Gate | Status | Current observation / next action |
+|---|---|---|
+| Repository preservation | PASS | Correct branch/commit and clean initial tree confirmed; changes this run are evidence/handoff only |
+| Mapbox runtime network change | FAIL | Current enforced runtime revision 1 still has no custom hosts. Saved draft contains Mapbox/Google additions but is unapplied. Fresh curl returns proxy CONNECT 403 before TLS |
+| Mapbox origin authentication | BLOCKED | Origin never reached. Apply `api.mapbox.com` in cloud environment settings first; then distinguish origin access from proxy access without printing headers/tokens |
+| Mapbox artifact/dependency resolution | BLOCKED | Test POM/artifact access and Gradle resolution separately after origin access; no new build retry on unchanged network failure |
+| Staging Supabase identity/access | BLOCKED | No local/injected URL/public key/management token. Existing CLI configuration returns AccessTokenRequiredError. Remote project/secret state cannot be inspected |
+| Firebase/FCM validation | BLOCKED | Both real google-services.json files and local FCM_SERVICE_ACCOUNT_JSON absent. Hosted bindings unobserved without management access |
+| Monitoring destination | BLOCKED | SENTRY_DSN and OPERATIONS_WORKER_TOKEN unavailable locally; no remote probe/alert receipt claimed |
+| Existing signing identity | BLOCKED | No configured keystore path/password/alias or root secrets.properties. No replacement key generated. Owner must identify established certificate/distribution history |
+| Passenger signed/minified candidate | BLOCKED | Source `zm.co.dhwinride.passenger`, versionName 0.1.0/versionCode 1. No release APK, hash or signature result exists |
+| Rider signed/minified candidate | BLOCKED | Source `zm.co.dhwinride.rider`, versionName 0.1.0/versionCode 1. No release APK, hash or signature result exists |
+| Staging migrations/functions | BLOCKED | Authorized in confirmed staging, but target/access missing. No hosted read/mutation/deployment performed |
+| Staging passenger/rider/admin and authorization journeys | BLOCKED | No configured target/test identities/candidates; historical/local tests are not substituted |
+| Real FCM/device and monitoring delivery | BLOCKED | No sender/device token/configuration or actual destination receipt; no synthetic result labelled real |
+| Isolated full-service recovery | BLOCKED | Exact isolated recovery target and service bindings missing. Previous current-schema database-only restore remains PASS as previously evidenced; Auth HTTP, Storage bytes, functions/config recovery remain untested |
+| GitHub protected pilot configuration | BLOCKED | Existing gh authentication used for metadata-only requests; proxy denies API access. No inference that remote secrets are absent. `api.github.com` saved as a pending network addition |
+| Five moderate dev-tool findings | FAIL | Registry check shows the same pinned latest legacy plugin releases and minimatch 3.1.5; no compatible newer patch found. No unsafe override/downgrade, rule suppression or audit exclusion. See DEPENDENCY_REVIEW.md |
+| Previously verified local engineering | PASS (carried forward) | Code unchanged from prior 187 SQL /18 Edge /7 recovery tests and database-only restore. Not rerun or represented as hosted/device evidence |
+
+Expected future APK paths (not produced artifacts): `passenger-app/build/outputs/apk/release/passenger-app-release.apk` and `rider-app/build/outputs/apk/release/rider-app-release.apk`. Hashes, signing fingerprints, build commit and actual package metadata will be recorded only after successful builds. Confirm highest distributed versionCode and existing certificate before an update; do not infer first release from absent local files.
+
+## Exact next configuration actions
+
+1. **First:** Cloud environment settings → Internet/network access: apply the saved custom allowlist, including `api.mapbox.com`, `oauth2.googleapis.com`, `fcm.googleapis.com`, plus newly saved `api.supabase.com` and `api.github.com`; preserve existing rules/presets. Review/save and publish the development environment version as required by that UI. Saving a draft alone did not apply runtime revision 1. The legal-source domains are also preserved. This does not publish apps.
+2. Configure `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` and `MAPBOX_PUBLIC_TOKEN` in secure environment bindings or ignored root `secrets.properties`. Supply `SUPABASE_ACCESS_TOKEN` through a secure CLI/management binding and `SUPABASE_DB_PASSWORD` if the selected database workflow requires it. Confirm this is staging. Add its exact hostname to the allowlist; do not guess from historical records.
+3. Add real `passenger-app/google-services.json` and `rider-app/google-services.json` through ignored configuration; provide existing `DHWINRIDE_RELEASE_KEYSTORE_PATH`, `DHWINRIDE_RELEASE_STORE_PASSWORD`, `DHWINRIDE_RELEASE_KEY_ALIAS`, `DHWINRIDE_RELEASE_KEY_PASSWORD` via the secure signing setup. Existing identity must be preserved. Protected GitHub candidate environment details are in the handoff; its actual settings could not be inspected here.
+4. In that staging project's Function Secrets, configure `MAPBOX_SERVER_TOKEN`, `FCM_SERVICE_ACCOUNT_JSON`, `OPERATIONS_WORKER_TOKEN`, `SENTRY_DSN`, and the described trusted schedules. Use Supabase-managed server bindings; never expose service-role/server/build credentials in client configuration. Configure the exact isolated recovery target and keys under the `RECOVERY_*` names in the handoff.
+
+Use CONFIGURATION_HANDOFF.md for all exact names, locations, scopes and safe verification. Credentials must not be pasted into chat. Once access changes, first recheck effective policy and origin responses, then inspect staging inventory/dry-run and resume authorized work.
+
+## Outstanding human approvals and guided device work
+
+- **Operator/safety:** BLOCKED — no final accountable go/no-go or safety drill evidence. Preserve already established price, zone, hours and manual onboarding decisions; those are not being requested again.
+- **Legal/insurance:** BLOCKED — actual legal entity, transport eligibility/licensing, rider/motorcycle insurance and publication approval need responsible operator/adviser evidence, not a software certification.
+- **Retention/privacy:** BLOCKED — approved calendar-year schedules, location/audit/provider-log/backup retention, legal holds and published privacy/terms remain required. No approval record supplied; hosted policy state is unobserved.
+- **Support/on-call:** BLOCKED — existing contact details do not prove tested coverage, response/escalation ownership or working alert channels.
+- **Physical devices:** BLOCKED — the user is checking two Android versions and existing installed app versions. Prior built APK version 0.1.0 for both apps is reported as historical context, not an installation result. No install, upgrade, GPS, network-loss, trip or notification check performed. DEVICE_REHEARSAL.md procedure step 1 cannot begin without actual signed APKs/hashes. Device inventory can be collected now, one preparation step at a time.
+
+Sanitized current evidence: `evidence/staging-recheck/configuration-status.json`. The earlier engineering evidence below remains historical/carry-forward context; it does not fill the blocked external gates.
+
+---
+
 # Release operations continuation — 2 November 2026 (CAT)
 
 Verdict: **BLOCKED** for controlled pilot and public release. Engineering source commit: `c1ce84cd7fa3b0c1e1638a5a5f8eca3ff71d6356` on `feat/release-operations`. Tests ran against the same source content before/after its reviewable commits. No APK, deployed candidate, production change, public booking enablement or publication approval exists. Earlier work was preserved and committed in separate concerns; the historical record below remains context.

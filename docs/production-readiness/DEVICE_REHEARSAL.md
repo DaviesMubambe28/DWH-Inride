@@ -2,6 +2,10 @@
 
 Status: BLOCKED, not executed. Use staging only, synthetic trips, consenting test participants and approved safe stationary locations. No public bookings or transport is authorized by this script. An operator must attend; actual travel requires the applicable transport/safety authorization first.
 
+## Current guided preparation — 2 November 2026
+
+Status: BLOCKED. The device inventory question has been sent: Android versions on Phone A/Phone B and existing installed DHW-inRide app versions, without device IDs or account details. The user reports that the last successfully built passenger and rider APKs were version 0.1.0, and is physically checking OS levels and installed versions. Those actual device details are still unconfirmed; no physical test result is recorded. Do not advance to installation or mark procedure step 1 passed until signed candidate files, hashes and preserved signing identity exist. Record each subsequent user-observed result individually; automated/local fixtures never substitute for it.
+
 ## Inputs and evidence
 
 Record the candidate source commit, both APK SHA-256 hashes, signing certificate digest, package IDs, versionName/versionCode, Android/device versions, staging project alias, tester/reviewer and CAT timestamps. Use pseudonymous account labels. Keep JWTs/passwords, PIN values, precise participant coordinates, rider documents, telephone numbers and device identifiers out of shared artifacts. Store redacted results under `docs/production-readiness/evidence/`; record expected versus observed behavior and pass/fail for every row. No row is passed merely because it appears in this document.

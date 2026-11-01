@@ -1,3 +1,11 @@
+# Staging recheck — 2 November 2026
+
+**BLOCKED.** Rechecked preserved commit `53cd679` without repeating completed suites. The runtime network policy remains revision 1 without the saved custom domains; Mapbox still receives a pre-TLS proxy CONNECT 403. Required local/injected project, Firebase, monitoring, signing and recovery settings remain absent. Supabase CLI management access is unavailable; GitHub pilot metadata inspection is network-blocked, so hosted settings remain unobserved. No APK, staging deployment, real journey or device result was produced.
+
+The current evidence report lists PASS/FAIL/BLOCKED gates and exact next actions. First apply the saved network settings, then provide the secure configuration from CONFIGURATION_HANDOFF.md. Staging deployment is authorized once the exact target/access is verified; production approval is still withheld. Device inventory preparation is pending. Legal/insurance, operator/safety, retention/privacy and support/on-call approvals remain separate open gates. Upstream metadata has no compatible new patch for the five remaining legacy development-tool findings.
+
+---
+
 # Release operations update — 2 November 2026
 
 **BLOCKED for real trips/public release.** Engineering source `c1ce84cd7fa3b0c1e1638a5a5f8eca3ff71d6356` adds tested notification sending, closure/retention, server monitoring/crash-marker transport and recovery tooling. The final local suite passes 23 migrations, 187 SQL assertions, concurrency, 18 Edge tests, frozen type checks, real HTTP boundary/probe tests and seven recovery tests. A current database-only restore preserves ownership/ACLs and passes all 187 SQL assertions in the restored target; it does not prove full-service recovery.

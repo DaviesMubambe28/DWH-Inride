@@ -1,0 +1,64 @@
+{
+  "tested_commit": "53cd67932ff90165600122fb6672639437c834d2",
+  "verified_at": "2026-11-02T01:57:58.063409+02:00",
+  "environment_binding_presence": {
+    "SUPABASE_URL": false,
+    "SUPABASE_PUBLISHABLE_KEY": false,
+    "SUPABASE_ANON_KEY": false,
+    "SUPABASE_SERVICE_ROLE_KEY": false,
+    "SUPABASE_ACCESS_TOKEN": false,
+    "SUPABASE_DB_PASSWORD": false,
+    "MAPBOX_PUBLIC_TOKEN": false,
+    "MAPBOX_DOWNLOADS_TOKEN": false,
+    "MAPBOX_SERVER_TOKEN": false,
+    "FCM_SERVICE_ACCOUNT_JSON": false,
+    "OPERATIONS_WORKER_TOKEN": false,
+    "SENTRY_DSN": false,
+    "DHWINRIDE_RELEASE_KEYSTORE_PATH": false,
+    "DHWINRIDE_RELEASE_STORE_PASSWORD": false,
+    "DHWINRIDE_RELEASE_KEY_ALIAS": false,
+    "DHWINRIDE_RELEASE_KEY_PASSWORD": false,
+    "RECOVERY_SOURCE_SUPABASE_URL": false,
+    "RECOVERY_SOURCE_SERVICE_ROLE_KEY": false,
+    "RECOVERY_TARGET_SUPABASE_URL": false,
+    "RECOVERY_TARGET_SERVICE_ROLE_KEY": false
+  },
+  "file_presence": {
+    "secrets.properties": false,
+    "local.properties": false,
+    "supabase/functions/.env": false,
+    "sites/dhw-inride-admin/.env.local": false,
+    "passenger-app/google-services.json": false,
+    "rider-app/google-services.json": false,
+    ".pilot/owner.json": false,
+    ".pilot/evidence.json": false
+  },
+  "runtime_spec_revision": "1",
+  "observations_current": true,
+  "runtime_network_policy": "enforced",
+  "runtime_custom_hosts": [],
+  "draft_revision_observed": 4,
+  "draft_runtime_difference": "Saved domains were not applied to the running policy. Management API domains added afterward in a new saved draft.",
+  "mapbox_result": "Proxy CONNECT 403 before TLS; no origin authentication or artifact response observed.",
+  "supabase_cli_result": "AccessTokenRequiredError using existing configuration; no project inspection performed.",
+  "github_pilot_metadata": "BLOCKED by network; remote settings are unobserved, not proven absent.",
+  "upstream_latest_checked": {
+    "minimatch_3": "3.1.5",
+    "eslint-config-next": "16.4.3",
+    "eslint-plugin-import": "2.32.0",
+    "eslint-plugin-jsx-a11y": "6.10.2",
+    "eslint-plugin-react": "7.37.5"
+  },
+  "execution_scope": "Presence, read-only access, network and upstream metadata only. Prior passing suites not repeated. No staging/production mutation or APK publication.",
+  "device_inventory": {
+    "status": "BLOCKED",
+    "source": "User reply",
+    "historical_built_apk_versions": {
+      "passenger": "0.1.0",
+      "rider": "0.1.0"
+    },
+    "android_os_versions_confirmed": false,
+    "installed_app_versions_confirmed": false,
+    "physical_test_results": []
+  }
+}
