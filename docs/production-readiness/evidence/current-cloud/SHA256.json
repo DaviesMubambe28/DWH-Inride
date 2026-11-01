@@ -1,0 +1,11 @@
+{
+  "baseline_commit": "0c94e2236dbc595d41f11188d3b2ea355188de3e",
+  "scope": "Working-tree validation; not final pilot approval evidence",
+  "files": {
+    "android-blocked.log": "bdddbe937278df5c35034738e5fdce53282e8952eae3d526656335d1d8b15272",
+    "release-guards.log": "62444489eb30da1c92b3f24b4729d59488e0659afb46198ca365fa18b1ba6e58",
+    "sql-concurrency.log": "42704d07b3e6dfa5e8e06f7c86e0b0f862daf9373cb4fd78245593e4dd2367f7",
+    "sql-tests.log": "39479810067d814c911f18141c1a7ec58042fcda09714ecd45100ed4e66d152f"
+  },
+  "normalization": "Trailing whitespace removed from retained text logs; command results unchanged."
+}

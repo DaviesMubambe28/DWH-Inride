@@ -1,0 +1,14 @@
+PASS: 23 migrations replayed on PostgreSQL 17
+PASS: account_lifecycle.test.sql: 23 assertions
+PASS: client_crash_reports.test.sql: 6 assertions
+PASS: final_pilot_policy.test.sql: 13 assertions
+PASS: notification_outbox.test.sql: 20 assertions
+PASS: operations_health.test.sql: 5 assertions
+PASS: pilot_cancellation.test.sql: 22 assertions
+PASS: pilot_onboarding.test.sql: 15 assertions
+PASS: pilot_service_controls.test.sql: 32 assertions
+PASS: retention_batches.test.sql: 8 assertions
+PASS: security_denials.test.sql: 21 assertions
+PASS: trip_workflow.test.sql: 22 assertions
+PASS: two concurrent rider sessions produce exactly one successful acceptance
+PASS: 187 SQL contract assertions. Auth/Storage HTTP integration remains separate.

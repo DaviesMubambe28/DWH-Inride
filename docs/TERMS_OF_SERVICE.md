@@ -42,26 +42,21 @@ The Platform must not dispatch paid passenger trips using a motorcycle unless DH
 
 The passenger must select accurate pickup and destination locations, review the displayed fare and payment method, and submit the request. A request is not an accepted ride until an eligible rider accepts it in the Platform. A rider may decline a request before accepting it. Once accepted, the trip details are shared with the passenger and assigned rider as described in the Privacy Policy.
 
-The app may display a distance/time-based fare estimate before booking. The fare presented by the server at booking is the fare recorded for that trip, subject to any correction required by law or an evident technical error. The app should communicate the final fare electronically at trip completion. Do not add an undisclosed charge. Before launch, DHW-inRide must confirm that its fare calculation, estimate, final fare and cancellation handling satisfy applicable RTSA and consumer requirements.
+The controlled pilot uses a flat ZMW 20 total cash fare for eligible trips inside the approved service area. Route distance and duration do not increase that fare; the internal 15% allocation is included in the total. The fare presented by the server at booking is the fare recorded for that trip, subject to any correction required by law or an evident technical error. The app should communicate the final fare electronically at trip completion. Do not add an undisclosed charge. Before launch, DHW-inRide must confirm that its fare calculation, estimate, final fare and cancellation handling satisfy applicable RTSA and consumer requirements.
 
 Pickup and destination addresses may be derived from map or geocoding services and can be inaccurate. Passengers and riders must confirm the actual safe pickup and destination before travel. Neither party should rely on an app map as a substitute for road signs, local conditions or safe judgment.
 
 ## 5. Fares and payment
 
-The app currently supports:
+The controlled pilot accepts **cash only**. The passenger pays the rider directly at the end of a completed trip. DHW-inRide does not collect, hold, escrow or settle the fare. In-app cash acknowledgements record a participant’s report and do not independently prove settlement. External mobile-money bookings are not enabled for this pilot.
 
-- **Cash:** the passenger pays the rider directly at the end of the trip; and
-- **External mobile money:** the passenger sends payment directly to the rider using a mutually agreed provider or method outside DHW-inRide.
-
-DHW-inRide does not currently collect, hold, escrow, transfer or settle the fare, and does not receive mobile-money credentials or provider settlement confirmations. An in-app “sent”, “received” or similar acknowledgement records a participant’s report. It is not proof that funds were transferred, cleared or received. Passengers and riders must check the amount and recipient before making an external payment and should keep their provider receipt. Never disclose a PIN, password or one-time code to DHW-inRide or another user.
-
-The passenger remains responsible for the displayed fare for a completed trip, and the rider must not demand an undisclosed fare. If the app records contradictory acknowledgements, payment is disputed, or the transfer fails, contact **[support contact]** with the trip ID and evidence. We may review the trip and account records but cannot reverse or guarantee an external transfer. We will not represent an external payment as platform-protected.
+The passenger is responsible for the disclosed ZMW 20 fare for a completed eligible trip. The rider must not demand an undisclosed surcharge. Report contradictory acknowledgements or fare disputes to operations at +260 971 793 185, +260 76 174 1656, or garumitech@gmail.com, quoting the trip ID. Never disclose a password, trip PIN outside pickup verification, or payment-provider PIN to support.
 
 Before enabling in-app collection, wallet balances, payment splitting, refunds or payouts, DHW-inRide must implement the payment flow and obtain any approvals or provider arrangements required by the Bank of Zambia and applicable payment law. These Terms do not authorize DHW-inRide to operate a regulated payment service.
 
 ## 6. Cancellations, delays and service issues
 
-Passengers may cancel a request while it remains unassigned and in the requesting state. The app may disable cancellation after a rider accepts or begins travel. Any cancellation fee or no-show charge must be disclosed before the passenger incurs it and must comply with consumer law. **No cancellation fee is charged under these Terms unless it is shown in the app before the relevant booking and is lawfully permitted.**
+Passengers may cancel an unassigned request. The pilot permits passenger cancellation before trip start; cancellation within two minutes of acceptance is free. A later cancellation generates a warning and manual review, with no automatic cancellation fee or debt. A rider may report passenger no-show only after five minutes from server-recorded arrival. Other rider cancellations require manual review. Operations reviews the circumstances; no new charge is authorized by this review.
 
 Riders must promptly report inability to complete an accepted trip and must not abandon a passenger in an unsafe location. Passengers and riders should contact emergency services first where there is an immediate threat to life or safety, then notify DHW-inRide at **[safety contact]**.
 

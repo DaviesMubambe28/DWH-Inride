@@ -1,0 +1,30 @@
+# Candidate device and operator rehearsal
+
+Status: BLOCKED, not executed. Use staging only, synthetic trips, consenting test participants and approved safe stationary locations. No public bookings or transport is authorized by this script. An operator must attend; actual travel requires the applicable transport/safety authorization first.
+
+## Inputs and evidence
+
+Record the candidate source commit, both APK SHA-256 hashes, signing certificate digest, package IDs, versionName/versionCode, Android/device versions, staging project alias, tester/reviewer and CAT timestamps. Use pseudonymous account labels. Keep JWTs/passwords, PIN values, precise participant coordinates, rider documents, telephone numbers and device identifiers out of shared artifacts. Store redacted results under `docs/production-readiness/evidence/`; record expected versus observed behavior and pass/fail for every row. No row is passed merely because it appears in this document.
+
+Phone A: passenger APK and passenger P1; phone B: rider APK and approved rider R1. Admin uses a separate authenticated browser. Also prepare P2, approved rider R2, pending/rejected/suspended rider identities. Two phones cover sequential journeys. A truly simultaneous two-rider device race needs a third phone or a separate authenticated staging client; do not claim the two-phone sequence proves device concurrency.
+
+## Procedure
+
+1. Verify APK signatures/hashes before installation. Install both signed candidates, inspect their staging target, and confirm the correct app identity/version. Repeat as an upgrade over the previous signed version without clearing data. A first install is not upgrade evidence.
+2. Create test accounts through the real Auth flow. Confirm email delivery in the actual test inbox, follow confirmation and password-reset links, sign in/out, restore a session after restart, and verify revoked/expired sessions fail safely. On an admin browser, sign in as P1/R1: operational reads and mutations must be rejected by the backend, not just hidden in the UI.
+3. Provision a pending rider and motorcycle as admin, verify document upload/review with synthetic non-personal fixtures, reject and suspend restricted test identities, and confirm they cannot go online/accept trips. Complete only genuinely performed approval attestations. Verify an approved rider's deliberately enabled, fresh in-zone location is needed for dispatch.
+4. With staging service paused, P1 requests a trip: expect rejection and no inserted trip. In an explicitly approved isolated staging policy, resume during approved hours. Check both endpoints inside/outside the 4 km zone, stale/offline rider presence and outside-hours denial. Restore the standard policy after any synthetic clock/config exercise; never change production policy for testing.
+5. P1 books once, taps repeatedly, retries after a network timeout and restarts the app. Expect at most one active booking and reconciliation with that booking. Record the server trip ID and compare both apps/admin/database states. A conflict response alone does not prove the UI recovered correctly.
+6. R1 and R2 attempt acceptance concurrently from distinct sessions: exactly one wins. The loser refreshes to no assignment; P1 sees only the winner. Check unauthorized arrival/start/completion from the losing rider and P2.
+7. Winning rider marks arrival. Test an incorrect pickup PIN and repeated incorrect attempts; no start may occur. Use the correct PIN privately while stationary together. Verify start, completion, ZMW 20 fare, cash acknowledgement, history and one valid completed-trip rating. Repeat completion/payment/rating calls: no duplicate charge, ledger record or rating. Compare admin/backend state.
+8. On separate synthetic trips test unassigned cancellation, passenger cancellation within/after two minutes of acceptance, rider no-show before/after five minutes from arrival, and rider cancellation/manual review. Expect no automatic fee or debt. Confirm cancellation cannot silently mutate a completed/in-progress trip outside supported rules.
+9. Repeat active-trip steps with location denied, approximate location, GPS unavailable, permission revoked, airplane mode, slow network, request timeout, app backgrounded, screen locked, process killed and restarted. Record observed state recovery after each change. Never rely on invented coordinates, success or trip progress. Expire/revoke the session and confirm safe reauthentication/reconciliation.
+10. Use the real trusted FCM sender. Test foreground/background/terminated app delivery and notification taps on both relevant Android versions. Verify destination trip/account, denied notification permission, token rotation and sender failure handling. Token storage or a locally generated notification is not FCM delivery evidence.
+11. Admin pauses new bookings during an active synthetic trip. New requests/acceptances must be blocked while the active trip can finish. Verify audit record and safe resumption only after the operator reviews the cause.
+12. Call/email the stated support channels during the promised service window; record actual acknowledgement and response time. Rehearse a safety/incident report, escalation, notification outage and stuck-trip response. Do not call emergency services for a drill without prior agency coordination.
+
+## Recovery and sign-off
+
+Restore the actual database backup and private Storage object bytes to an isolated target, verify access controls and representative records/files, then rehearse compatible backend/web rollback and a signed Android forward update. Record who can obtain backup/signing access if the primary owner is unavailable. No destructive hosted reset.
+
+For pilot approval, the responsible operator must review every result, known defect, legal/insurance confirmation, monitoring delivery, on-call rota, backup evidence and stop conditions in PILOT_RUNBOOK.md. Keep `owner_approved=false` and bookings paused until that review. Public release additionally requires reviewed pilot outcomes, published legal/support information and a separate explicit production-release approval.

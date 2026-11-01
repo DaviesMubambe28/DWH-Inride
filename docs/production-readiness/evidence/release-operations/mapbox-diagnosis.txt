@@ -1,0 +1,8 @@
+Sanitized observation: 2026-11-02 00:47 CAT
+Request: unauthenticated HTTPS HEAD to api.mapbox.com/downloads/v2/releases/maven/com/mapbox/maps/android-ndk27/11.33.0/android-ndk27-11.33.0.pom
+curl: (56) CONNECT tunnel failed, response 403
+HTTP/1.1 403 Forbidden
+server: envoy
+No TLS session to Mapbox was established. No Mapbox token was sent. Origin authentication, Downloads:Read entitlement and artifact availability remain unverified; do not infer their status from a proxy denial.
+
+Current environment status corroboration: observations_current=true; network policy enforced; api.mapbox.com absent from effective allowed hosts; fcm.googleapis.com also absent; no configured secret bindings. Draft additions are not yet runtime access.

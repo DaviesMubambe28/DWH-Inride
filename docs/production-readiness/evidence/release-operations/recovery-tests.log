@@ -1,0 +1,12 @@
+test_full_service_verification_rejects_database_only_receipt (test_recovery.RecoveryTests.test_full_service_verification_rejects_database_only_receipt) ... ok
+test_hash_verification_detects_corrupt_and_escaping_artifacts (test_recovery.RecoveryTests.test_hash_verification_detects_corrupt_and_escaping_artifacts) ... ok
+test_inventory_never_accepts_traversal_from_remote_names (test_recovery.RecoveryTests.test_inventory_never_accepts_traversal_from_remote_names) ... ok
+test_paginated_storage_inventory_includes_nested_objects (test_recovery.RecoveryTests.test_paginated_storage_inventory_includes_nested_objects) ... ok
+test_restore_refuses_same_target_and_unapproved_target (test_recovery.RecoveryTests.test_restore_refuses_same_target_and_unapproved_target) ... ok
+test_restore_rejects_manifest_path_traversal_and_nul (test_recovery.RecoveryTests.test_restore_rejects_manifest_path_traversal_and_nul) ... ok
+test_storage_backup_restore_roundtrip_checks_actual_bytes (test_recovery.RecoveryTests.test_storage_backup_restore_roundtrip_checks_actual_bytes) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.002s
+
+OK

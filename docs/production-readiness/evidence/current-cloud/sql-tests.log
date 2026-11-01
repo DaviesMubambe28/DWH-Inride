@@ -1,0 +1,16 @@
+Connecting to local database...
+psql:/workspace/DWH-Inride/supabase/tests/database/final_pilot_policy.test.sql:2: NOTICE:  extension "pgtap" already exists, skipping
+/workspace/DWH-Inride/supabase/tests/database/final_pilot_policy.test.sql ...... ok
+psql:/workspace/DWH-Inride/supabase/tests/database/pilot_cancellation.test.sql:2: NOTICE:  extension "pgtap" already exists, skipping
+/workspace/DWH-Inride/supabase/tests/database/pilot_cancellation.test.sql ...... ok
+psql:/workspace/DWH-Inride/supabase/tests/database/pilot_onboarding.test.sql:2: NOTICE:  extension "pgtap" already exists, skipping
+/workspace/DWH-Inride/supabase/tests/database/pilot_onboarding.test.sql ........ ok
+psql:/workspace/DWH-Inride/supabase/tests/database/pilot_service_controls.test.sql:2: NOTICE:  extension "pgtap" already exists, skipping
+/workspace/DWH-Inride/supabase/tests/database/pilot_service_controls.test.sql .. ok
+psql:/workspace/DWH-Inride/supabase/tests/database/security_denials.test.sql:2: NOTICE:  extension "pgtap" already exists, skipping
+/workspace/DWH-Inride/supabase/tests/database/security_denials.test.sql ........ ok
+psql:/workspace/DWH-Inride/supabase/tests/database/trip_workflow.test.sql:3: NOTICE:  extension "pgtap" already exists, skipping
+/workspace/DWH-Inride/supabase/tests/database/trip_workflow.test.sql ........... ok
+All tests successful.
+Files=6, Tests=125,  3 wallclock secs ( 0.03 usr  0.02 sys +  0.04 cusr  0.01 csys =  0.10 CPU)
+Result: PASS

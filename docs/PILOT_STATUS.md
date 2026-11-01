@@ -1,3 +1,25 @@
+# Release operations update — 2 November 2026
+
+**BLOCKED for real trips/public release.** Engineering source `c1ce84cd7fa3b0c1e1638a5a5f8eca3ff71d6356` adds tested notification sending, closure/retention, server monitoring/crash-marker transport and recovery tooling. The final local suite passes 23 migrations, 187 SQL assertions, concurrency, 18 Edge tests, frozen type checks, real HTTP boundary/probe tests and seven recovery tests. A current database-only restore preserves ownership/ACLs and passes all 187 SQL assertions in the restored target; it does not prove full-service recovery.
+
+Modern dependency remediation passes dashboard types/build/lint/3 tests; five moderate legacy development-tool findings remain, with zero production dependency advisories. Mapbox failure is a pre-TLS proxy CONNECT rejection. Gradle configuration passes offline; Android code is still uncompiled, and real Firebase/signing/FCM/staging/monitoring/device/operator/legal evidence is absent.
+
+See [current evidence](production-readiness/CURRENT_RELEASE_EVIDENCE.md), [single configuration handoff](production-readiness/CONFIGURATION_HANDOFF.md), [full recovery procedure](production-readiness/FULL_SERVICE_RECOVERY.md) and [device rehearsal](production-readiness/DEVICE_REHEARSAL.md). Keep public bookings/downloads disabled. Prior records below are historical context.
+
+---
+
+# Current continuation — 2 November 2026 (CAT)
+
+**BLOCKED for real trips and public release.** See [current release evidence](production-readiness/CURRENT_RELEASE_EVIDENCE.md) for results against baseline `0c94e2236dbc595d41f11188d3b2ea355188de3e` plus the recorded working-tree fixes. This section supersedes historical verification claims below.
+
+Current checks: admin types/build/lint/2 unit tests and fixture browser/accessibility checks; landing 7 tests; Edge 6 input tests/type check/13-package advisory inventory; 8 preflight tests; all 19 local migrations and 125 SQL assertions; exactly one winner in a real two-session local acceptance race. Local database-only dump/restore recovered a synthetic marker and migration inventory, without ownership/ACL or Storage recovery certification.
+
+Fixed CI SQL suite discovery, fixture isolation and test-image registry selection. Corrected stale draft terms for flat cash fare/cancellation and privacy text for persisted rider positions. Android now has SDK/full JDK/proxy trust but remains blocked by Mapbox dependency egress. No signed APK or current Android test/lint pass exists. Dashboard moderate dev-tool advisories remain unresolved. Native Deno audit has a CA issue; the exact locked inventory was checked through verified official npm HTTPS instead.
+
+Staging credentials, Firebase/FCM sender, signing, current device journeys, operational monitoring, complete retention/deletion implementation, hosted/Storage recovery and legal/operator approvals remain incomplete. No production action or release approval occurred. [Device rehearsal](production-readiness/DEVICE_REHEARSAL.md) is prepared and unexecuted. Earlier records below are historical context only.
+
+---
+
 # Pilot readiness — 29 October 2026
 
 **NO GO for real trips.** The software has additional tested controls, but legal/publication approval, external configuration, Android validation, and staging/device evidence are still missing. Pilot traffic starts paused.

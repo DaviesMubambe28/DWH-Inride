@@ -1,0 +1,18 @@
+{
+  "source_commit": "c1ce84cd7fa3b0c1e1638a5a5f8eca3ff71d6356",
+  "verified_at": "2026-11-02T01:47:35.578567+02:00",
+  "scope": "Local engineering evidence only, not release approval or signed candidate evidence",
+  "files": {
+    "database-restore.log": "e1296014ff2d5d6c6c3463de2fa314df7aa48291dba66a5f76a1e31bf4efcda4",
+    "dependency-summary.json": "0c26875b5fd0e5534984e425e6690a74528d9df51e19880766d951186e08efd5",
+    "edge-tests.log": "426ad10e2b10aae7fdb3f488607d9c11a05cbe983124f8e78a7a94330516368d",
+    "gradle-configuration.txt": "9108e0150257ffbe11233064d55ebf5222931e0cdb3c5dc93bf9a716c18d9cf0",
+    "mapbox-diagnosis.txt": "1eeedd6c82ee63d6aead913fb75804061b3fe601dc3edaaaa2b9e7ade6bbe341",
+    "recovery-tests.log": "08defa668cd4c65d94aa5a6719cdcf8a8c249fa8e4a5d82580b6250396ddce10",
+    "sql-contracts.log": "704eff9242e16e859d04a07e75e379ea08e8b9be4c2fb1f0a4598fbe10b79222",
+    "supabase-sql.log": "e9c4c1307efd38362cdf623a1891ab36d55ef1646cc362dfec5ded1c18412af7",
+    "worker-http.log": "c2b3d15d9a2e7d2e1391c5b9ebc357218be5a0dda5feecfdb0329c1dc6653486",
+    "workflow-validation.txt": "823e5ae0674865c44f64968ec16c8e435bc66399e310ec3ffa40f0b4eede08da"
+  },
+  "normalization": "Trailing whitespace removed from retained text logs; command results unchanged."
+}
