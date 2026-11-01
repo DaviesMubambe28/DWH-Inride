@@ -21,6 +21,8 @@ Deno.serve(async req=>{
     const result=await reportError('app_crashed',event.component,Deno.env.get('SENTRY_DSN')??'',fetch,record=>console.error(JSON.stringify(record)),event.event_id.replaceAll('-',''));
     if(result.delivered){const {data:ack,error}=await client.rpc('complete_client_error',{p_event_id:event.event_id,p_lease:event.lease});if(error||ack!==true)throw Error('CRASH_ACK_FAILED');delivered++;}
    }
+   const {error:heartbeatError}=await client.rpc('record_operations_run',{p_worker:'client-errors',p_processed:(data??[]).length,p_failed:(data??[]).length-delivered});
+   if(heartbeatError)throw Error('CRASH_HEARTBEAT_FAILED');
    return Response.json({processed:(data??[]).length,delivered},{status:delivered===(data??[]).length?200:503});
   }
   if(action==='health'){const {data,error}=await client.rpc('operations_health');if(error)throw Error('HEALTH_FAILED');return Response.json(data,{headers:{'Cache-Control':'no-store'}});}

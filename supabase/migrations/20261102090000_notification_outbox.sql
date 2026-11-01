@@ -3,7 +3,7 @@ create table private.push_outbox (
  id uuid primary key default gen_random_uuid(),
  trip_id uuid not null references public.trips(id) on delete cascade,
  recipient_id uuid not null references public.profiles(id) on delete cascade,
- fcm_token text not null,
+ fcm_token text not null, token_fingerprint text not null,
  kind text not null check(kind in ('offer','trip_update')),
  event_key text not null,
  state text not null default 'pending' check(state in ('pending','sending','sent','dead','cancelled')),
@@ -11,8 +11,13 @@ create table private.push_outbox (
  next_attempt_at timestamptz not null default now(),
  lease uuid, leased_until timestamptz,
  created_at timestamptz not null default now(),
- unique(event_key,fcm_token)
+ unique(event_key,token_fingerprint)
 );
+-- Keep a one-way dedupe key stable when the raw credential is scrubbed.
+create function private.stamp_push_fingerprint() returns trigger language plpgsql set search_path='' as $$
+begin new.token_fingerprint:=encode(extensions.digest(new.fcm_token,'sha256'),'hex');return new;end $$;
+create trigger stamp_push_fingerprint before insert on private.push_outbox for each row execute function private.stamp_push_fingerprint();
+revoke all on function private.stamp_push_fingerprint() from public,anon,authenticated;
 create index push_outbox_pending_idx on private.push_outbox(next_attempt_at) where state in ('pending','sending');
 revoke all on private.push_outbox from public,anon,authenticated;
 

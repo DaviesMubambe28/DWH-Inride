@@ -41,5 +41,13 @@ select ok((select lease from reclaimed)<>(select lease from claimed),'reclaim us
 update private.push_outbox set attempts=6,leased_until=now()-interval '1 second' where id in (select id from reclaimed);
 select is((select count(*)::int from public.claim_push_deliveries(10)),0,'retry exhaustion prevents another send');
 select is((select state from private.push_outbox where id=(select id from reclaimed)),'dead','exhausted delivery is visible as dead');
+insert into public.device_push_tokens(fcm_token,user_id,app_id)
+select token,'61000000-0000-0000-0000-000000000002','zm.co.dhwinride.rider' from unnest(array['synthetic-multidevice-token-a','synthetic-multidevice-token-b']) token;
+insert into private.push_outbox(trip_id,recipient_id,fcm_token,kind,event_key)
+select t.id,d.user_id,d.fcm_token,'trip_update',t.id::text||':multiple' from public.trips t cross join public.device_push_tokens d where d.fcm_token like 'synthetic-multidevice-%';
+create temp table multiple as select * from public.claim_push_deliveries(10);
+select is((select count(*)::int from multiple),2,'one event fans out to both devices');
+select lives_ok($$select public.finish_push_delivery(id,lease,'sent',0) from multiple$$,'both acknowledgements can erase raw tokens without a uniqueness collision');
+select is((select count(*)::int from private.push_outbox where state='sent' and event_key like '%:multiple'),2,'both devices acknowledged exactly once');
 select * from finish();
 rollback;

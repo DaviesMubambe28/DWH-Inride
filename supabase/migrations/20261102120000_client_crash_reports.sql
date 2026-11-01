@@ -37,4 +37,18 @@ create function private.clear_client_error_identity() returns trigger language p
 begin delete from private.client_error_limits where user_id=new.user_id;return new;end $$;
 create trigger clear_client_error_identity after insert on private.account_closures for each row execute function private.clear_client_error_identity();
 revoke all on function private.clear_client_error_identity() from public,anon,authenticated;
+alter table private.worker_health drop constraint worker_health_worker_check;
+alter table private.worker_health add constraint worker_health_worker_check check(worker in ('notifications','data-lifecycle','client-errors'));
+create or replace function public.operations_health() returns jsonb language sql stable security definer set search_path='' as $$
+ select jsonb_build_object(
+  'push_pending',(select count(*) from private.push_outbox where state in ('pending','sending')),
+  'push_dead',(select count(*) from private.push_outbox where state='dead'),
+  'push_oldest_pending_at',(select min(created_at) from private.push_outbox where state in ('pending','sending')),
+  'expired_push_leases',(select count(*) from private.push_outbox where state='sending' and leased_until<now()),
+  'closure_pending',(select count(*) from private.account_closures where state<>'erased'),
+  'retention_approved',(select approved from private.retention_policy where id),
+  'client_errors_pending',(select count(*) from private.client_errors where not delivered),
+  'client_errors_oldest_pending_at',(select min(created_at) from private.client_errors where not delivered),
+  'workers',coalesce((select jsonb_agg(to_jsonb(h)) from private.worker_health h),'[]'::jsonb))
+$$;
 commit;
