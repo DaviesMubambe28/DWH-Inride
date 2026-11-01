@@ -424,3 +424,12 @@ entrypoint = "./functions/request-trip/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/request-trip/*.html" ]
+
+[functions.notification-worker]
+verify_jwt = false
+
+[functions.account-deletion]
+verify_jwt = false
+
+[functions.operations-worker]
+verify_jwt = false

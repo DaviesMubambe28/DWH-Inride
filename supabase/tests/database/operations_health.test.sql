@@ -1,0 +1,12 @@
+begin;
+create extension if not exists pgtap with schema extensions;
+select plan(5);
+set local role authenticated;
+select throws_ok($$select public.operations_health()$$,'42501',null,'health counts are server-only');
+select throws_ok($$select public.record_operations_run('notifications',1,0)$$,'42501',null,'clients cannot forge heartbeats');
+reset role;
+select lives_ok($$select public.record_operations_run('notifications',1,0)$$,'worker records success');
+select is((public.operations_health()->'workers'->0->>'worker'),'notifications','health exposes only worker counts');
+select throws_ok($$select public.record_operations_run('unknown',1,0)$$,'23514',null,'unknown workers are rejected');
+select * from finish();
+rollback;

@@ -1,6 +1,9 @@
 package zm.co.dhwinride.core.push
 
 import android.content.Context
+import android.util.Log
+import kotlinx.coroutines.CancellationException
+import zm.co.dhwinride.core.monitoring.CrashReporter
 import com.google.firebase.messaging.FirebaseMessaging
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
@@ -18,6 +21,13 @@ object FcmTokenRegistrar {
     suspend fun registerIfSignedIn(context: Context, client: SupabaseClient, appId: String) {
         if (client.auth.currentUserOrNull() == null) return
 
+        try {
+            CrashReporter.flushIfSignedIn(context, client)
+        } catch (error: CancellationException) {
+            throw error
+        } catch (_: Exception) {
+            Log.w("CrashReporter", "Crash marker sync unavailable; will retry.")
+        }
         val token = FirebaseMessaging.getInstance().token.await()
         require(token.isNotBlank()) { "Firebase returned an empty registration token." }
         client.postgrest.rpc(
