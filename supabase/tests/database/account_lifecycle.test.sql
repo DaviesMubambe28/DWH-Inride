@@ -1,0 +1,47 @@
+begin;
+create extension if not exists pgtap with schema extensions;
+select no_plan();
+insert into auth.users(id,raw_user_meta_data) values
+ ('62000000-0000-0000-0000-000000000001','{"full_name":"Closing Passenger","phone_number":"+260976200001"}'),
+ ('62000000-0000-0000-0000-000000000002','{"full_name":"Other Passenger","phone_number":"+260976200002"}');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','62000000-0000-0000-0000-000000000001',true);
+select lives_ok($$select public.request_my_account_deletion()$$,'owner may request closure');
+select lives_ok($$select public.request_my_account_deletion()$$,'repeated request is idempotent');
+select is((select count(*)::int from public.profiles),0,'closed account cannot read public account data');
+select throws_ok($$select public.register_my_fcm_token('synthetic-account-token-1234','zm.co.dhwinride.passenger')$$,'42501',null,'closed user cannot register a device');
+select throws_ok($$select public.claim_account_erasure()$$,'42501',null,'clients cannot run erasure');
+reset role;
+select set_config('request.jwt.claim.sub','',true);
+select is((select count(*)::int from private.account_closures),1,'only the caller has a request');
+select ok((select erase_after>=requested_at+interval '1 year' from private.account_closures),'minimum retention is one year');
+select is((select count(*)::int from public.claim_account_erasure()),0,'no early purge or unapproved policy');
+select throws_ok($$update private.retention_policy set account_retention=interval '1 day'$$,'23514',null,'cannot lower legal minimum');
+select throws_ok($$update private.retention_policy set account_retention=interval '360 days'$$,'23514',null,'interval month comparison cannot shorten a calendar year');
+-- A second account with a live trip cannot close.
+update private.pilot_service_settings set enabled=true,opens='00:00',closes='23:59:59.999999',weekdays=array[1,2,3,4,5,6,7],center_latitude=-15.3292,center_longitude=28.6821,radius_km=100,fare_policy_approved=true,cancellation_policy_approved=true;
+do $$ begin perform public.create_routed_trip('62000000-0000-0000-0000-000000000002',-15.3292,28.6821,'Test',-15.33,28.69,'Test',4000,600,'cash'); end $$;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','62000000-0000-0000-0000-000000000002',true);
+select throws_ok($$select public.request_my_account_deletion()$$,'55000',null,'active trip blocks closure');
+reset role;
+select set_config('request.jwt.claim.sub','',true);
+update private.retention_policy set approved=true;
+update private.account_closures set requested_at=now()-interval '2 years',erase_after=now()-interval '1 year',legal_hold=true;
+select is((select count(*)::int from public.claim_account_erasure()),0,'legal hold blocks erasure');
+update private.account_closures set legal_hold=false;
+create temp table erasing as select * from public.claim_account_erasure();
+select is((select count(*)::int from erasing),1,'eligible account is leased');
+select is((select count(*)::int from public.claim_account_erasure()),0,'concurrent worker cannot claim it');
+select is(public.finalize_account_erasure((select user_id from erasing),gen_random_uuid()),false,'wrong lease cannot erase');
+select is(public.finalize_account_erasure((select user_id from erasing),(select lease from erasing)),true,'valid lease anonymizes records');
+select is((select full_name from public.profiles where id='62000000-0000-0000-0000-000000000001'),'Deleted account','profile identity removed');
+select throws_ok($$insert into private.data_holds(user_id,reason) values ('62000000-0000-0000-0000-000000000001','legal')$$,'55000',null,'holds cannot silently race active erasure lease');
+select is(public.complete_account_erasure((select user_id from erasing),(select lease from erasing)),false,'completion requires actual Auth removal');
+delete from auth.users where id='62000000-0000-0000-0000-000000000001';
+select is(public.complete_account_erasure((select user_id from erasing),(select lease from erasing)),true,'Auth deletion is acknowledged after erasure');
+select is((select auth_user_id from public.profiles where id='62000000-0000-0000-0000-000000000001'),null::uuid,'Auth deletion preserves non-login tombstone');
+select is((select count(*)::int from public.claim_account_erasure()),0,'erased account is never reclaimed');
+select lives_ok($$select public.run_retention_batch()$$,'approved retention batch is executable');
+select * from finish();
+rollback;
