@@ -42,7 +42,11 @@ def main():
                         help="Remove the synthetic fixtures from a previous private receipt")
     parser.add_argument("--live-request-trip", action="store_true",
                         help="Book through the real current handler on fixed loopback port 8003, including live routing")
+    parser.add_argument("--race-checks", action="store_true",
+                        help="Exercise real concurrent local cancellation/start/completion and PIN-lock calls")
     args = parser.parse_args()
+    if args.race_checks and args.keep_browser_fixture:
+        parser.error("Race fixtures must be cleaned, not retained for browser use")
     if args.keep_browser_fixture and args.cleanup_browser_fixture:
         parser.error("Choose fixture creation or cleanup")
     if args.keep_browser_fixture and (args.keep_browser_fixture.resolve().is_relative_to(ROOT)
@@ -230,6 +234,70 @@ def main():
         assert rpc("confirm_rider_payment", {"p_trip_id": trip_id}, tokens[winner]) is False
         passed("duplicate arrival/start/completion/payment are harmless; approval revocation blocks start")
         passed("cash recording by correct passenger and assigned rider; completed state persisted")
+        if args.race_checks:
+            def race_trip():
+                row = rpc("create_routed_trip", booking, config["SERVICE_ROLE_KEY"])[0]
+                identity = str(uuid.UUID(row["trip_id"]))
+                assert rpc("accept_trip", {"p_trip_id": identity}, tokens["rider1"]) is True
+                assert rpc("mark_trip_arrived", {"p_trip_id": identity}, tokens["rider1"]) is True
+                return identity, rpc("get_trip_pickup_pin", {"p_trip_id": identity}, tokens["passenger"])
+
+            outcomes = {"start_wins": 0, "cancel_before_start": 0, "complete_wins": 0, "cancel_before_complete": 0}
+            def parallel(first, second):
+                # Independent urllib calls/connections and PostgREST transactions.
+                from threading import Barrier
+                gate = Barrier(2)
+                def run(action):
+                    gate.wait(timeout=10)
+                    return action()
+                with ThreadPoolExecutor(max_workers=2) as pool:
+                    return list(pool.map(run, (first, second)))
+
+            for _ in range(3):
+                identity, pickup_code = race_trip()
+                cancelled, started = parallel(
+                    lambda: rpc("cancel_pilot_trip", {"p_trip_id": identity, "p_reason": "passenger_cancelled"}, tokens["passenger"]),
+                    lambda: rpc("verify_trip_pin_and_start", {"p_trip_id": identity, "p_pin": pickup_code}, tokens["rider1"]),
+                )
+                assert sorted([cancelled, started]) == [False, True]
+                state = sql("select status::text from public.trips where id='" + identity + "'")
+                assert state == ("cancelled" if cancelled else "in_progress")
+                assert sql("select count(*) from public.pilot_cancellation_reviews where trip_id='" + identity + "'") == ("1" if cancelled else "0")
+                outcomes["cancel_before_start" if cancelled else "start_wins"] += 1
+                if started:
+                    assert rpc("complete_trip", {"p_trip_id": identity}, tokens["rider1"]) is True
+
+                identity, pickup_code = race_trip()
+                assert rpc("verify_trip_pin_and_start", {"p_trip_id": identity, "p_pin": pickup_code}, tokens["rider1"]) is True
+                cancelled, completed = parallel(
+                    lambda: rpc("cancel_pilot_trip", {"p_trip_id": identity, "p_reason": "safety_concern"}, tokens["rider1"]),
+                    lambda: rpc("complete_trip", {"p_trip_id": identity}, tokens["rider1"]),
+                )
+                assert sorted([cancelled, completed]) == [False, True]
+                assert sql("select status::text from public.trips where id='" + identity + "'") == ("cancelled" if cancelled else "completed")
+                assert sql("select count(*) from public.pilot_cancellation_reviews where trip_id='" + identity + "'") == ("1" if cancelled else "0")
+                outcomes["cancel_before_complete" if cancelled else "complete_wins"] += 1
+
+                identity, _ = race_trip()
+                def cancel_once():
+                    return rpc("cancel_pilot_trip", {"p_trip_id": identity, "p_reason": "passenger_cancelled"}, tokens["passenger"])
+                assert sorted(parallel(cancel_once, cancel_once)) == [False, True]
+                assert sql("select count(*) from public.pilot_cancellation_reviews where trip_id='" + identity + "'") == "1"
+                assert float(sql("select fare_amount from public.trips where id='" + identity + "'")) == 20
+            passed("nine concurrent local HTTP cancellation/start/completion races; one durable outcome/review; observed " + json.dumps(outcomes, sort_keys=True))
+
+            identity, pickup_code = race_trip()
+            wrong = "0000" if pickup_code != "0000" else "0001"
+            def attempt(_):
+                return rpc("verify_trip_pin_and_start", {"p_trip_id": identity, "p_pin": wrong}, tokens["rider1"], expected=(200, 403))
+            with ThreadPoolExecutor(max_workers=6) as pool:
+                results = list(pool.map(attempt, range(6)))
+            assert sum(result is False for result in results) == 5
+            assert sum(isinstance(result, dict) and result.get("code") == "42501" for result in results) == 1
+            assert sql("select pin_failed_attempts from public.trips where id='" + identity + "'") == "5"
+            rpc("verify_trip_pin_and_start", {"p_trip_id": identity, "p_pin": pickup_code}, tokens["rider1"], expected=(403,))
+            assert sql("select status::text from public.trips where id='" + identity + "'") == "arrived"
+            passed("six concurrent wrong-PIN calls persist five attempts and lock; correct PIN denied while locked; no actual expiry wait")
         if args.keep_browser_fixture:
             receipt = {"origin": ORIGIN, "public_key": config["ANON_KEY"], "synthetic_fixture": True,
                        "prefix": prefix, "users": browser_users}
