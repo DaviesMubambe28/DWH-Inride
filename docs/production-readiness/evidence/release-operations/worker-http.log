@@ -1,0 +1,4 @@
+PASS: notification-worker real HTTP method/auth/configuration boundary
+PASS: operations-worker real HTTP method/auth/configuration boundary
+PASS: account-deletion real HTTP method/auth/configuration boundary
+PASS: monitoring probe reached structured logs; remote monitoring and FCM delivery remain unverified.

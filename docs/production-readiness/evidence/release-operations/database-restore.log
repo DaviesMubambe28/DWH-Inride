@@ -1,0 +1,1 @@
+PASS: database-only restore with original ownership/ACLs recovered a synthetic marker, 23 migrations and 187 passing SQL assertions. Existing cluster roles reused; Auth HTTP, Storage bytes, functions/config and cross-machine recovery remain unverified.

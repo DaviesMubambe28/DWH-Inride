@@ -1,0 +1,14 @@
+{
+  "modern_minimatch": "11.0.1",
+  "remaining_legacy_minimatch": "3.1.5",
+  "all_dependency_findings": {
+    "info": 0,
+    "low": 0,
+    "moderate": 5,
+    "high": 0,
+    "critical": 0,
+    "total": 5
+  },
+  "production_only_findings": 0,
+  "limitation": "Legacy callable/makeRe APIs are incompatible with v11; no blanket override or audit exclusion."
+}

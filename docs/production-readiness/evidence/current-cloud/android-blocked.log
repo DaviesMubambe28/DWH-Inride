@@ -1,0 +1,41 @@
+Picked up JAVA_TOOL_OPTIONS: -Dhttps.proxyHost=proxy -Dhttps.proxyPort=8080 -Dhttp.proxyHost=proxy -Dhttp.proxyPort=8080 -Djavax.net.ssl.trustStore=/workspace/release-tools/java-cacerts -Djavax.net.ssl.trustStorePassword=changeit
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.6.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :core-ui:preBuild UP-TO-DATE
+> Task :core-ui:preDebugBuild UP-TO-DATE
+> Task :core-ui:generateDebugResources
+> Task :core-ui:packageDebugResources
+> Task :core-ui:processDebugNavigationResources
+> Task :core-ui:javaPreCompileDebug
+> Task :core-ui:preDebugUnitTestBuild UP-TO-DATE
+> Task :core-ui:javaPreCompileDebugUnitTest
+> Task :core-ui:parseDebugLocalResources
+> Task :core-ui:checkDebugAarMetadata
+> Task :core-ui:checkDebugAarMetadata FAILED
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':core-ui:checkDebugAarMetadata' (registered by plugin 'com.android.internal.library').
+> Could not resolve all files for configuration ':core-ui:debugRuntimeClasspath'.
+   > Could not resolve com.mapbox.maps:android-ndk27:11.33.0.
+     Required by:
+         project ':core-ui'
+      > Could not resolve com.mapbox.maps:android-ndk27:11.33.0.
+         > Could not get resource 'https://api.mapbox.com/downloads/v2/releases/maven/com/mapbox/maps/android-ndk27/11.33.0/android-ndk27-11.33.0.pom'.
+            > Could not GET 'https://api.mapbox.com/downloads/v2/releases/maven/com/mapbox/maps/android-ndk27/11.33.0/android-ndk27-11.33.0.pom'. Received status code 403 from server: Forbidden
+   > Could not resolve com.mapbox.extension:maps-compose-ndk27:11.33.0.
+     Required by:
+         project ':core-ui'
+      > Could not resolve com.mapbox.extension:maps-compose-ndk27:11.33.0.
+         > Could not get resource 'https://api.mapbox.com/downloads/v2/releases/maven/com/mapbox/extension/maps-compose-ndk27/11.33.0/maps-compose-ndk27-11.33.0.pom'.
+            > Could not GET 'https://api.mapbox.com/downloads/v2/releases/maven/com/mapbox/extension/maps-compose-ndk27/11.33.0/maps-compose-ndk27-11.33.0.pom'. Received status code 403 from server: Forbidden
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 1m 45s
+7 actionable tasks: 7 executed

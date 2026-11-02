@@ -27,6 +27,13 @@ class DhwFirebaseMessagingService : FirebaseMessagingService() {
             ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED
         ) return
 
+        // A timed-out provider request may have succeeded. Stable event IDs let us
+        // suppress retries locally; FCM itself does not promise exactly-once delivery.
+        val eventId = message.data["event_id"]?.takeIf { it.matches(Regex("[a-fA-F0-9-]{36}")) }
+        val preferences = getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
+        val seen = preferences.getStringSet("delivered_events", emptySet()).orEmpty()
+        if (eventId != null && eventId in seen) return
+
         val title = message.notification?.title ?: message.data["title"] ?: "DHW-inRide"
         val body = message.notification?.body ?: message.data["body"] ?: return
 
@@ -51,9 +58,12 @@ class DhwFirebaseMessagingService : FirebaseMessagingService() {
             .build()
 
         NotificationManagerCompat.from(this).notify(
-            (System.currentTimeMillis() and 0x7fffffff).toInt(),
+            eventId?.hashCode() ?: (System.currentTimeMillis() and 0x7fffffff).toInt(),
             notification,
         )
+        if (eventId != null) {
+            preferences.edit().putStringSet("delivered_events", (seen.toList().takeLast(99) + eventId).toSet()).apply()
+        }
     }
 
     private fun ensureNotificationChannel() {

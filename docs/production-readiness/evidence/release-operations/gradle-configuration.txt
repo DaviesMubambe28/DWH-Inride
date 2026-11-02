@@ -1,0 +1,1 @@
+Gradle 9.6 help --offline passed with the optional download-token binding absent and with a synthetic offline-only fixture present. No credential was sent, no artifact was downloaded in these checks and no origin authentication success is claimed. Full Android compilation/lint/unit/minification remain blocked.

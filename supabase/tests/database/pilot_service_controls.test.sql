@@ -31,7 +31,11 @@ set local role service_role;
 select throws_ok($$select * from public.create_routed_trip('30000000-0000-0000-0000-000000000001', -15.3292, 28.6821, 'Pickup', -15.33, 28.69, 'Destination', 4000, 600, 'cash')$$,
   'P0001', 'PILOT_UNAVAILABLE', 'trusted booking cannot bypass the paused pilot');
 reset role;
-\ir ../support/open-pilot-fixture.sql
+-- Isolated test transaction only. Never use these values as a real pilot policy.
+update private.pilot_service_settings set enabled = true, opens = '00:00', closes = '23:59:59.999999',
+  weekdays = array[1,2,3,4,5,6,7], center_latitude = -15.3292, center_longitude = 28.6821,
+  radius_km = 100, support_phone = '+260979000001', support_email = 'fixture@test.invalid',
+  fare_policy_approved = true, cancellation_policy_approved = true;
 update private.pilot_service_settings set radius_km = 5;
 set local role service_role;
 select throws_ok($$select * from public.create_routed_trip('30000000-0000-0000-0000-000000000001', -15.3292, 28.6821, 'Pickup', -15.33, 28.69, 'Destination', 4000, 600, 'mobile_money_external')$$,

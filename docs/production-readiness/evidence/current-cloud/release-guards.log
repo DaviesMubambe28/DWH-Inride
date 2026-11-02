@@ -1,0 +1,36 @@
+Picked up JAVA_TOOL_OPTIONS: -Dhttps.proxyHost=proxy -Dhttps.proxyPort=8080 -Dhttp.proxyHost=proxy -Dhttp.proxyPort=8080 -Djavax.net.ssl.trustStore=/workspace/release-tools/java-cacerts -Djavax.net.ssl.trustStorePassword=changeit
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.6.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :passenger-app:validatePilotRelease FAILED
+> Task :rider-app:validatePilotRelease FAILED
+
+FAILURE: Build completed with 2 failures.
+
+1: Task failed with an exception.
+-----------
+* What went wrong:
+Execution failed for task ':passenger-app:validatePilotRelease' (registered in build file 'build.gradle.kts').
+> Pilot release signing is incomplete. Set: DHWINRIDE_RELEASE_KEYSTORE_PATH, DHWINRIDE_RELEASE_STORE_PASSWORD, DHWINRIDE_RELEASE_KEY_ALIAS, DHWINRIDE_RELEASE_KEY_PASSWORD. Never put values in source control.
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
+==============================================================================
+
+2: Task failed with an exception.
+-----------
+* What went wrong:
+Execution failed for task ':rider-app:validatePilotRelease' (registered in build file 'build.gradle.kts').
+> Pilot release signing is incomplete. Set: DHWINRIDE_RELEASE_KEYSTORE_PATH, DHWINRIDE_RELEASE_STORE_PASSWORD, DHWINRIDE_RELEASE_KEY_ALIAS, DHWINRIDE_RELEASE_KEY_PASSWORD. Never put values in source control.
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
+==============================================================================
+
+BUILD FAILED in 7s
+2 actionable tasks: 2 executed

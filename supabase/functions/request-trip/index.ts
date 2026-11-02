@@ -1,6 +1,9 @@
 import { withSupabase } from "@supabase/server";
 import { readBookingInput, routeMetrics, bookingFailure, BookingInputError } from "../_shared/booking-input.ts";
 
+import { reportError } from "../_shared/monitoring.ts";
+const report = (code: string) => reportError(code, "request-trip", Deno.env.get("SENTRY_DSN") ?? "");
+
 function json(message: unknown, status = 200): Response {
   return Response.json(message, { status, headers: { "Cache-Control": "no-store" } });
 }
@@ -48,9 +51,11 @@ export default {
     try {
       directionsResponse = await fetch(directionsUrl, { signal: AbortSignal.timeout(8_000) });
     } catch {
+      await report("routing_unavailable");
       return json({ error: "Routing service is temporarily unavailable." }, 502);
     }
     if (!directionsResponse.ok) {
+      await report("routing_unavailable");
       return json({ error: "Routing service rejected the request." }, 502);
     }
 
@@ -77,6 +82,7 @@ export default {
 
     if (createError) {
       const failure = bookingFailure(createError);
+      if (failure.status === 500) await report("booking_write_failed");
       return json({ error: failure.error }, failure.status);
     }
 

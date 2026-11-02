@@ -1,0 +1,30 @@
+✔ erasure removes Storage bytes before rows, Auth and completion (2.027336ms)
+✔ failed Storage or false finalization never deletes Auth (0.646685ms)
+✔ listing is bounded, recursive and cannot escape the account prefix (0.491181ms)
+✔ partial batches and deletion failures are resumable without premature completion (0.268084ms)
+✔ valid booking normalizes addresses and defaults to cash (24.485607ms)
+✔ null, arrays, invalid coordinates and mobile money are rejected (1.655326ms)
+✔ streamed and declared oversized requests fail before being parsed (0.667847ms)
+✔ malformed JSON and non-JSON content types are recoverable client errors (0.68995ms)
+✔ routing data must contain finite positive numeric metrics (0.290788ms)
+✔ pilot denials become useful errors without leaking database details (0.202997ms)
+(node:59130) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/DWH-Inride/supabase/functions/_shared/account-erasure.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/DWH-Inride/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ Google exchange signs a constrained JWT and ignores supplied token endpoints (35.231633ms)
+✔ monitoring uses fixed taxonomy and never accepts private messages or stack traces (1.273881ms)
+✔ unconfigured and failed reporting are explicit, not a false delivery pass (0.301274ms)
+✔ worker authorization requires exact, nonempty bearer credential (0.792855ms)
+✔ only explicit unregistered tokens are deleted; failures are classified safely (0.161834ms)
+✔ delivery sends a stable id and generic content; retries never expose provider body (0.653656ms)
+✔ unregistered, auth and malformed provider responses are handled (0.704552ms)
+✔ malformed success is not accepted as delivered and quota backoff honors Retry-After (0.59023ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 18
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 129.39233

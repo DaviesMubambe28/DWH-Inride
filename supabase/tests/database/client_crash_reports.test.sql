@@ -1,0 +1,16 @@
+begin;
+create extension if not exists pgtap with schema extensions;
+select plan(6);
+insert into auth.users(id,raw_user_meta_data) values ('63000000-0000-0000-0000-000000000001','{"full_name":"Crash Fixture","phone_number":"+260976300001"}');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','63000000-0000-0000-0000-000000000001',true);
+select is(public.report_my_app_crash('64000000-0000-0000-0000-000000000001'),true,'authenticated crash marker is queued');
+select is(public.report_my_app_crash('64000000-0000-0000-0000-000000000001'),true,'retry is idempotent');
+select is(public.report_my_app_crash('64000000-0000-0000-0000-000000000002'),false,'client rate limit prevents alert flooding');
+select throws_ok($$select * from public.claim_client_errors()$$,'42501',null,'clients cannot read crash queue');
+reset role;
+create temp table reports as select * from public.claim_client_errors();
+select is((select count(*)::int from reports),1,'trusted worker claims one marker');
+select is(public.complete_client_error((select event_id from reports),(select lease from reports)),true,'correct lease acknowledges delivery');
+select * from finish();
+rollback;

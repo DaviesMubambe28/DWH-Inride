@@ -26,7 +26,7 @@ Supply the intended development/staging Supabase URL and public key, real Mapbox
 
 Before a hosted migration, confirm the target project read-only and review the exact migration diff/dry run. Take a backup and verify the restore path first. Migrations `20261029100000` through `20261029150000` have been tested locally and have **not** been applied to a hosted project. They tighten client write grants, enforce manual activation, and initialize a paused pilot.
 
-The full Supabase Docker test stack could not fit its PostgreSQL image on this environment's storage driver. SQL contracts were tested using PostgreSQL 17.11 with a clearly identified test-only Auth/Storage compatibility schema. This proves SQL logic and database-role behavior, not GoTrue, Storage HTTP, Realtime, Edge gateway, or hosted JWT integration. Run the full Supabase CI job and authenticated staging tests separately.
+The earlier environment exhausted storage during full-stack startup. The current cloud run starts the real Supabase PostgreSQL database and passes 187 SQL assertions; a separate fresh contract runner also verifies concurrency using the identified Auth/Storage compatibility bootstrap. Current full-service health remains blocked after diagnosing proxy routing of Auth loopback probes and a remaining Storage health failure. Neither SQL path proves GoTrue/Storage HTTP, Realtime delivery, Edge gateway or hosted JWT behavior. Run the full Supabase CI job and authenticated staging tests separately.
 
 ## Onboarding a rider
 
@@ -111,3 +111,19 @@ For rollback, stop new bookings first. Retain signed artifact hashes and the las
 - Supabase server SDK 1.9.2: https://github.com/supabase/server. The published SDK README verifies `withSupabase({ auth: 'user' })` and `ctx.userClaims.id`; no speculative change to the identity claim was made.
 - Supabase CLI registry support: https://github.com/supabase/cli/blob/main/apps/cli-go/internal/utils/docker.go. The local Docker attempt used the supported `SUPABASE_INTERNAL_IMAGE_REGISTRY=docker.io` override.
 - Installed Next.js documentation at `node_modules/next/dist/docs/01-app/03-api-reference/06-cli/next.md` documents `next typegen`; generated type files are preserved during local checks.
+
+## Current cloud continuation — 2 November 2026
+
+Read `docs/production-readiness/CURRENT_RELEASE_EVIDENCE.md` before interpreting older environment statements. The database-only local Supabase stack now replays all migrations and passes 125 assertions. Run `SUPABASE_INTERNAL_IMAGE_REGISTRY=docker.io DO_NOT_TRACK=1 ./node_modules/.bin/supabase db test --local supabase/tests/database`; support/bootstrap files are not TAP suites. Each suite includes its transaction-local policy fixture explicitly because the CLI mounts only the selected directory. Do not run the support SQL as standalone tests.
+
+Tools/caches installed outside source are under `/workspace/release-tools`: Android SDK, verified Temurin JDK 21.0.9+10, Gradle cache, Java CA store, Deno and browser tools. Java needs the configured HTTP/HTTPS proxy and an additional trusted session CA; never disable TLS. Current Android failure is Mapbox Maven HTTP 403. Apply the saved `api.mapbox.com` network setting and rerun; no current Android build/test pass is claimed. Temporary tool paths belong to this instance and must be revalidated in a future environment.
+
+Follow `docs/production-readiness/DEVICE_REHEARSAL.md` with signed candidate hashes and staging identities once available. Full Auth/Storage local health, hosted services, FCM sending, real monitoring, legal retention/deletion and operational ownership remain separate gates. Local dump/restore mechanics excluded ownership/ACL restoration and did not exercise Storage object bytes. Keep final go/no-go blocked.
+
+## Release operations implementation and handoff
+
+The current engineering adds four local-only migrations (`20261102090000` through `20261102120000`), a trusted notification-worker, authenticated account-deletion and operations-worker, generic crash markers, retention holds and recovery tools. Follow `docs/production-readiness/CONFIGURATION_HANDOFF.md` for the exact configuration and scheduler calls, and `FULL_SERVICE_RECOVERY.md` for recovery. These replace earlier statements that the sender/retention implementation is absent; actual destination/device/hosted verification is still blocked.
+
+Do not deploy just the new migrations into an unknown schema. Confirm intended staging, reconcile all pending pilot migrations, review dry-run and restore plans, then validate user Auth/Storage/FCM and device behavior. Keep retention approval false until reviewed. Monitor dead messages/old queues/missing worker heartbeats; review failed deliveries before any manual replay and never blindly replay expired offers. Do not grant broad client permissions to fix failures.
+
+Latest current database-only recovery preserves original owners/ACLs and passes 187 SQL assertions in a restored local target, reusing existing cluster roles. It does not prove cross-machine role creation, Auth HTTP/sessions, Storage bytes, functions, settings or real alerts. Keep these gates separate in the final candidate evidence.

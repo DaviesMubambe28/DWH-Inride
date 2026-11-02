@@ -1,0 +1,1 @@
+Official actionlint 1.7.7 artifact SHA256 verified. Syntax/expression validation of quality.yml and pilot-candidate.yml exited 0. Optional ShellCheck analysis was not executed. GitHub workflows themselves were not run.
