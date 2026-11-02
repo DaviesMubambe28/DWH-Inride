@@ -1,0 +1,55 @@
+{
+  "checked_at": "2026-11-02T09:33:18.343127+02:00",
+  "initial_commit": "bcaf6ba21922b543ac6e08e6ba513ba4a3142889",
+  "branch": "feat/release-operations",
+  "repository_instructions": "No AGENTS.md found in workspace outside dependencies/build/cache/git directories",
+  "public_downloads": {
+    "status": "PASS_UNAVAILABLE",
+    "passenger_release": null,
+    "rider_release": null,
+    "configured_admin_url": null,
+    "landing_command": "npm run build",
+    "tests": 7,
+    "passed": 7,
+    "failed": 0,
+    "browser_contexts_passed": 4,
+    "actual_release_apk_download": "BLOCKED; no configured artifact",
+    "source_changed": false
+  },
+  "signing_and_distribution": {
+    "status": "BLOCKED",
+    "local_four_release_bindings_present": false,
+    "root_secrets_properties_present": false,
+    "real_firebase_files_present": false,
+    "github_release_count": 0,
+    "existing_release_certificate": "UNVERIFIED; no replacement key generated",
+    "pilot_environment_metadata": "HTTP404; absence vs access not established",
+    "pilot_secret_and_variable_names": "HTTP404; absence vs access not established",
+    "repository_secret_names": "HTTP403; values/names unavailable"
+  },
+  "devices": {
+    "adb_executable_present": true,
+    "adb_command_exit": 0,
+    "connected_entries": 0,
+    "emulator_executable_present": false,
+    "dev_kvm_present": false,
+    "dev_kvm_read_write_access": false,
+    "physical_os_and_installed_versions": "BLOCKED; operator result pending"
+  },
+  "physical_rehearsal": {
+    "status": "BLOCKED_NOT_EXECUTED",
+    "guide": "docs/production-readiness/DEVICE_REHEARSAL.md",
+    "first_action": "Phone A/B Android OS and existing app version/name only; no IDs, credentials or account details",
+    "development_track": "Separate .development application IDs; no release upgrade or FCM evidence; verify actual artifact manifest before install"
+  },
+  "outstanding_approvals": [
+    "Existing release signing owner/certificate/distribution history and highest distributed versionCode",
+    "Physical device journeys and candidate installation/upgrade",
+    "Responsible operator/safety onboarding and operating authority",
+    "Licensing and insurance evidence",
+    "Final published privacy/terms and retention/backup/log schedule approval",
+    "Monitored support hours, on-call rota and actual incident/alert drill",
+    "Final release approval; public bookings/APK publication remain disabled"
+  ],
+  "hosted_writes_or_publication_performed": false
+}

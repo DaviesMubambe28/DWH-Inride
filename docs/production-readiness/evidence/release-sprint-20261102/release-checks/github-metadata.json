@@ -1,0 +1,26 @@
+{
+  "pilot_environment": {
+    "exit_code": 1,
+    "http_status": 404,
+    "error_category": "request_failed"
+  },
+  "pilot_secret_names": {
+    "exit_code": 1,
+    "http_status": 404,
+    "error_category": "request_failed"
+  },
+  "pilot_variable_names": {
+    "exit_code": 1,
+    "http_status": 404,
+    "error_category": "request_failed"
+  },
+  "repository_secret_names": {
+    "exit_code": 1,
+    "http_status": 403,
+    "error_category": "request_failed"
+  },
+  "releases": {
+    "exit_code": 0,
+    "releases": []
+  }
+}
