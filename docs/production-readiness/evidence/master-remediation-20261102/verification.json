@@ -6,6 +6,7 @@
   "score": 4.0,
   "fresh_checks": {
     "mapbox_origin": { "http_status": 200, "result": "PASS" },
+    "mapbox_maven_artifact": { "http_status": 200, "downloads_token_configured": false, "result": "PASS" },
     "supabase_project": {
       "reference": "vhckkmzyabbsbgjuhjmq",
       "development_only": true,

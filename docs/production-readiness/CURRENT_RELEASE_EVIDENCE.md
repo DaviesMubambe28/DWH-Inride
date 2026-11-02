@@ -12,7 +12,7 @@ Fresh checks on the current source:
 - Admin typecheck, lint, production export, three unit tests and four-view fixture browser checks pass. The ES-module package declaration removes the previous Node reparsing warning.
 - Landing build has ten passing tests; five-view browser/axe/no-overflow checks pass. Passenger/rider downloads and public Admin remain intentionally unavailable.
 - Local SQL: 14 files / 218 assertions pass. Edge: 18 tests pass. Recovery/preflight: 15 tests pass. The real local Auth/PostgREST/current handler/live-Mapbox trip, cash acknowledgement, concurrency and PIN-lock rehearsal passes and cleans its fixtures.
-- Mapbox origin authentication returns HTTP 200. The configured Supabase URL matches confirmed development-only project `vhckkmzyabbsbgjuhjmq`; hosted state remains 12 of 26 migrations and only `request-trip`. Auth remains localhost/auto-confirm/no custom SMTP.
+- Mapbox API authentication and the exact 11.33.0 Maven POM each return HTTP 200. The configured Supabase URL matches confirmed development-only project `vhckkmzyabbsbgjuhjmq`; hosted state remains 12 of 26 migrations and only `request-trip`. Auth remains localhost/auto-confirm/no custom SMTP.
 - Root dependency audit has zero findings. Admin still has five moderate development-tool paths through legacy ESLint plugins and `minimatch 3.1.5`; npm's offered fix is an incompatible Next/ESLint downgrade. No high or critical finding remains.
 
 Sanitized machine-readable evidence and hashes: [`evidence/master-remediation-20261102/verification.json`](evidence/master-remediation-20261102/verification.json). No hosted write/deployment, booking enablement, public hosting, APK publication, email/FCM/monitoring delivery or real-phone check occurred.
