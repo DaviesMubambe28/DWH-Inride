@@ -1,0 +1,851 @@
+{
+  "project_ref": "vhckkmzyabbsbgjuhjmq",
+  "mode": "READ_ONLY",
+  "source_commit": "4cf13cbab3cfd8f59e15b691151e9b09fb4b77bd",
+  "migrations": [
+    {
+      "file": "20261025120000_fcm_device_tokens.sql",
+      "sha256": "d221edc853f9dd331c8c9161faf007f5def759d9dc265efe67af7dae47aa2943",
+      "tables": {
+        "public.device_push_tokens": false
+      },
+      "functions": [
+        {
+          "name": "public.register_my_fcm_token",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        },
+        {
+          "name": "public.unregister_my_fcm_token",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        }
+      ],
+      "triggers": {}
+    },
+    {
+      "file": "20261029100000_pilot_access_hardening.sql",
+      "sha256": "c06683b901fc769c6edd9158e7956d6075531759c63e4886c4887a9ca0324409",
+      "tables": {},
+      "functions": [
+        {
+          "name": "public.apply_as_driver",
+          "exists": true,
+          "normalized_body_match": true,
+          "security_definer_match": true,
+          "empty_search_path_match": true
+        }
+      ],
+      "triggers": {}
+    },
+    {
+      "file": "20261029110000_manual_pilot_onboarding.sql",
+      "sha256": "af7cdf1a80aa3757c99715bfe2bba9a3d0e8c193c443107ebae365fa5a8fb080",
+      "tables": {
+        "private.pilot_rider_checks": false,
+        "private.pilot_operations_audit": false
+      },
+      "functions": [
+        {
+          "name": "public.admin_provision_pilot_rider",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        },
+        {
+          "name": "private.require_pilot_rider_checks",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        },
+        {
+          "name": "public.admin_activate_pilot_rider",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        }
+      ],
+      "triggers": {
+        "require_pilot_rider_checks": false
+      }
+    },
+    {
+      "file": "20261029120000_pilot_service_controls.sql",
+      "sha256": "b130e37e046249de810fc3884801837b29253732d34e4a3b93719e99b0eaf8c7",
+      "tables": {
+        "private.pilot_service_settings": false,
+        "private.pilot_rider_presence": false
+      },
+      "functions": [
+        {
+          "name": "private.pilot_service_open",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        },
+        {
+          "name": "private.pilot_point_allowed",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        },
+        {
+          "name": "public.pilot_service_status",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        },
+        {
+          "name": "private.enforce_pilot_booking",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        },
+        {
+          "name": "public.record_pilot_rider_presence",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        },
+        {
+          "name": "private.clear_offline_pilot_presence",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        },
+        {
+          "name": "private.is_online_approved_rider",
+          "exists": true,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        }
+      ],
+      "triggers": {
+        "enforce_pilot_booking": false,
+        "clear_offline_pilot_presence": false
+      }
+    },
+    {
+      "file": "20261029130000_pilot_pause_switch.sql",
+      "sha256": "cd87913f006d934c76785a8dfa86c15f7f83b4a796545acb039cfe4922b9baa4",
+      "tables": {},
+      "functions": [
+        {
+          "name": "public.admin_pause_pilot",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        }
+      ],
+      "triggers": {}
+    },
+    {
+      "file": "20261029140000_approved_flat_pilot_policy.sql",
+      "sha256": "bc80b9d473a42e73273e6f18340b0004e25183f703ef10a9a65c6e82d6059327",
+      "tables": {},
+      "functions": [
+        {
+          "name": "private.calculate_trip_financials",
+          "exists": true,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        },
+        {
+          "name": "public.pilot_service_status",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        }
+      ],
+      "triggers": {}
+    },
+    {
+      "file": "20261029150000_pilot_cancellation_review.sql",
+      "sha256": "9bf6ca80f1cc9d25b12199937e7625feea869d3540be2dd6b2cd46cebf75050b",
+      "tables": {
+        "public.pilot_cancellation_reviews": false
+      },
+      "functions": [
+        {
+          "name": "private.stamp_pilot_trip_times",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        },
+        {
+          "name": "public.cancel_pilot_trip",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        },
+        {
+          "name": "public.cancel_trip",
+          "exists": true,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        },
+        {
+          "name": "public.admin_review_pilot_cancellation",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        }
+      ],
+      "triggers": {
+        "zz_stamp_pilot_trip_times": false
+      }
+    },
+    {
+      "file": "20261102090000_notification_outbox.sql",
+      "sha256": "c91d4338e490630b389eb7c7d8e76561dee88c4dfedf4a487df190336783279b",
+      "tables": {
+        "private.push_outbox": false
+      },
+      "functions": [
+        {
+          "name": "private.stamp_push_fingerprint",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        },
+        {
+          "name": "private.enqueue_trip_push",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        },
+        {
+          "name": "public.claim_push_deliveries",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        },
+        {
+          "name": "public.finish_push_delivery",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        }
+      ],
+      "triggers": {
+        "stamp_push_fingerprint": false,
+        "enqueue_trip_push": false
+      }
+    },
+    {
+      "file": "20261102100000_account_retention.sql",
+      "sha256": "4b9bf76c6360c32804f1588f402bfe1f2b1d8814eb58578ecfac4cd7adf80d01",
+      "tables": {
+        "private.retention_policy": false,
+        "private.account_closures": false,
+        "private.data_holds": false
+      },
+      "functions": [
+        {
+          "name": "private.link_profile_auth",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        },
+        {
+          "name": "private.valid_retention_period",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        },
+        {
+          "name": "private.account_is_open",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        },
+        {
+          "name": "private.is_admin",
+          "exists": true,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        },
+        {
+          "name": "private.guard_closed_account_write",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        },
+        {
+          "name": "public.request_my_account_deletion",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        },
+        {
+          "name": "public.claim_account_erasure",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        },
+        {
+          "name": "public.finalize_account_erasure",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        },
+        {
+          "name": "public.complete_account_erasure",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        },
+        {
+          "name": "private.record_trip_retention_end",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        },
+        {
+          "name": "public.run_retention_batch",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        },
+        {
+          "name": "private.guard_erasure_hold",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        },
+        {
+          "name": "private.guard_retention_policy_change",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        }
+      ],
+      "triggers": {
+        "link_profile_auth": false,
+        "guard_closed_account_write": false,
+        "record_trip_retention_end": false,
+        "guard_erasure_hold": false,
+        "guard_retention_policy_change": false
+      }
+    },
+    {
+      "file": "20261102110000_operations_health.sql",
+      "sha256": "e64f930e334a1c428f43134c393aa3c91276067e6f3f02a7b93672faa9a1951d",
+      "tables": {
+        "private.worker_health": false
+      },
+      "functions": [
+        {
+          "name": "public.record_operations_run",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        },
+        {
+          "name": "public.operations_health",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        }
+      ],
+      "triggers": {}
+    },
+    {
+      "file": "20261102120000_client_crash_reports.sql",
+      "sha256": "94f9b5f1ea8822dce774549d7e9e92409dff1009e7852529dc7ee813afc3d6d1",
+      "tables": {
+        "private.client_error_limits": false,
+        "private.client_errors": false
+      },
+      "functions": [
+        {
+          "name": "public.report_my_app_crash",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        },
+        {
+          "name": "public.claim_client_errors",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        },
+        {
+          "name": "public.complete_client_error",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        },
+        {
+          "name": "private.clear_client_error_identity",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        },
+        {
+          "name": "public.operations_health",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        }
+      ],
+      "triggers": {
+        "clear_client_error_identity": false
+      }
+    },
+    {
+      "file": "20261102130000_cash_payment_confirmation.sql",
+      "sha256": "214280d24d4e37e8d1d47be34e5e121e298627213c4ac6d79685911f7448e061",
+      "tables": {},
+      "functions": [
+        {
+          "name": "private.enforce_external_payment_confirmation",
+          "exists": true,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        }
+      ],
+      "triggers": {}
+    },
+    {
+      "file": "20261102140000_pin_attempt_counter.sql",
+      "sha256": "76136b0b349bac54ac7c05ed528bd8d2e9771b6719a793fff23d645d8bef44e9",
+      "tables": {},
+      "functions": [
+        {
+          "name": "public.verify_trip_pin_and_start",
+          "exists": true,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        }
+      ],
+      "triggers": {}
+    },
+    {
+      "file": "20261102150000_rider_start_approval.sql",
+      "sha256": "e2da56d1bf6d670c3f7150e55fdfbca059a8cf47f8269962e0e330abea19be51",
+      "tables": {},
+      "functions": [
+        {
+          "name": "public.verify_trip_pin_and_start",
+          "exists": true,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        }
+      ],
+      "triggers": {}
+    }
+  ],
+  "existing_replacements": [
+    {
+      "name": "private.calculate_trip_financials",
+      "last_recorded_source": "20261016013132_production_trip_workflow.sql",
+      "matches_recorded_body": true
+    },
+    {
+      "name": "private.enforce_external_payment_confirmation",
+      "last_recorded_source": "20261013232004_external_mobile_money.sql",
+      "matches_recorded_body": true
+    },
+    {
+      "name": "private.is_admin",
+      "last_recorded_source": "20261024120000_secure_trip_access.sql",
+      "matches_recorded_body": true
+    },
+    {
+      "name": "private.is_online_approved_rider",
+      "last_recorded_source": "20261024120000_secure_trip_access.sql",
+      "matches_recorded_body": true
+    },
+    {
+      "name": "public.apply_as_driver",
+      "last_recorded_source": "20261024120000_secure_trip_access.sql",
+      "matches_recorded_body": false
+    },
+    {
+      "name": "public.cancel_trip",
+      "last_recorded_source": "20261024120000_secure_trip_access.sql",
+      "matches_recorded_body": true
+    },
+    {
+      "name": "public.verify_trip_pin_and_start",
+      "last_recorded_source": "20261016013132_production_trip_workflow.sql",
+      "matches_recorded_body": true
+    }
+  ],
+  "hardening_grants": [
+    {
+      "relname": "profiles",
+      "attname": "approval_status",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "profiles",
+      "attname": "created_at",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "profiles",
+      "attname": "full_name",
+      "authenticated_insert": false,
+      "authenticated_update": true
+    },
+    {
+      "relname": "profiles",
+      "attname": "id",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "profiles",
+      "attname": "is_approved",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "profiles",
+      "attname": "is_approved_rider",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "profiles",
+      "attname": "is_online",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "profiles",
+      "attname": "phone_number",
+      "authenticated_insert": false,
+      "authenticated_update": true
+    },
+    {
+      "relname": "profiles",
+      "attname": "rating",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "profiles",
+      "attname": "role",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "profiles",
+      "attname": "total_trips",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "profiles",
+      "attname": "updated_at",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "completed_at",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "created_at",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "driver_fare",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "dropoff_address",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "dropoff_lat",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "dropoff_lng",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "fare_amount",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "id",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "passenger_id",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "passenger_marked_paid_at",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "payment_method",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "payment_status",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "pickup_address",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "pickup_lat",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "pickup_lng",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "pin_failed_attempts",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "pin_locked_until",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "rider_confirmed_paid_at",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "rider_id",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "route_distance_meters",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "route_duration_seconds",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "service_fee",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "started_at",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "status",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "trip_pin_hash",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "updated_at",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    }
+  ],
+  "hardening_table_grants": [
+    {
+      "t": "public.profiles",
+      "can_insert": false,
+      "can_update": false,
+      "can_delete": false
+    },
+    {
+      "t": "public.trips",
+      "can_insert": false,
+      "can_update": false,
+      "can_delete": false
+    }
+  ],
+  "apply_execution": [
+    {
+      "proname": "apply_as_driver",
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "public_execute": false
+    }
+  ],
+  "alter_preconditions": [
+    {
+      "original_profile_auth_fk_exists": true,
+      "all_profile_ids_have_auth_user": true,
+      "auth_link_column_absent": true,
+      "new_trip_columns_absent": true
+    }
+  ],
+  "constraints": [
+    {
+      "relation": "private.trip_pickup_pins",
+      "conname": "trip_pickup_pins_passenger_id_fkey",
+      "definition": "FOREIGN KEY (passenger_id) REFERENCES profiles(id) ON DELETE CASCADE"
+    },
+    {
+      "relation": "private.trip_pickup_pins",
+      "conname": "trip_pickup_pins_trip_id_fkey",
+      "definition": "FOREIGN KEY (trip_id) REFERENCES trips(id) ON DELETE CASCADE"
+    },
+    {
+      "relation": "public.motorcycles",
+      "conname": "motorcycles_rider_id_fkey",
+      "definition": "FOREIGN KEY (rider_id) REFERENCES profiles(id) ON DELETE CASCADE"
+    },
+    {
+      "relation": "public.profiles",
+      "conname": "profiles_id_fkey",
+      "definition": "FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE"
+    },
+    {
+      "relation": "public.rider_documents",
+      "conname": "rider_documents_rider_id_fkey",
+      "definition": "FOREIGN KEY (rider_id) REFERENCES profiles(id) ON DELETE CASCADE"
+    },
+    {
+      "relation": "public.trip_locations",
+      "conname": "trip_locations_rider_id_fkey",
+      "definition": "FOREIGN KEY (rider_id) REFERENCES profiles(id) ON DELETE RESTRICT"
+    },
+    {
+      "relation": "public.trip_locations",
+      "conname": "trip_locations_trip_rider_fkey",
+      "definition": "FOREIGN KEY (trip_id, rider_id) REFERENCES trips(id, rider_id) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    {
+      "relation": "public.trip_ratings",
+      "conname": "trip_ratings_rated_user_id_fkey",
+      "definition": "FOREIGN KEY (rated_user_id) REFERENCES profiles(id) ON DELETE CASCADE"
+    },
+    {
+      "relation": "public.trip_ratings",
+      "conname": "trip_ratings_rater_id_fkey",
+      "definition": "FOREIGN KEY (rater_id) REFERENCES profiles(id) ON DELETE CASCADE"
+    },
+    {
+      "relation": "public.trip_ratings",
+      "conname": "trip_ratings_trip_id_fkey",
+      "definition": "FOREIGN KEY (trip_id) REFERENCES trips(id) ON DELETE CASCADE"
+    },
+    {
+      "relation": "public.trips",
+      "conname": "trips_passenger_id_fkey",
+      "definition": "FOREIGN KEY (passenger_id) REFERENCES profiles(id) ON DELETE RESTRICT"
+    },
+    {
+      "relation": "public.trips",
+      "conname": "trips_rider_id_fkey",
+      "definition": "FOREIGN KEY (rider_id) REFERENCES profiles(id) ON DELETE SET NULL"
+    }
+  ],
+  "schedule_inventory": [
+    {
+      "cron_job_table_exists": false
+    }
+  ]
+}

@@ -64,7 +64,7 @@ Operator-reported current Windows facts: PowerShell 5.1.26100.9711 was used, Pow
 
 First launch `pwsh`, check `$PSVersionTable.PSVersion.ToString()` and `docker info --format '{{.OSType}}'`, and return only those two results/errors. **Wait for review before continuing.** Expected PowerShell ≥7 and Linux containers. The agent cannot operate your Windows computer.
 
-After that review, in the same fresh PowerShell 7 terminal at this repository root, load the provided helper and verify only client versions:
+After that review, obtain the [reviewed helper](../../scripts/Use-DockerPostgres.ps1) from this workspace and save it as `scripts/Use-DockerPostgres.ps1` in the Windows checkout; these local changes have not been pushed. Its SHA-256 is `bc49a0c35bc0c995c2ebf77ffc706bea9f61bdb34f977bdd60c1c16596c2388e` (verify with `Get-FileHash`). In the same fresh PowerShell 7 terminal at that repository root, load it and verify only client versions:
 
 ```powershell
 . .\scripts\Use-DockerPostgres.ps1

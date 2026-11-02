@@ -1,0 +1,21 @@
+# Resume checkpoint — 2 November 2026 (CAT)
+
+**Blocked below 9/10: 4.00/10 — Not ready.** Fixed [rubric/action register](LAUNCH_REQUIREMENTS.md), [audit](LAUNCH_READINESS_AUDIT_2026-11-02.md), [external handoff](REMEDIATION_HANDOFF_2026-11-02.md), [prepared deployment plan](DEVELOPMENT_DEPLOYMENT_PLAN.md). Preserve all work; no push, merge, deploy, publication, booking enablement, production mutation or external messages. No AGENTS.md found; repository instructions inspected.
+
+## Saved work and evidence
+
+Started clean `feat/release-operations` at `4cf13cb`. Source commits: `d73e208` rider privacy/reconciliation/duplicate guards, `3b54c85` actual local HTTP cancellation/PIN concurrency checks, `4aaef22` Docker PostgreSQL backup-client alternative. Only documentation/evidence follow that source commit. Receipts: `evidence/continuation-20261102/`.
+
+53 Android unit tests pass (nine new regressions), all affected lint/build checks pass; both updated development APKs verified for signatures/unchanged debug signer, metadata/16KiB and known-secret absence. Source/APK SHA-256 in android-artifacts.json. Current APKs have NOT been installed; zero connected devices, KVM unavailable. No signing identity replaced, normal release guards untouched, Firebase/release inputs absent.
+
+Local service trip/live Mapbox and nine real parallel cancellation/start/completion races pass, both competing outcomes observed. Six parallel wrong-PIN calls persist five attempts and enforce lock including correct-PIN denial; no actual expiry wait. Fixtures removed and local policy restored paused; own loopback Edge harness stopped, existing Supabase services preserved. No SQL/migration changes: previous 26-migration/218-assertion replay and unchanged web/admin/worker/dependency results retained, not rerun as new evidence.
+
+Fresh read-only hosted state: 12 recorded migrations/26 local/14 pending, only request-trip v2; no listed backups/PITR/custom SMTP/new workers. Required server/Android configuration unchanged and missing. Existing hosted MAPBOX_SERVER_TOKEN preserved. HTTP unrestricted; unsupported public PostgreSQL TCP route not retried. No hosted mutations.
+
+Docker PowerShell helper: four actual 17.11 client versions, offline synthetic archive path mapping with spaces and invalid archive rejection pass on Linux; five guide blocks/helper parse. This is not Windows mount/TLS, actual source backup or restore evidence. Missing native psql is avoidable. User reports default PS5.1.26100.9711, pwsh available, Docker29.8.2, CLI2.121.0; signing/distribution and phone details still pending.
+
+## Next action, one Windows step at a time
+
+User: run `pwsh`, then `$PSVersionTable.PSVersion.ToString()` and `docker info --format '{{.OSType}}'`; return only those two results/errors. No password/dump yet. Explain any error before continuing. Once PS7/Linux confirmed: supply reviewed scripts/Use-DockerPostgres.ps1 (local changes not pushed), verify SHA-256 recorded in WINDOWS_SUPABASE_BACKUP.md, load it and check four versions only. Then guide actual CA/session parameters, masked interactive verified-TLS source calls, whole database/roles capture and isolated restore from the guide. Never accept schema-only/default CLI dump as complete recovery; never mark actual backup verified until source restore/coverage passes.
+
+Other external gates: recover established signing inputs/Firebase files, actual hosted deployment authorization after verified backup, SMTP/code template/FCM/worker/Sentry bindings, real phone/upgrade/trip/interruption/delivery observations, full-service recovery, and accountable operator/legal/insurance/privacy/retention/support approval. Exact secure destinations/scopes and follow-up actions are in the handoff. No safely executable remaining hosted/release/phone work can proceed with current access; do not repeat unchanged failures or inflate the score.

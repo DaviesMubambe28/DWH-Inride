@@ -1,3 +1,5 @@
+> **Continuation:** see [fixed requirements](LAUNCH_REQUIREMENTS.md), [resume checkpoint](LAUNCH_CHECKPOINT.md) and [reviewed development deployment plan](DEVELOPMENT_DEPLOYMENT_PLAN.md). Windows operator reports Docker/CLI present, native psql absent and pwsh available. Native PostgreSQL is optional using the reviewed Docker helper in WINDOWS_SUPABASE_BACKUP.md; actual Windows TLS/source backup/restore is not verified. Next user step is PowerShell7/Docker Linux confirmation only. No hosted settings changed.
+
 > **Current remediation handoff (2 November 2026):** [REMEDIATION_HANDOFF_2026-11-02.md](REMEDIATION_HANDOFF_2026-11-02.md) records exact still-missing inputs and human evidence. Mobile password recovery now uses numeric recovery-code entry in a separate memory-only Auth client. Before actual email/device testing, configure the intended development project's Reset Password email template to include `{{ .Token }}` and verify mail delivery. No Android redirect URI is invented; do not enable confirmation until email delivery works. No hosted settings were changed.
 
 # Configuration handoff — release operations

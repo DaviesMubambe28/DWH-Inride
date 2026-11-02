@@ -1,0 +1,96 @@
+{
+  "captured_at_cat": "2026-11-02T16:47:45.604800+02:00",
+  "source_commit": "4aaef2233f819872806e0b7b7ffb260f9f7dbd32",
+  "prior_source": "4cf13cb",
+  "no_hosted_mutations": true,
+  "no_push_deploy_publication_or_messages": true,
+  "unit_totals": {
+    "tests": 53,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "rider_regressions": 9,
+  "red_results": {
+    "initial_four_regressions": "4 tests / 4 failures before fix",
+    "authoritative_reconciliation": "9 tests / 3 failures before follow-up fix"
+  },
+  "mutation": "inverted acceptance guard detected by tests; original restored and full Android verification passes",
+  "lint": {
+    "core-ui": {
+      "Error": 0,
+      "Fatal": 0,
+      "Warning": 37
+    },
+    "passenger-app": {
+      "Error": 0,
+      "Fatal": 0,
+      "Warning": 4
+    },
+    "rider-app": {
+      "Error": 0,
+      "Fatal": 0,
+      "Warning": 4
+    }
+  },
+  "backend_race_checks": {
+    "cancellation_races": 9,
+    "start_wins": 1,
+    "cancel_before_start": 2,
+    "complete_wins": 2,
+    "cancel_before_complete": 1,
+    "duplicate_cancellation_races": 3,
+    "concurrent_wrong_pin_requests": 6,
+    "persisted_wrong_pin_attempts": 5,
+    "sixth_request_denied": true,
+    "correct_pin_denied_while_locked": true,
+    "real_lock_expiry_wait": false,
+    "synthetic_fixtures_removed": true,
+    "original_local_settings_restored_paused": true,
+    "scope": "actual local Auth/PostgREST/current handler + live Mapbox, not hosted or phone"
+  },
+  "retained_not_rerun": {
+    "migrations": 26,
+    "sql_assertions": 218,
+    "reason": "No SQL/migration changes since 4cf13cb; previous logs/source continuity retained",
+    "landing_checks": 7,
+    "admin_and_worker_checks": "Unchanged prior evidence, no new hosted/device claim"
+  },
+  "powershell": {
+    "version_checks": [
+      "psql 17.11",
+      "pg_dump 17.11",
+      "pg_dumpall 17.11",
+      "pg_restore 17.11"
+    ],
+    "guide_blocks": 5,
+    "helper_syntax_errors": 0,
+    "offline_synthetic_archive_mapping": "PASS including path spaces",
+    "invalid_archive_rejected": "PASS nonzero exit throws",
+    "Windows_execution": "NOT VERIFIED",
+    "actual_source_TLS_backup_restore": "NOT VERIFIED",
+    "old_synthetic_archive_unavailable": "created new disposable synthetic fixture instead; no real data used"
+  },
+  "windows_operator_report": {
+    "powershell_used": "5.1.26100.9711",
+    "pwsh_available": true,
+    "native_psql": false,
+    "docker": "29.8.2",
+    "supabase_cli": "2.121.0",
+    "next_step": "Launch pwsh, return PSVersion and Docker OSType only; wait before password/source steps"
+  },
+  "devices": {
+    "adb_entries": 0,
+    "hardware_acceleration_available": false,
+    "actual_phone_or_current_APK_install": "NOT VERIFIED"
+  },
+  "git_and_security_review": {
+    "entire_continuation_files_scanned": 23,
+    "configured_secret_or_private_key_findings": 0,
+    "diff_check": "PASS",
+    "local_markdown_links": "PASS",
+    "no_weakened_guards_or_removed_tests": true,
+    "no_new_dependencies": true,
+    "score": "4.00/10; critical external gates remain open"
+  }
+}

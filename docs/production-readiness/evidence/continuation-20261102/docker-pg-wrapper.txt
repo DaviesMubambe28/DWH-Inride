@@ -1,0 +1,4 @@
+Docker PostgreSQL client mode loaded for this session only. No database connection or backup has run.
+PASS: function command discovery and Docker archive file mapping work with spaces; no database connected
+PASS: invalid archive exits nonzero and throws; no partial-success report
+pg_restore: error: input file does not appear to be a valid archive (too short?)

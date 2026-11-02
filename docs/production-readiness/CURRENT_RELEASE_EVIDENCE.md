@@ -1,23 +1,22 @@
-# Remediation checkpoint — 2 November 2026 (CAT)
+# Current continuation checkpoint — 2 November 2026 (CAT)
 
-**4/10 — Not ready for public launch.** Engineering saved locally through `44c60ba`, starting from clean `de90f56`; subsequent commits contain only documentation/evidence. No hosted deployment, production mutation, external message/email, push, publication or booking enablement occurred. [Full current audit](LAUNCH_READINESS_AUDIT_2026-11-02.md) and [exact external handoff](REMEDIATION_HANDOFF_2026-11-02.md). Prior sections below are historical.
+**Blocked below 9/10: 4.00/10 — Not ready.** Fixed [rubric/requirements](LAUNCH_REQUIREMENTS.md); [audit](LAUNCH_READINESS_AUDIT_2026-11-02.md); [resume checkpoint](LAUNCH_CHECKPOINT.md); [external handoff](REMEDIATION_HANDOFF_2026-11-02.md); [prepared deployment plan](DEVELOPMENT_DEPLOYMENT_PLAN.md). Began clean at `4cf13cb`; current source through `4aaef22`, subsequent changes documentation/evidence only. No push, hosted write/deploy, publication, real booking enablement or external messages.
 
-| Gate | Result | Evidence and limit |
+| Gate | Result | Current evidence and scope |
 |---|---|---|
-| Local safety/auth fixes | PASS locally | Current approved-rider requirement at PIN/start, rider signup boundary, guarded memory-only recovery client, truthful email copy and duplicate-action handling. Not deployed |
-| SQL/migration verification | PASS locally | All 26 migrations and 218 assertions on a new isolated synthetic PostgreSQL database; affected existing-service suites 74 assertions. Not actual platform/hosted restore |
-| Android tests/build/lint | PASS development only | 44 tests, no failures/errors/skips; both current APKs built and signature/16KiB packaging/known-secret checks pass. Core lint 0 errors/37 warnings; apps 0 errors/4 warnings each |
-| Development artifacts | PASS static verification | `0.1.0-development-no-push`, code1, `.development` IDs, debug signer preserved, push unavailable. [Hashes and input provenance](evidence/remediation-20261102/android-artifacts.json). Current APK install/phone/upgrade NOT VERIFIED; old emulator ANR result is historical |
-| Actual local service trip | PASS local API scope | Current handler + real Auth/PostgREST + live Mapbox; booking/one race winner/arrival/PIN/start/completion/cash, cross-user/fare/revocation/duplicates verified. Original paused state restored; fixtures removed |
-| Local recovery protocol | PASS local API scope | Wrong and replayed generated OTP rejected; new password succeeds, old fails, previous refresh revoked. No mail dispatched. Existing access JWT lifetime still applies |
-| Landing/CI definitions | PASS local, GitHub run unverified | Seven named availability tests and actionlint pass; landing added to quality workflow; both public downloads/admin URL remain null |
-| Hosted backend safety/deployment | FAIL/BLOCKED | 12 records vs 26 local files; 14 unrecorded versions, legacy cash/PIN/start behavior, only request-trip v2; new workers absent. No blind migration repair |
-| Actual source backup/full recovery | BLOCKED | No provider backup/PITR, supported cloud public TCP unavailable, no source dump or isolated source restore. Four Windows blocks syntax-pass; not Windows execution or backup proof |
-| Signed/minified release candidates | BLOCKED | Existing signing identity/inputs and both Firebase files unavailable. No replacement key generated, no weakened release guards |
-| Email, actual FCM/Sentry receipt, hosted/phone journey | BLOCKED | SMTP/template/URLs, FCM worker secret, operations token, DSN and real test devices/evidence missing; no simulated substitutes |
-| Operator/legal/insurance, privacy/retention, support/on-call | BLOCKED separately | No accountable approvals or actual drills supplied; code defaults/synthetic attestations are insufficient |
+| Rider saved-state/privacy and action guards | PASS locally | Nine new regressions; persisted PIN removed, acceptance/PIN rapid duplicates gated, stale/removed/started/completed trips and restart navigation reconciled. Inverted guard caught; original restored |
+| Android unit/lint/development artifacts | PASS development only | 53 tests, zero failures/errors/skips; core lint 0 errors/37 warnings, each app 0 errors/4 warnings. Both development APKs rebuilt with unchanged debug identity; signatures/16KiB alignment/public bindings/known-secret scan pass. [Current hashes and source provenance](evidence/continuation-20261102/android-artifacts.json) |
+| Current APK installation, same-identity release upgrade | BLOCKED | Zero connected devices; release signer/history/Firebase absent. Old emulator installs/ANR apply to older hashes only. No production candidate or current install claim |
+| Local trip and concurrency | PASS local API scope | Real local Auth/PostgREST/current handler/live Mapbox; full trip/cash and role/fare/revocation/duplicates. Nine parallel cancellation races with both winner outcomes observed; six wrong-PIN calls persist five and lock, correct PIN denied while locked. Fixtures removed; original local policy paused |
+| SQL/site/admin/worker/dependency checks | Retained, not rerun | No corresponding SQL/site/worker/dependency changes. Previous 26 migrations/218 SQL assertions, seven landing and admin/browser/worker results remain scoped historical evidence; five moderate dev-tool findings still open |
+| Fresh hosted safety/configuration | FAIL/BLOCKED | 12 records vs 26 local, 14 pending; legacy cash/PIN/start behavior and only request-trip v2. No listed backup/PITR/custom SMTP/new workers; missing FCM/operations/Sentry inputs. Read-only inspection only; existing Mapbox secret preserved |
+| Backup/restore path | Prepared, actual gate BLOCKED | Native psql is optional using new pinned Docker PostgreSQL17.11 helper. Four versions, file mapping with spaces and invalid-archive rejection pass on Linux; five guide blocks/helper syntax pass. Actual Windows mount/TLS/source archive/isolated source restore/full-service recovery remain unverified |
+| Email/FCM/monitoring/hosted two-phone journey | BLOCKED | Missing configuration and real recipients/devices/operator observations; local generated OTP test did not send email |
+| Operator/legal/insurance, privacy/retention, support | BLOCKED separately | Required accountable approvals and actual drills remain absent; local code/fixtures cannot close these gates |
 
-Next human action: open **PowerShell 7 on Windows** and run only **Step 1 — check installed programs** in [WINDOWS_SUPABASE_BACKUP.md](WINDOWS_SUPABASE_BACKUP.md); share versions/errors, no credentials. The handoff lists all remaining inputs and service/phone/recovery/approval steps. Nine-out-of-ten requires those real outcomes, not more local checklist passes.
+Operator returned PS5.1.26100.9711, pwsh available, Docker29.8.2, CLI2.121.0, native psql absent. **Next step only:** launch `pwsh`, then return `$PSVersionTable.PSVersion.ToString()` and `docker info --format '{{.OSType}}'`. Do not enter a database password or start a dump yet. We then guide the reviewed helper versions, CA/native verified-TLS connection, masked whole-database/role capture and isolated restore in order. No native PostgreSQL installation is required for this alternative.
+
+Earlier sections below are historical and do not override current evidence.
 
 ---
 
