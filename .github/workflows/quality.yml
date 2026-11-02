@@ -111,9 +111,21 @@ jobs:
       - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
       - run: sdkmanager "platforms;android-37.0" "build-tools;37.0.0"
       - run: bash gradlew :core-ui:testDebugUnitTest :core-ui:lintDebug --no-daemon --max-workers=2
+      # Compile the real app sources without runtime bindings, Firebase files or
+      # release signing. These separate .development APKs are never uploaded.
+      - name: Compile and lint both development apps (notifications unavailable)
+        run: bash gradlew :passenger-app:assembleDevelopment :rider-app:assembleDevelopment :passenger-app:lintDevelopment :rider-app:lintDevelopment --no-daemon --max-workers=2
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: android-core-reports
           path: core-ui/build/reports/
           if-no-files-found: error
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: android-development-lint-reports
+          path: |
+            passenger-app/build/reports/
+            rider-app/build/reports/
+          if-no-files-found: ignore
