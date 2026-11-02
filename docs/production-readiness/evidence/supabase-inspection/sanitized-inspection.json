@@ -1,0 +1,499 @@
+{
+  "project_ref": "vhckkmzyabbsbgjuhjmq",
+  "read_only_endpoint": "/database/query/read-only",
+  "server": {
+    "http_status": 201,
+    "rows": [
+      {
+        "version": "17.11",
+        "migration_history_exists": true
+      }
+    ]
+  },
+  "migrations": {
+    "http_status": 201,
+    "rows": [
+      {
+        "version": "20261013221902",
+        "name": "init_schema"
+      },
+      {
+        "version": "20261013221915",
+        "name": "storage_and_security"
+      },
+      {
+        "version": "20261013221919",
+        "name": "rls_policies"
+      },
+      {
+        "version": "20261013221924",
+        "name": "indexes"
+      },
+      {
+        "version": "20261013232004",
+        "name": "external_mobile_money"
+      },
+      {
+        "version": "20261016005149",
+        "name": "production_operations"
+      },
+      {
+        "version": "20261016013132",
+        "name": "production_trip_workflow"
+      },
+      {
+        "version": "20261017120000",
+        "name": "rider_available_feed_policy"
+      },
+      {
+        "version": "20261018103000",
+        "name": "validate_signup_profile_metadata"
+      },
+      {
+        "version": "20261020120000",
+        "name": "grant_trip_feed_columns"
+      },
+      {
+        "version": "20261024120000",
+        "name": "secure_trip_access"
+      },
+      {
+        "version": "20261025130000",
+        "name": "trip_ratings"
+      }
+    ]
+  },
+  "migration_comparison": {
+    "local_count": 23,
+    "remote_count": 12,
+    "local_not_recorded_remotely": [
+      "20261025120000_fcm_device_tokens.sql",
+      "20261029100000_pilot_access_hardening.sql",
+      "20261029110000_manual_pilot_onboarding.sql",
+      "20261029120000_pilot_service_controls.sql",
+      "20261029130000_pilot_pause_switch.sql",
+      "20261029140000_approved_flat_pilot_policy.sql",
+      "20261029150000_pilot_cancellation_review.sql",
+      "20261102090000_notification_outbox.sql",
+      "20261102100000_account_retention.sql",
+      "20261102110000_operations_health.sql",
+      "20261102120000_client_crash_reports.sql"
+    ],
+    "remote_not_in_local": []
+  },
+  "function_contracts": {
+    "http_status": 201,
+    "rows": [
+      {
+        "proname": "accept_trip",
+        "arguments": "p_trip_id uuid",
+        "security_definer": true,
+        "anon_execute": false,
+        "authenticated_execute": true,
+        "apply_uses_current_role": null,
+        "apply_uses_actor_role": null
+      },
+      {
+        "proname": "apply_as_driver",
+        "arguments": "",
+        "security_definer": true,
+        "anon_execute": false,
+        "authenticated_execute": true,
+        "apply_uses_current_role": false,
+        "apply_uses_actor_role": true
+      },
+      {
+        "proname": "complete_trip",
+        "arguments": "p_trip_id uuid",
+        "security_definer": true,
+        "anon_execute": false,
+        "authenticated_execute": true,
+        "apply_uses_current_role": null,
+        "apply_uses_actor_role": null
+      },
+      {
+        "proname": "create_routed_trip",
+        "arguments": "p_passenger_id uuid, p_pickup_lat numeric, p_pickup_lng numeric, p_pickup_address text, p_dropoff_lat numeric, p_dropoff_lng numeric, p_dropoff_address text, p_route_distance_meters integer, p_route_duration_seconds integer, p_payment_method text",
+        "security_definer": true,
+        "anon_execute": false,
+        "authenticated_execute": false,
+        "apply_uses_current_role": null,
+        "apply_uses_actor_role": null
+      },
+      {
+        "proname": "mark_trip_arrived",
+        "arguments": "p_trip_id uuid",
+        "security_definer": true,
+        "anon_execute": false,
+        "authenticated_execute": true,
+        "apply_uses_current_role": null,
+        "apply_uses_actor_role": null
+      }
+    ]
+  },
+  "table_security": {
+    "http_status": 201,
+    "rows": [
+      {
+        "relname": "motorcycles",
+        "rls_enabled": true,
+        "anon_table_select": false,
+        "authenticated_table_insert": true,
+        "authenticated_table_update": true
+      },
+      {
+        "relname": "profiles",
+        "rls_enabled": true,
+        "anon_table_select": false,
+        "authenticated_table_insert": false,
+        "authenticated_table_update": false
+      },
+      {
+        "relname": "rider_documents",
+        "rls_enabled": true,
+        "anon_table_select": false,
+        "authenticated_table_insert": true,
+        "authenticated_table_update": true
+      },
+      {
+        "relname": "trip_locations",
+        "rls_enabled": true,
+        "anon_table_select": false,
+        "authenticated_table_insert": true,
+        "authenticated_table_update": true
+      },
+      {
+        "relname": "trip_ratings",
+        "rls_enabled": true,
+        "anon_table_select": false,
+        "authenticated_table_insert": false,
+        "authenticated_table_update": false
+      },
+      {
+        "relname": "trips",
+        "rls_enabled": true,
+        "anon_table_select": false,
+        "authenticated_table_insert": false,
+        "authenticated_table_update": false
+      }
+    ]
+  },
+  "policies": {
+    "http_status": 201,
+    "rows": [
+      {
+        "schemaname": "public",
+        "tablename": "motorcycles",
+        "policyname": "motorcycles_delete_owner",
+        "roles": "{authenticated}",
+        "cmd": "DELETE"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "motorcycles",
+        "policyname": "motorcycles_insert_owner",
+        "roles": "{authenticated}",
+        "cmd": "INSERT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "motorcycles",
+        "policyname": "motorcycles_select_owner_or_admin",
+        "roles": "{authenticated}",
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "motorcycles",
+        "policyname": "motorcycles_update_owner",
+        "roles": "{authenticated}",
+        "cmd": "UPDATE"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "profiles",
+        "policyname": "Allow insert for authenticated users",
+        "roles": "{authenticated}",
+        "cmd": "INSERT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "profiles",
+        "policyname": "profiles_admin_delete",
+        "roles": "{authenticated}",
+        "cmd": "DELETE"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "profiles",
+        "policyname": "profiles_admin_insert",
+        "roles": "{authenticated}",
+        "cmd": "INSERT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "profiles",
+        "policyname": "profiles_insert_self_passenger",
+        "roles": "{authenticated}",
+        "cmd": "INSERT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "profiles",
+        "policyname": "profiles_select_self_or_admin_or_assigned_passenger",
+        "roles": "{authenticated}",
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "profiles",
+        "policyname": "profiles_update_self",
+        "roles": "{authenticated}",
+        "cmd": "UPDATE"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "profiles",
+        "policyname": "profiles_update_self_or_admin",
+        "roles": "{authenticated}",
+        "cmd": "UPDATE"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "rider_documents",
+        "policyname": "rider_documents_owner_or_admin_delete",
+        "roles": "{authenticated}",
+        "cmd": "DELETE"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "rider_documents",
+        "policyname": "rider_documents_owner_or_admin_insert",
+        "roles": "{authenticated}",
+        "cmd": "INSERT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "rider_documents",
+        "policyname": "rider_documents_owner_or_admin_select",
+        "roles": "{authenticated}",
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "rider_documents",
+        "policyname": "rider_documents_owner_or_admin_update",
+        "roles": "{authenticated}",
+        "cmd": "UPDATE"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "trip_locations",
+        "policyname": "trip_locations_admin_all",
+        "roles": "{authenticated}",
+        "cmd": "ALL"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "trip_locations",
+        "policyname": "trip_locations_insert_assigned_active_rider",
+        "roles": "{authenticated}",
+        "cmd": "INSERT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "trip_locations",
+        "policyname": "trip_locations_select_own_active_or_passenger_or_admin",
+        "roles": "{authenticated}",
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "trip_locations",
+        "policyname": "trip_locations_update_assigned_active_rider",
+        "roles": "{authenticated}",
+        "cmd": "UPDATE"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "trip_ratings",
+        "policyname": "trip_ratings_select_relevant_or_admin",
+        "roles": "{authenticated}",
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "trips",
+        "policyname": "trips_admin_all",
+        "roles": "{authenticated}",
+        "cmd": "ALL"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "trips",
+        "policyname": "trips_insert_passenger",
+        "roles": "{authenticated}",
+        "cmd": "INSERT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "trips",
+        "policyname": "trips_passenger_cancel_requested",
+        "roles": "{authenticated}",
+        "cmd": "UPDATE"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "trips",
+        "policyname": "trips_rider_accept_or_update_assigned",
+        "roles": "{authenticated}",
+        "cmd": "UPDATE"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "trips",
+        "policyname": "trips_select_open_requests_for_approved_online_riders",
+        "roles": "{authenticated}",
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "trips",
+        "policyname": "trips_select_passenger_assigned_rider_or_admin",
+        "roles": "{authenticated}",
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "trips",
+        "policyname": "trips_update_participant",
+        "roles": "{authenticated}",
+        "cmd": "UPDATE"
+      },
+      {
+        "schemaname": "storage",
+        "tablename": "objects",
+        "policyname": "rider_documents_objects_delete_owner",
+        "roles": "{authenticated}",
+        "cmd": "DELETE"
+      },
+      {
+        "schemaname": "storage",
+        "tablename": "objects",
+        "policyname": "rider_documents_objects_insert_owner",
+        "roles": "{authenticated}",
+        "cmd": "INSERT"
+      },
+      {
+        "schemaname": "storage",
+        "tablename": "objects",
+        "policyname": "rider_documents_objects_select_owner_or_admin",
+        "roles": "{authenticated}",
+        "cmd": "SELECT"
+      },
+      {
+        "schemaname": "storage",
+        "tablename": "objects",
+        "policyname": "rider_documents_objects_update_owner",
+        "roles": "{authenticated}",
+        "cmd": "UPDATE"
+      }
+    ]
+  },
+  "storage_buckets": {
+    "http_status": 201,
+    "rows": [
+      {
+        "id": "rider-documents",
+        "public": false,
+        "file_size_limit": 5242880,
+        "allowed_mime_types": [
+          "image/jpeg",
+          "image/png",
+          "application/pdf"
+        ]
+      }
+    ]
+  },
+  "realtime_tables": {
+    "http_status": 201,
+    "rows": [
+      {
+        "schemaname": "public",
+        "tablename": "profiles"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "rider_documents"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "trips"
+      }
+    ]
+  },
+  "pilot_configuration_presence": {
+    "http_status": 201,
+    "rows": [
+      {
+        "service_settings": false,
+        "retention_policy": false,
+        "push_outbox": false
+      }
+    ]
+  },
+  "verified_at": "2026-11-02T03:46:03.470575+02:00",
+  "source_commit": "dec17f8148a5d2ebecdecebf2f242cdd63841f86",
+  "management_access": "PASS: project/config GETs and enforced read-only SQL succeed",
+  "environment_classification": {
+    "owner_confirmation": "Current project is development-only; no production service exists yet",
+    "visible_projects": 1,
+    "branches": 0,
+    "separate_staging_production_pair": false,
+    "nonproduction_target_confirmed": true
+  },
+  "functions": [
+    {
+      "slug": "request-trip",
+      "version": 2,
+      "status": "ACTIVE",
+      "verify_jwt": true
+    }
+  ],
+  "secret_names": [
+    "SUPABASE_URL",
+    "SUPABASE_ANON_KEY",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "SUPABASE_PUBLISHABLE_KEYS",
+    "SUPABASE_SECRET_KEYS",
+    "SUPABASE_DB_URL",
+    "SUPABASE_JWKS",
+    "MAPBOX_SERVER_TOKEN"
+  ],
+  "required_new_worker_secret_names_absent": [
+    "FCM_SERVICE_ACCOUNT_JSON",
+    "OPERATIONS_WORKER_TOKEN",
+    "SENTRY_DSN"
+  ],
+  "auth": {
+    "email_enabled": true,
+    "signup_disabled": false,
+    "email_auto_confirm": true,
+    "site_url_hostname": "localhost",
+    "redirect_allowlist_configured": false,
+    "custom_smtp_configured": false,
+    "jwt_exp_seconds": 3600,
+    "refresh_token_rotation_enabled": true,
+    "refresh_token_reuse_interval_seconds": 10
+  },
+  "drift": {
+    "apply_as_driver_matches_local_unrecorded_hardening": true,
+    "protected_column_updates_granted_to_authenticated": {
+      "profiles.role": false,
+      "profiles.approval_status": false,
+      "trips.fare_amount": false,
+      "trips.status": false
+    }
+  },
+  "scope": "Read-only project/config/catalog inspection. No schema, migration history, grants, functions, secrets, Auth configuration or bookings changed. No user-data rows inspected and no credentials recorded."
+}

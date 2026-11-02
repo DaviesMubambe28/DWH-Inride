@@ -1,3 +1,9 @@
+# Latest non-production Supabase inspection — 2 November 2026
+
+**Release remains BLOCKED; management read access now PASSES.** The owner confirms the configured project is development-only and no production service exists yet; a distinct staging/production pair has not been created. Read-only inspection finds 11 unrecorded local migrations, missing new worker deployments/tables, existing MAPBOX_SERVER_TOKEN, and unconfigured hosted FCM/monitoring worker secrets. Auth still uses localhost/empty redirect allowlist and auto-confirm, with no custom SMTP. No changes were applied. See `production-readiness/SUPABASE_INSPECTION.md` before deployment or further configuration.
+
+---
+
 # Staging recheck — 2 November 2026
 
 **BLOCKED.** Rechecked preserved commit `53cd679` without repeating completed suites. The runtime network policy remains revision 1 without the saved custom domains; Mapbox still receives a pre-TLS proxy CONNECT 403. Required local/injected project, Firebase, monitoring, signing and recovery settings remain absent. Supabase CLI management access is unavailable; GitHub pilot metadata inspection is network-blocked, so hosted settings remain unobserved. No APK, staging deployment, real journey or device result was produced.

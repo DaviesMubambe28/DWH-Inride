@@ -1,3 +1,13 @@
+# Current Supabase inspection — 2 November 2026
+
+**PASS:** management read access with the configured token and project URL. **Owner-confirmed development-only target:** `vhckkmzyabbsbgjuhjmq`; no production service exists yet. There is only one visible project and no branches, so a separate staging/production pair is not established.
+
+Read-only inspection found 12 recorded/23 local migrations (11 pending), only request-trip v2 deployed, and no new pilot/retention/outbox tables. The apply_as_driver fix already matches a locally pending hardening migration, demonstrating migration-history drift. Existing MAPBOX_SERVER_TOKEN is present and must be preserved. Hosted FCM_SERVICE_ACCOUNT_JSON, OPERATIONS_WORKER_TOKEN and SENTRY_DSN are absent. Auth auto-confirm is enabled, Site URL is localhost, redirect allowlist is empty and custom SMTP is unconfigured. No hosted changes or user-data queries were performed.
+
+See **SUPABASE_INSPECTION.md** and `evidence/supabase-inspection/` for verified metadata and the pending migration list. Earlier statements below that management access/networking are blocked are historical; they do not override this inspection. **Release remains BLOCKED** pending deployment reconciliation, live journeys, actual candidates, notifications/monitoring, full recovery and operator/legal evidence.
+
+---
+
 # Staging configuration recheck — 2 November 2026 (CAT)
 
 Tested commit: `53cd67932ff90165600122fb6672639437c834d2` on `feat/release-operations`, initially clean and preserved. Time: `2026-11-02T01:57:58.063409+02:00`. **Release remains BLOCKED.** The user has authorized reviewed staging migration/function deployment once the exact staging target/access is available. Production deployment, booking enablement and APK publication remain unauthorized. No additional blanket staging approval is needed.
