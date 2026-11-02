@@ -143,7 +143,10 @@ try {
     & pg_dump @DbArgs --format=custom --serializable-deferrable --lock-wait-timeout=15s `
       --file (Join-Path $Bundle 'database.dump')
     Assert-Native 'Whole database schema-and-data export'
-    & pg_dumpall @DbArgs --roles-only --no-role-passwords --file (Join-Path $Bundle 'roles.sql')
+    # pg_dumpall requires conninfo for --dbname; a bare 'postgres' fails here.
+    # This argument contains only the database name, never the password.
+    & pg_dumpall --host $DbHost --port 5432 --username $DbUser --dbname 'dbname=postgres' `
+      --password --roles-only --no-role-passwords --file (Join-Path $Bundle 'roles.sql')
     Assert-Native 'Role definitions without database login passwords'
     & psql @DbArgs -X --quiet --no-align --tuples-only --set ON_ERROR_STOP=1 `
       --file $InventoryFile --output (Join-Path $Bundle 'source-after.json')
@@ -237,6 +240,12 @@ if ($Expected -cne $Restored) { throw 'Data/catalog security inventory differs; 
 Restore SQL is privileged executable material: use only your reviewed archive. `--clean` is permitted here solely because the destination is a newly created database in a new network-isolated disposable container. Never change these commands to point at the hosted source. If restore fails, retain the protected logs, report only a sanitized error class/object type, and stop; do not delete failing archive entries or ignore errors.
 
 Before certifying the database gate, review table counts (including Auth users, profiles, trips and all 12 migration records), original owners/ACLs, RLS/policy and function comparison, source/destination PostgreSQL/extensions and role memberships. The JSON comparison covers table counts and selected security catalogs, not every platform setting or content digest. Successful full archive extraction/restore and checksum validation are required alongside it. Record actual source/restore times, tool/image versions/digest, reviewer, SHA-256 and every exception. Windows execution and this actual hosted restore are **not yet verified by the agent**. Preserve a second encrypted off-machine copy and prove its integrity as well; the disk's BitLocker recovery key and backup custody must be recoverable separately.
+
+## Synthetic mechanics checked during the release sprint
+
+A separate network-isolated local Supabase PostgreSQL 17 container exercised the documented startup, full custom archive, role export, required archive entries and isolated database restore using synthetic Auth/application/private/Storage-metadata/migration fixtures. This exposed and fixed a real command error: `pg_dumpall --dbname` requires a libpq connection string such as `dbname=postgres`, rather than the bare database name accepted by psql/pg_dump. Its password still belongs only at the native masked prompt.
+
+The corrected local rehearsal preserved all inventory sections, ownership, ACLs, RLS and function definitions; rightful-subject SELECT succeeded, cross-subject SELECT returned no rows, protected role UPDATE was denied, and restored pgcrypto executed successfully. Role export contained no database login-password literals. See `evidence/release-sprint-20261102/backup-procedure/verification.json`. These are **synthetic Linux database mechanics**, not Windows execution, native hosted TLS/password verification, an export of the development project's real data or full-service recovery. The hosted backup gate remains BLOCKED.
 
 ## Coverage and remaining recovery gates
 
