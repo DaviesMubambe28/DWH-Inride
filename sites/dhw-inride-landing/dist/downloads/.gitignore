@@ -1,0 +1,3 @@
+# APKs belong to approved artifact hosting or the deployment bundle, never Git.
+*.apk
+*.aab

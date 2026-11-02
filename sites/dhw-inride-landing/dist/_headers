@@ -1,4 +1,16 @@
-/*.apk
+/downloads/passenger/*.apk
   Content-Type: application/vnd.android.package-archive
   Content-Disposition: attachment
   X-Content-Type-Options: nosniff
+  Cache-Control: public, max-age=31536000, immutable
+/downloads/rider/*.apk
+  Content-Type: application/vnd.android.package-archive
+  Content-Disposition: attachment
+  X-Content-Type-Options: nosniff
+  Cache-Control: public, max-age=31536000, immutable
+/release-config.mjs
+  Cache-Control: public, max-age=0, must-revalidate
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+/
+  Cache-Control: public, max-age=0, must-revalidate
