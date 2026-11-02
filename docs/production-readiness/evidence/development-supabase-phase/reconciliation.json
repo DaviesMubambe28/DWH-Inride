@@ -1,0 +1,305 @@
+{
+  "project_ref": "vhckkmzyabbsbgjuhjmq",
+  "mode": "READ_ONLY",
+  "source_commit": "bbc181a0e1f8e22156141b39279cd2c8e20f7ca8",
+  "existing_replacements": [
+    {
+      "name": "private.calculate_trip_financials",
+      "last_recorded_source": "20261016013132_production_trip_workflow.sql",
+      "matches_recorded_body": true
+    },
+    {
+      "name": "private.is_admin",
+      "last_recorded_source": "20261024120000_secure_trip_access.sql",
+      "matches_recorded_body": true
+    },
+    {
+      "name": "private.is_online_approved_rider",
+      "last_recorded_source": "20261024120000_secure_trip_access.sql",
+      "matches_recorded_body": true
+    },
+    {
+      "name": "public.apply_as_driver",
+      "last_recorded_source": "20261024120000_secure_trip_access.sql",
+      "matches_recorded_body": false
+    },
+    {
+      "name": "public.cancel_trip",
+      "last_recorded_source": "20261024120000_secure_trip_access.sql",
+      "matches_recorded_body": true
+    }
+  ],
+  "hardening_table_grants": [
+    {
+      "t": "public.profiles",
+      "can_insert": false,
+      "can_update": false,
+      "can_delete": false
+    },
+    {
+      "t": "public.trips",
+      "can_insert": false,
+      "can_update": false,
+      "can_delete": false
+    }
+  ],
+  "apply_execution": [
+    {
+      "proname": "apply_as_driver",
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "public_execute": false
+    }
+  ],
+  "alter_preconditions": [
+    {
+      "original_profile_auth_fk_exists": true,
+      "all_profile_ids_have_auth_user": true,
+      "auth_link_column_absent": true,
+      "new_trip_columns_absent": true
+    }
+  ],
+  "schedule_inventory": [
+    {
+      "cron_job_table_exists": false
+    }
+  ],
+  "migrations": [
+    {
+      "file": "20261025120000_fcm_device_tokens.sql",
+      "sha256": "d221edc853f9dd331c8c9161faf007f5def759d9dc265efe67af7dae47aa2943",
+      "new_tables_absent": [
+        "public.device_push_tokens"
+      ],
+      "new_triggers_absent": [],
+      "missing_functions": [
+        "public.register_my_fcm_token",
+        "public.unregister_my_fcm_token"
+      ],
+      "existing_functions": []
+    },
+    {
+      "file": "20261029100000_pilot_access_hardening.sql",
+      "sha256": "c06683b901fc769c6edd9158e7956d6075531759c63e4886c4887a9ca0324409",
+      "new_tables_absent": [],
+      "new_triggers_absent": [],
+      "missing_functions": [],
+      "existing_functions": [
+        {
+          "name": "public.apply_as_driver",
+          "exists": true,
+          "normalized_body_match": true,
+          "security_definer_match": true,
+          "empty_search_path_match": true
+        }
+      ]
+    },
+    {
+      "file": "20261029110000_manual_pilot_onboarding.sql",
+      "sha256": "af7cdf1a80aa3757c99715bfe2bba9a3d0e8c193c443107ebae365fa5a8fb080",
+      "new_tables_absent": [
+        "private.pilot_rider_checks",
+        "private.pilot_operations_audit"
+      ],
+      "new_triggers_absent": [
+        "require_pilot_rider_checks"
+      ],
+      "missing_functions": [
+        "public.admin_provision_pilot_rider",
+        "private.require_pilot_rider_checks",
+        "public.admin_activate_pilot_rider"
+      ],
+      "existing_functions": []
+    },
+    {
+      "file": "20261029120000_pilot_service_controls.sql",
+      "sha256": "b130e37e046249de810fc3884801837b29253732d34e4a3b93719e99b0eaf8c7",
+      "new_tables_absent": [
+        "private.pilot_service_settings",
+        "private.pilot_rider_presence"
+      ],
+      "new_triggers_absent": [
+        "enforce_pilot_booking",
+        "clear_offline_pilot_presence"
+      ],
+      "missing_functions": [
+        "private.pilot_service_open",
+        "private.pilot_point_allowed",
+        "public.pilot_service_status",
+        "private.enforce_pilot_booking",
+        "public.record_pilot_rider_presence",
+        "private.clear_offline_pilot_presence"
+      ],
+      "existing_functions": [
+        {
+          "name": "private.is_online_approved_rider",
+          "exists": true,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        }
+      ]
+    },
+    {
+      "file": "20261029130000_pilot_pause_switch.sql",
+      "sha256": "cd87913f006d934c76785a8dfa86c15f7f83b4a796545acb039cfe4922b9baa4",
+      "new_tables_absent": [],
+      "new_triggers_absent": [],
+      "missing_functions": [
+        "public.admin_pause_pilot"
+      ],
+      "existing_functions": []
+    },
+    {
+      "file": "20261029140000_approved_flat_pilot_policy.sql",
+      "sha256": "bc80b9d473a42e73273e6f18340b0004e25183f703ef10a9a65c6e82d6059327",
+      "new_tables_absent": [],
+      "new_triggers_absent": [],
+      "missing_functions": [
+        "public.pilot_service_status"
+      ],
+      "existing_functions": [
+        {
+          "name": "private.calculate_trip_financials",
+          "exists": true,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        }
+      ]
+    },
+    {
+      "file": "20261029150000_pilot_cancellation_review.sql",
+      "sha256": "9bf6ca80f1cc9d25b12199937e7625feea869d3540be2dd6b2cd46cebf75050b",
+      "new_tables_absent": [
+        "public.pilot_cancellation_reviews"
+      ],
+      "new_triggers_absent": [
+        "zz_stamp_pilot_trip_times"
+      ],
+      "missing_functions": [
+        "private.stamp_pilot_trip_times",
+        "public.cancel_pilot_trip",
+        "public.admin_review_pilot_cancellation"
+      ],
+      "existing_functions": [
+        {
+          "name": "public.cancel_trip",
+          "exists": true,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        }
+      ]
+    },
+    {
+      "file": "20261102090000_notification_outbox.sql",
+      "sha256": "c91d4338e490630b389eb7c7d8e76561dee88c4dfedf4a487df190336783279b",
+      "new_tables_absent": [
+        "private.push_outbox"
+      ],
+      "new_triggers_absent": [
+        "stamp_push_fingerprint",
+        "enqueue_trip_push"
+      ],
+      "missing_functions": [
+        "private.stamp_push_fingerprint",
+        "private.enqueue_trip_push",
+        "public.claim_push_deliveries",
+        "public.finish_push_delivery"
+      ],
+      "existing_functions": []
+    },
+    {
+      "file": "20261102100000_account_retention.sql",
+      "sha256": "4b9bf76c6360c32804f1588f402bfe1f2b1d8814eb58578ecfac4cd7adf80d01",
+      "new_tables_absent": [
+        "private.retention_policy",
+        "private.account_closures",
+        "private.data_holds"
+      ],
+      "new_triggers_absent": [
+        "link_profile_auth",
+        "guard_closed_account_write",
+        "record_trip_retention_end",
+        "guard_erasure_hold",
+        "guard_retention_policy_change"
+      ],
+      "missing_functions": [
+        "private.link_profile_auth",
+        "private.valid_retention_period",
+        "private.account_is_open",
+        "private.guard_closed_account_write",
+        "public.request_my_account_deletion",
+        "public.claim_account_erasure",
+        "public.finalize_account_erasure",
+        "public.complete_account_erasure",
+        "private.record_trip_retention_end",
+        "public.run_retention_batch",
+        "private.guard_erasure_hold",
+        "private.guard_retention_policy_change"
+      ],
+      "existing_functions": [
+        {
+          "name": "private.is_admin",
+          "exists": true,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        }
+      ]
+    },
+    {
+      "file": "20261102110000_operations_health.sql",
+      "sha256": "e64f930e334a1c428f43134c393aa3c91276067e6f3f02a7b93672faa9a1951d",
+      "new_tables_absent": [
+        "private.worker_health"
+      ],
+      "new_triggers_absent": [],
+      "missing_functions": [
+        "public.record_operations_run",
+        "public.operations_health"
+      ],
+      "existing_functions": []
+    },
+    {
+      "file": "20261102120000_client_crash_reports.sql",
+      "sha256": "94f9b5f1ea8822dce774549d7e9e92409dff1009e7852529dc7ee813afc3d6d1",
+      "new_tables_absent": [
+        "private.client_error_limits",
+        "private.client_errors"
+      ],
+      "new_triggers_absent": [
+        "clear_client_error_identity"
+      ],
+      "missing_functions": [
+        "public.report_my_app_crash",
+        "public.claim_client_errors",
+        "public.complete_client_error",
+        "private.clear_client_error_identity",
+        "public.operations_health"
+      ],
+      "existing_functions": []
+    }
+  ],
+  "hardening_columns": {
+    "inspected_column_count": 38,
+    "insert_allowed_columns": [],
+    "update_allowed_columns": [
+      "profiles.full_name",
+      "profiles.phone_number"
+    ]
+  },
+  "apply_signature": [
+    {
+      "proname": "apply_as_driver",
+      "arguments": "",
+      "result": "verification_status",
+      "language": "plpgsql",
+      "prokind": "f",
+      "provolatile": "v",
+      "proisstrict": false,
+      "proparallel": "u"
+    }
+  ]
+}

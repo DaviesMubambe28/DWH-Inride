@@ -1,5 +1,7 @@
 # Supabase read-only inspection — 2 November 2026
 
+Follow-up: [DEVELOPMENT_SUPABASE_PHASE.md](DEVELOPMENT_SUPABASE_PHASE.md) records the complete pending-migration comparison and the TCP/backup blocker. Hosted state remains unchanged.
+
 **Management read access: PASS.** Configured project: `vhckkmzyabbsbgjuhjmq`, ACTIVE_HEALTHY, eu-west-1, PostgreSQL 17.11. Inspected source: `dec17f8148a5d2ebecdecebf2f242cdd63841f86`. Credentials were read only by the normal authenticated requests and were not printed or persisted in evidence.
 
 **Environment classification:** the owner explicitly confirmed this project is development-only and that no production service exists yet. Only one project is visible to this token and the branch inventory is empty. It is therefore an owner-confirmed non-production target, **not** a verified separate staging/production pair. A separate production environment must be established before public release. No hosted changes were made during this inspection.

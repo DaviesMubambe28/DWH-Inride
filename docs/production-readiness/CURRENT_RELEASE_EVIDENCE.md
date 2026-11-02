@@ -1,3 +1,29 @@
+# Development Supabase phase — 2 November 2026
+
+Current engineering commit: `debebd7` (based on preserved `bbc181a`). Target `vhckkmzyabbsbgjuhjmq` is owner-confirmed development-only. The owner has authorized reviewed non-production backup/migration/function work. **No hosted changes were made because the required recoverable backup is blocked.**
+
+| Gate | Status | Verified result |
+|---|---|---|
+| Management/HTTP/Mapbox dependencies | PASS | Existing management binding works; effective unrestricted HTTP policy; real Mapbox origin POM 200 and Android dependency resolution/compilation succeed |
+| Development backup | BLOCKED | Provider lists no backups; PITR off. TCP grants empty and advertised TCP proxy refuses connection before CONNECT response. No recoverable hosted database backup created |
+| Eleven pending migrations compared | PASS | New objects/alter preconditions checked. Hardening body, security attributes, all column/table grants and execution restrictions already match. Other replacement bodies match recorded baseline; substantive pending work remains |
+| Migration reconciliation/application | BLOCKED | Backup gate prevents history repair or SQL deployment; 12 recorded versions remain unchanged |
+| Function source inspection | PASS | Existing request-trip source exported outside Git; lacks local pilot precheck, so update is required after backup. MAPBOX_SERVER_TOKEN preserved |
+| Three worker/function deployments and hosted journeys | BLOCKED | No deployment/test identities/data mutations before backup; synthetic rider/approval, trip authorization, acceptance race and fare checks not run hosted |
+| Android shared core | PASS | Compiled; 34 tests, 0 failures/errors/skips; lint 0 errors, 37 warnings. Fixed notification permission declaration and geographically invalid test fixtures; added outside-area denial coverage |
+| Signed/minified passenger and rider candidates | BLOCKED | Both Firebase JSON files and existing signing inputs absent; no replacement keys or APKs generated |
+| Real FCM/monitoring | BLOCKED | Hosted FCM_SERVICE_ACCOUNT_JSON, OPERATIONS_WORKER_TOKEN and SENTRY_DSN still missing; no delivery/alert claim |
+| Auth email/callback journeys | BLOCKED | localhost Site URL, empty redirects, no custom SMTP; Android confirmation/reset deep link not implemented. Password sign-in requires no redirect. Confirmation remains disabled pending verified email delivery |
+| Full-service recovery | BLOCKED | Prior local database-only restore carried forward; hosted export and isolated Auth/Storage/functions/config recovery unverified |
+| Operator/legal/support/device approvals | BLOCKED | Actual physical-device, operator/safety, support coverage, insurance/licensing and privacy/retention evidence remain outstanding |
+| Production/public bookings/APK publication | BLOCKED | Release not approved; no production resources or public publication enabled |
+
+See [DEVELOPMENT_SUPABASE_PHASE.md](DEVELOPMENT_SUPABASE_PHASE.md) and `evidence/development-supabase-phase/` for exact reconciliation, Auth/secret handoff and backup limitations. **Single next action:** enable development TCP session access to `aws-0-eu-west-1.pooler.supabase.com:5432` and activate its TCP proxy through supported environment settings/admin support. No HTTP draft edit was made. Attempt temporary CLI login before requesting a database password. After this gate, proceed with verified backup and authorized hosted work, then FCM configuration first, one service at a time.
+
+Older sections below are historical observations and do not override these current results. Previously passing, unaffected SQL/Edge/recovery/web suites were not repeated.
+
+---
+
 # Current Supabase inspection — 2 November 2026
 
 **PASS:** management read access with the configured token and project URL. **Owner-confirmed development-only target:** `vhckkmzyabbsbgjuhjmq`; no production service exists yet. There is only one visible project and no branches, so a separate staging/production pair is not established.
