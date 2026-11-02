@@ -1,6 +1,6 @@
 # Windows backup and isolated database restore
 
-Prepared from `533a2a5` for **development-only** project `vhckkmzyabbsbgjuhjmq`. This is an operator procedure, not evidence that a backup/restore has run. All three PowerShell blocks passed syntax parsing with official checksum-verified PowerShell 7.5.4 on Linux. The revised inventory SQL ran successfully through the hosted read-only Management API, with numeric counts and security catalog coverage; this does not verify native Windows permissions, TLS, tool execution or restore. Hosted migrations remain blocked until the resulting backup has passed an isolated restore review. Do not upload the archive, role export, inventories, document bytes, password or certificate private keys to Git or chat.
+Prepared from `533a2a5` for **development-only** project `vhckkmzyabbsbgjuhjmq`. This is an operator procedure, not evidence that a backup/restore has run. All four PowerShell blocks passed syntax parsing with official checksum-verified PowerShell 7.5.4 on Linux. The revised inventory SQL ran successfully through the hosted read-only Management API, with numeric counts and security catalog coverage; this does not verify native Windows permissions, TLS, tool execution or restore. Hosted migrations remain blocked until the resulting backup has passed an isolated restore review. Do not upload the archive, role export, inventories, document bytes, password or certificate private keys to Git or chat.
 
 ## Why the cloud route cannot be enabled here
 
@@ -36,6 +36,27 @@ Download the server root certificate from this project's **Database settings**, 
 Choose a **BitLocker-encrypted NTFS folder outside every checkout and cloud-synced public folder**. Limit access to the operator and approved recovery custodians; retain the encrypted volume recovery key separately. The commands restrict the new bundle to the current Windows identity, but do not enable or attest BitLocker. Do not use a PowerShell transcript/screen recording during password entry. The native tools' `--password` option prompts securely without placing the password in PowerShell variables, command arguments or files. Several prompts are intentional.
 
 Pause all development test clients and operator schema/data changes during capture and comparison. Do not enable bookings or schedules. The database archive uses its own consistent snapshot; the before/after inventories require a quiet source. Inventory drift means the comparison must be repeated after quiescing, not ignored.
+
+## Step 1 — check installed programs
+
+On Windows, click **Start**, type **PowerShell**, and open **PowerShell 7** (not Command Prompt). If only Windows PowerShell is installed, open it for this inspection and report its version; the actual backup requires PowerShell 7. Administrator mode is not required for these checks. This block does not connect to Supabase or ask for a password:
+
+```powershell
+$PSVersionTable.PSVersion.ToString()
+foreach ($BackupTool in @('psql', 'pg_dump', 'pg_dumpall', 'pg_restore', 'docker')) {
+    $BackupCommand = Get-Command $BackupTool -CommandType Application -ErrorAction SilentlyContinue
+    if ($null -eq $BackupCommand) {
+        Write-Output "MISSING: $BackupTool"
+    } else {
+        & $BackupTool --version
+    }
+}
+if (Get-Command docker -CommandType Application -ErrorAction SilentlyContinue) {
+    docker info --format '{{.OSType}}'
+}
+```
+
+Expected: PowerShell 7, all four PostgreSQL clients reporting 17.x, Docker available, and its server type `linux`. An unavailable Docker server or a missing command is a prerequisite failure, not a backup failure. Share only these program/version results and errors. **Wait for review before the capture step; no password or connection string is needed at this stage.** Existing cloud-side syntax and synthetic restore tests do not substitute for these Windows results.
 
 ## Capture the whole database and roles
 

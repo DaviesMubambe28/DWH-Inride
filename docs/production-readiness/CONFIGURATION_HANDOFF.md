@@ -1,3 +1,5 @@
+> **Current remediation handoff (2 November 2026):** [REMEDIATION_HANDOFF_2026-11-02.md](REMEDIATION_HANDOFF_2026-11-02.md) records exact still-missing inputs and human evidence. Mobile password recovery now uses numeric recovery-code entry in a separate memory-only Auth client. Before actual email/device testing, configure the intended development project's Reset Password email template to include `{{ .Token }}` and verify mail delivery. No Android redirect URI is invented; do not enable confirmation until email delivery works. No hosted settings were changed.
+
 # Configuration handoff — release operations
 
 Current development phase: see [DEVELOPMENT_SUPABASE_PHASE.md](DEVELOPMENT_SUPABASE_PHASE.md). Project `vhckkmzyabbsbgjuhjmq` is owner-confirmed development-only. Management/HTTP/Mapbox access work. The documented TCP route permits VPN/private IP destinations only and cannot reach the public project pooler. Use WINDOWS_SUPABASE_BACKUP.md for the local Windows whole-database backup and isolated restore; no public-TCP UI control is documented. Preserve MAPBOX_SERVER_TOKEN. No hosted migrations/functions have changed.

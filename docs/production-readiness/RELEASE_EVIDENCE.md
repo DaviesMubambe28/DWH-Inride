@@ -1,3 +1,9 @@
+# Current remediation evidence — 2 November 2026 (CAT)
+
+**4/10 — Not ready.** Local engineering through `44c60ba`: 26-migration/218-assertion isolated replay, 44 Android unit tests, rebuilt/verified development APKs, local trip/recovery protocol checks and landing CI. Hosted fixes remain undeployed; backup, signed release, real phones/email/FCM/monitoring, full-service recovery and operator/legal/retention/support approval remain blocked. No push, deployment, external email or publication. Current artifacts have not been installed; previous emulator observations apply only to older hashes. See CURRENT_RELEASE_EVIDENCE.md and LAUNCH_READINESS_AUDIT_2026-11-02.md under docs/production-readiness, plus REMEDIATION_HANDOFF_2026-11-02.md for exact actions. All entries below are historical and do not override the current record.
+
+---
+
 # Release evidence
 
 Updated: 2026-10-26

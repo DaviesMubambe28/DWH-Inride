@@ -1,12 +1,23 @@
-# Independent launch audit — 2 November 2026 (CAT)
+# Remediation checkpoint — 2 November 2026 (CAT)
 
-**Public-launch rating: 3/10. Verdict: Not ready.** Current saved engineering through `227df3e`; Android development artifacts from `be7a1bb` still match current Android inputs. See [LAUNCH_READINESS_AUDIT_2026-11-02.md](LAUNCH_READINESS_AUDIT_2026-11-02.md) for every check's Verified/Partially verified/Failed/Not verified status, exact evidence, user impact and next action.
+**4/10 — Not ready for public launch.** Engineering saved locally through `44c60ba`, starting from clean `de90f56`; subsequent commits contain only documentation/evidence. No hosted deployment, production mutation, external message/email, push, publication or booking enablement occurred. [Full current audit](LAUNCH_READINESS_AUDIT_2026-11-02.md) and [exact external handoff](REMEDIATION_HANDOFF_2026-11-02.md). Prior sections below are historical.
 
-Current evidence includes actual local Auth/API/live-Mapbox trip flow, real local Chromium admin/role checks, two installed development APKs on an API35 software emulator, and 68 affected SQL assertions. System UI ANR prevented reliable welcome-screen observation; no physical phone or full hosted journey is verified. Development APKs are separately labelled/debug-signed with push disabled; no signed/minified release candidate exists.
+| Gate | Result | Evidence and limit |
+|---|---|---|
+| Local safety/auth fixes | PASS locally | Current approved-rider requirement at PIN/start, rider signup boundary, guarded memory-only recovery client, truthful email copy and duplicate-action handling. Not deployed |
+| SQL/migration verification | PASS locally | All 26 migrations and 218 assertions on a new isolated synthetic PostgreSQL database; affected existing-service suites 74 assertions. Not actual platform/hosted restore |
+| Android tests/build/lint | PASS development only | 44 tests, no failures/errors/skips; both current APKs built and signature/16KiB packaging/known-secret checks pass. Core lint 0 errors/37 warnings; apps 0 errors/4 warnings each |
+| Development artifacts | PASS static verification | `0.1.0-development-no-push`, code1, `.development` IDs, debug signer preserved, push unavailable. [Hashes and input provenance](evidence/remediation-20261102/android-artifacts.json). Current APK install/phone/upgrade NOT VERIFIED; old emulator ANR result is historical |
+| Actual local service trip | PASS local API scope | Current handler + real Auth/PostgREST + live Mapbox; booking/one race winner/arrival/PIN/start/completion/cash, cross-user/fare/revocation/duplicates verified. Original paused state restored; fixtures removed |
+| Local recovery protocol | PASS local API scope | Wrong and replayed generated OTP rejected; new password succeeds, old fails, previous refresh revoked. No mail dispatched. Existing access JWT lifetime still applies |
+| Landing/CI definitions | PASS local, GitHub run unverified | Seven named availability tests and actionlint pass; landing added to quality workflow; both public downloads/admin URL remain null |
+| Hosted backend safety/deployment | FAIL/BLOCKED | 12 records vs 26 local files; 14 unrecorded versions, legacy cash/PIN/start behavior, only request-trip v2; new workers absent. No blind migration repair |
+| Actual source backup/full recovery | BLOCKED | No provider backup/PITR, supported cloud public TCP unavailable, no source dump or isolated source restore. Four Windows blocks syntax-pass; not Windows execution or backup proof |
+| Signed/minified release candidates | BLOCKED | Existing signing identity/inputs and both Firebase files unavailable. No replacement key generated, no weakened release guards |
+| Email, actual FCM/Sentry receipt, hosted/phone journey | BLOCKED | SMTP/template/URLs, FCM worker secret, operations token, DSN and real test devices/evidence missing; no simulated substitutes |
+| Operator/legal/insurance, privacy/retention, support/on-call | BLOCKED separately | No accountable approvals or actual drills supplied; code defaults/synthetic attestations are insufficient |
 
-Two real backend bugs were reproduced and fixed only locally: cash acknowledgement and wrong-four-digit-PIN counter rollback. Hosted definitions still match the old faulty versions. Hosted state remains 12 recorded migrations against 25 local files (13 unrecorded); only request-trip v2 is deployed, with new pilot/notification/retention controls absent. No hosted backup is available/verified. Monitoring/FCM, real email recovery, existing release signing, production separation and operator/legal/insurance/support/retention approvals remain open.
-
-No hosted deployment, Git push, public APK publication, real booking enablement or production-data mutation was performed in the audit. Public download/admin URL entries remain null. Earlier sections are historical and do not override this assessment. Sanitized current receipts: `evidence/launch-audit-20261102/`.
+Next human action: open **PowerShell 7 on Windows** and run only **Step 1 — check installed programs** in [WINDOWS_SUPABASE_BACKUP.md](WINDOWS_SUPABASE_BACKUP.md); share versions/errors, no credentials. The handoff lists all remaining inputs and service/phone/recovery/approval steps. Nine-out-of-ten requires those real outcomes, not more local checklist passes.
 
 ---
 

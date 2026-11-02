@@ -1,0 +1,21 @@
+
+> build
+> node --test --test-isolation=none tests/*.test.mjs && node --check dist/script.js && node scripts/verify-releases.mjs
+
+✔ direct downloads reject unsafe links, debug APKs, store redirects and missing metadata (1.333932ms)
+✔ Passenger and Rider releases cannot be interchanged (0.170387ms)
+✔ admin links reject unsafe schemes and embedded credentials (0.129525ms)
+✔ production configuration fails closed (0.160131ms)
+✔ unavailable releases remain honest without JavaScript (0.234984ms)
+✔ all navigation anchors and local production assets exist (0.385181ms)
+✔ Android requirement is grounded in both app configurations (0.297099ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 15.886763
+passenger: Coming soon (no APK configured)
+rider: Coming soon (no APK configured)
