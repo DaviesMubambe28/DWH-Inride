@@ -1,3 +1,26 @@
+# TCP capability and Windows backup fallback — 2 November 2026 (CAT)
+
+Continuation from preserved `533a2a5`. **Release and hosted migrations remain BLOCKED.** No hosted writes, network configuration changes, environment publication or production/APK publication were performed.
+
+| Gate | Status | Current evidence |
+|---|---|---|
+| TCP capability diagnosis | PASS | Detailed runtime reference requires VPN plus a TCP grant and private IPv4 destinations only. This public pooler is ineligible. VPN false, grants empty; unchanged proxy probe not repeated |
+| Public TCP activation | BLOCKED | No supported public-TCP activation tool or documented UI setting/click path. Previous suggestion to add a pooler TCP grant was incorrect and is superseded |
+| Supabase endpoint identity | PASS | Management API reconfirmed actual host, database, username and transaction port 6543. Official docs establish session port 5432; operator must cross-check project Connect panel. PostgreSQL 17.11 and 12 migration records confirmed |
+| Native PostgreSQL TLS/login | BLOCKED | No eligible cloud transport. Windows procedure requires certificate validation and identity check before export; no successful native connection is claimed |
+| Windows whole-database backup/restore procedure | PREPARED | Secure native password prompts, verify-full TLS, schema+data archive, roles, private inventories/checksums and isolated restore/ownership/RLS checks documented. PowerShell 7 syntax PASS; actual Windows capture/restore NOT RUN |
+| Inventory SQL | PASS | New query validated via read-only hosted Management endpoint; required catalog and table keys present. This does not verify native Windows role permissions or a backup |
+| Hosted backup/migrations/functions/journeys | BLOCKED | No verified recoverable archive, so no history repair, SQL/Edge deployment or synthetic journey writes |
+| Android core release variant | PASS | assembleRelease and lintRelease succeed: shared AAR, zero lint errors, 37 warnings. Hash recorded in evidence; not an application APK or minification/signing result |
+| Passenger/rider release candidates | BLOCKED | Real Firebase files and established signing identity inputs still required; no replacement keys generated |
+| Live FCM/monitoring/full-service/device/operator approvals | BLOCKED | Prior limitations remain; no simulated delivery/recovery/physical or legal/support approval substituted |
+
+Use [WINDOWS_SUPABASE_BACKUP.md](WINDOWS_SUPABASE_BACKUP.md). It corrects the previous TCP-grant recommendation, provides verified connection fields and the exact local capture/isolated-restore procedure, and distinguishes full database schema/data from Storage bytes/platform secrets/full-service recovery. Start by cross-checking the project's **Connect → Session pooler → View parameters** and obtaining its trusted CA from Database settings. Enter the existing database password only at the native tools' masked prompts. No password needs to be sent in chat or stored in Git.
+
+Current metadata: `evidence/tcp-windows-fallback/verification.json`. Earlier sections are historical and do not override this correction. Existing passed Android debug/SQL/Edge/web/recovery suites were not repeated.
+
+---
+
 # Development Supabase phase — 2 November 2026
 
 Current engineering commit: `debebd7` (based on preserved `bbc181a`). Target `vhckkmzyabbsbgjuhjmq` is owner-confirmed development-only. The owner has authorized reviewed non-production backup/migration/function work. **No hosted changes were made because the required recoverable backup is blocked.**

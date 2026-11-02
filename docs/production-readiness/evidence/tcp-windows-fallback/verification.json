@@ -1,0 +1,50 @@
+{
+  "checked_at": "2026-11-02T09:12:34.118402+02:00",
+  "source_commit": "533a2a54cd51446589f86da70b6155adfaed3b65",
+  "project_ref": "vhckkmzyabbsbgjuhjmq",
+  "connection_metadata": {
+    "host": "aws-0-eu-west-1.pooler.supabase.com",
+    "database": "postgres",
+    "username": "postgres.vhckkmzyabbsbgjuhjmq",
+    "api_advertised_port": 6543,
+    "api_advertised_mode": "transaction",
+    "documented_session_port": 5432,
+    "server_version": "17.11",
+    "recorded_migrations": 12,
+    "dns_classification": "public"
+  },
+  "cloud_tcp": {
+    "status": "BLOCKED",
+    "vpn_configured": false,
+    "tcp_domains": [],
+    "documented_route": "VPN plus domain grant; private IPv4 ranges only",
+    "public_tcp_tool_or_ui_path_documented": false,
+    "unchanged_tcp_probe_repeated": false,
+    "native_postgres_tls_authentication": "UNTESTED; no eligible supported route",
+    "http_rules_changed": false,
+    "configuration_published": false
+  },
+  "windows_backup": {
+    "status": "PREPARED_NOT_EXECUTED",
+    "inventory_sql": "PASS: revised read-only hosted query; numeric table counts and schema/column/function ownership/ACL/RLS/policy catalogs verified without printing values",
+    "native_windows_permissions_and_tls": "UNTESTED",
+    "archive_and_isolated_restore": "BLOCKED until operator execution",
+    "scope": "Whole database schema/data attempt and role definitions excluding database login passwords; not Storage bytes/platform keys/settings/full-service recovery",
+    "powershell_syntax": "PASS: three blocks parsed with checksum-verified official PowerShell 7.5.4 on Linux; not Windows execution"
+  },
+  "android_core_release": {
+    "status": "PASS",
+    "command": "bash gradlew :core-ui:assembleRelease :core-ui:lintRelease --console=plain",
+    "artifact": "core-ui/build/outputs/aar/core-ui-release.aar",
+    "bytes": 771257,
+    "sha256": "00d7d7de962929de015d066c1afc8a2f1a38e64d21d4e3a2b54690b2189c1ab3",
+    "lint": {
+      "Error": 0,
+      "Fatal": 0,
+      "Warning": 37
+    },
+    "scope": "Shared library AAR only; not signed/minified application candidates"
+  },
+  "hosted_writes_performed": false,
+  "production_and_apk_publication_performed": false
+}

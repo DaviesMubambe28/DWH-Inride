@@ -1,5 +1,7 @@
 # Development Supabase reconciliation — 2 November 2026
 
+**Network guidance corrected after reading the detailed VPN/TCP reference:** the documented TCP route supports VPN/private destinations only; this pooler's public addresses are ineligible. Merely adding a TCP domain grant will not unblock it. No public-TCP UI control/click path is documented in the available product documentation. Use [WINDOWS_SUPABASE_BACKUP.md](WINDOWS_SUPABASE_BACKUP.md) for the verified connection details and local backup/isolated-restore procedure. The previous TCP activation recommendation below is superseded.
+
 Target: `vhckkmzyabbsbgjuhjmq`, explicitly confirmed development-only by the owner, with no production service yet. Inspection started at `bbc181a0e1f8e22156141b39279cd2c8e20f7ca8`. The owner authorized backup, reviewed migration reconciliation, function deployment and synthetic hosted tests. **No hosted changes were made:** the required recoverable backup is blocked. No migration history was repaired, login role created, password reset, test account created, function deployed, secret replaced or schedule enabled.
 
 ## Backup gate: BLOCKED
@@ -75,6 +77,6 @@ Both real Firebase client files and all four DHWINRIDE_RELEASE_* signing inputs 
 
 ## Single next action
 
-Enable development TCP access to **aws-0-eu-west-1.pooler.supabase.com:5432** through the environment's supported TCP network configuration, then publish/reconnect that environment. The effective policy must include this domain in `tcp_network_access.domains`, and its `tcp_connect_proxy` must accept connections. The available draft tool exposes HTTP allowed_domains, not TCP grants/proxy activation, so no ineffective HTTP-only edit was saved. If the product editor offers no TCP setting, ask the environment administrator/support to enable this exact destination and TCP proxy; do not add another HTTP wildcard. After activation, verify the policy/proxy once, then attempt the temporary login and verified backup before any migration.
+Use the documented local Windows fallback: cross-check this project's **Connect → Session pooler → View parameters**, obtain its trusted CA through Database settings, then follow [WINDOWS_SUPABASE_BACKUP.md](WINDOWS_SUPABASE_BACKUP.md). The native tools prompt securely for the existing database password. Verify the whole schema-and-data archive by restoring it into an isolated local database; do not send the password or actual backup in chat/Git. Public TCP cannot be activated through the documented cloud route. No unchanged proxy probe, HTTP allowlist edit, environment publish or hosted migration is required for the fallback.
 
 Operator/safety/support coverage, physical-device journeys, insurance/licensing/privacy/retention approval, actual full-service recovery, candidate builds and live FCM/monitoring remain release blockers. Production deployment, public bookings and APK publication remain disabled pending explicit release approval.

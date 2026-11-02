@@ -1,5 +1,7 @@
 # Full-service recovery rehearsal
 
+For the current development project's unavailable public-TCP cloud route, use [WINDOWS_SUPABASE_BACKUP.md](WINDOWS_SUPABASE_BACKUP.md). It provides verified connection metadata, secure native password prompts, a whole-database schema/data archive and an isolated database-restore procedure. It is not a completed hosted backup or full-service recovery receipt. Its full restore includes Storage metadata; review the separate byte/metadata restoration plan before using the empty-target Storage API procedure below.
+
 Current evidence: **database-only recovery passed again for the new schema**: original ownership/ACLs, a synthetic marker and 23 migrations restored into a disposable local target; all 187 SQL assertions passed there. Existing cluster roles were reused. Auth HTTP/sessions, Storage bytes, functions/settings and cross-machine recovery remain untested. The earlier mechanics-only attempt is historical context. A synthetic marker and 19 migration records were restored to a disposable local database using `--no-owner --no-acl`. That did not prove role ownership/ACL restoration, Auth login, Storage bytes, functions, environment bindings, SMTP, alerts, or production recovery. No full-service restore is marked passed.
 
 ## Prepare the recovery package
