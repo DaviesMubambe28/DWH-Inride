@@ -1,5 +1,15 @@
 # Resume checkpoint — 2 November 2026 (CAT)
 
+## Master remediation continuation — 2 November 2026 (UTC)
+
+Current source is `945d149` on `feat/release-operations`. The fixed verdict remains **4.00/10 — Not ready** because critical external gates are still open; local software evidence cannot raise those domains above level 2.
+
+Fresh verification on the current source: Mapbox origin HTTP 200; confirmed development project `vhckkmzyabbsbgjuhjmq`; hosted inventory remains 12 of 26 migrations and only `request-trip`; Auth still uses localhost, auto-confirm and no custom SMTP. Local checks pass with 60 Android tests, both development builds and lint tasks, 218 SQL assertions, 18 Edge tests, 15 recovery/preflight tests, admin typecheck/lint/build/3 tests/4-view browser fixture, landing 10 build tests/5-view browser checks, and the actual local Auth/PostgREST/live-Mapbox trip plus race/PIN-lock rehearsal. The development APKs use the preserved debug certificate and contain no management token or service-role marker.
+
+New source fixes restore persisted passenger/rider sessions only after Auth initialization and role validation, reject cross-app roles, and provide working passenger/rider sign-out actions with explicit failure handling. A mutation of the role predicate caused both focused role tests to fail before the correct condition was restored. The admin package now declares its ES module format and no longer emits the Node reparsing warning.
+
+Current development artifact hashes and sanitized results are recorded in [`evidence/master-remediation-20261102/verification.json`](evidence/master-remediation-20261102/verification.json). These APKs are debuggable `0.1.0-development-no-push` builds, not release candidates and not approved downloads. No hosted migration/function deployment, production mutation, booking enablement, public deployment, APK publication, email/FCM/monitoring delivery or phone test occurred.
+
 **Blocked below 9/10: 4.00/10 — Not ready.** Fixed [rubric/action register](LAUNCH_REQUIREMENTS.md), [audit](LAUNCH_READINESS_AUDIT_2026-11-02.md), [external handoff](REMEDIATION_HANDOFF_2026-11-02.md), [prepared deployment plan](DEVELOPMENT_DEPLOYMENT_PLAN.md). Preserve all work. The user subsequently authorized pushing all saved updates to GitHub on `feat/release-operations`; push verification is recorded in the chat/Git remote state. This authorizes no merge, deployment, APK publication, booking enablement, production mutation or external messages. No AGENTS.md found; repository instructions inspected.
 
 ## Saved work and evidence
