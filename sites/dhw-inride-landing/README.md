@@ -1,123 +1,51 @@
 # DHW-inRide landing page
 
-Original responsive landing page for the Chongwe motorbike service. Inspired by
-the reference's spacious hierarchy, not its assets, branding or claims. Static
-HTML/CSS/ES modules; no new dependencies or app-store redirects.
+Static HTML/CSS/ES modules for Chongwe motorbike transport; navy/orange/white, original design, no runtime dependencies or remote fonts. Existing working content/release safeguards preserved. Current page: `dist/index.html`; central public metadata: `dist/release-config.mjs`.
 
-## Build and preview
+## Build and local preview
 
-Use Node 22+ and run `npm run build`. `dist/` is the complete production artifact;
-there is no bundle step or dependency installation. The build runs the tests,
-checks JavaScript syntax, and verifies every configured APK against its download
-and Android metadata. Null release entries are explicit Coming soon states.
-Serve `dist/` over HTTP/HTTPS (ES modules need a server rather than `file://`).
-In the managed environment use `sites-preview start <absolute-site-directory>`.
+Use Node24.19.0 (the CI version). No npm dependency installation is needed for the site:
 
-## Verified content and imagery
-
-- Both Android modules currently declare minSdk 26 (Android 8.0), version 0.1.0.
-  These are source values, not evidence of a released APK.
-- Booking/account copy follows LaunchAccessFlow and PassengerApp. Rider joining
-  reflects admin-led pilot onboarding in PILOT_STATUS and the admin dashboard.
-- Support contacts come from docs/PILOT_STATUS.md. No 24/7 or response-time claim.
-- Footer policy/terms links point to the actual repository documents and explicitly
-  label them drafts. Final approved hosted documents are still needed.
-- assets/chongwe-ride.webp is an original AI-generated brand illustration created
-  with the built-in ImageGen tool, not a photograph of actual operators. It is
-  labelled accordingly, optimized to WebP, and served locally. The prompt asked
-  for helmeted Zambian adults beside a navy/orange commuter motorcycle in a leafy
-  small-town setting, editorial illustration, no text or third-party branding.
-- No real app screenshots, installable web app or service worker were found. No
-  fake UI screenshots, iOS buttons, testimonials, ratings or pickup guarantees.
-
-## Enable direct APK downloads
-
-Development APKs now exist in the Android build outputs with separate
-`.development` package IDs and notifications disabled. They are not public release
-artifacts. No published GitHub release assets were available at inspection. Both
-public release entries in `dist/release-config.mjs` remain `null`. The app cards show
-Coming soon without invented version/size/date values. Hero links take visitors
-to their corresponding availability card; they never simulate a download.
-
-Build signed releases using the existing signing identity and documented process
-in `.github/workflows/pilot-candidate.yml` and `docs/PILOT_RUNBOOK.md`. The existing
-release signing inputs and real Firebase files are still required. Runtime public
-Mapbox/Supabase bindings support development builds; they do not establish signed
-release readiness. Required:
-
-- DHWINRIDE_RELEASE_KEYSTORE_PATH pointing to the established keystore
-- DHWINRIDE_RELEASE_STORE_PASSWORD, DHWINRIDE_RELEASE_KEY_ALIAS,
-  DHWINRIDE_RELEASE_KEY_PASSWORD
-- Each app's real ignored google-services.json
-- MAPBOX_PUBLIC_TOKEN, SUPABASE_URL and the permitted public Supabase key
-  (never a service-role key in an app)
-- Optional MAPBOX_DOWNLOADS_TOKEN with Downloads:Read only if the Maven origin
-  requires it; current dependency resolution succeeded without this token
-
-Do not generate replacement signing identities for existing installs. Do not
-publish a pilot candidate publicly until the owner approves its release. The
-workflow uploads a temporary CI artifact; that is not a stable public download.
-
-After signed release verification, upload each APK to the approved existing
-public HTTPS infrastructure, e.g. immutable versioned GitHub Release assets.
-Use a URL ending in `.apk`, not a release HTML page or authenticated CI artifact.
-Record actual values for each app:
-
-```js
-{
-  kind: "apk",
-  url: /* actual public HTTPS APK URL */,
-  version: /* APK versionName */,
-  bytes: /* exact file bytes */,
-  android: /* Android version matching APK minSdk */,
-  releaseDate: /* confirmed release date YYYY-MM-DD */,
-  packageName: /* zm.co.dhwinride.passenger OR zm.co.dhwinride.rider */,
-  sha256: /* file SHA-256 hex */,
-  certificateSha256: /* established signing certificate SHA-256 hex */
-}
+```sh
+npm run build
+npm run preview
 ```
 
-With a configured release the production build makes a real HTTPS download,
-rejects HTML and wrong file signatures/sizes/checksums, and runs `aapt dump badging`
-and `apksigner verify --verbose --print-certs` to check package, version, minimum
-Android, debuggable status and signing identity. It fails if tools or downloads
-are unavailable. Set AAPT_PATH/APKSIGNER_PATH if build tools are not on PATH.
-This gate is implemented but has not executed against a real APK because none
-is supplied. Never treat passing null-state checks as release verification.
+Preview binds only `http://127.0.0.1:4173/`; set `LANDING_PREVIEW_PORT` if occupied. This is not public hosting. `dist/` is the complete deployable artifact; there is no bundle step. The build runs ten named tests, JS syntax and configured **real** APK download/package/signature checks. Null release entries pass only the pending-state checks. Serve over HTTP/HTTPS, not file://.
 
-`dist/_headers` supplies APK attachment/MIME/nosniff headers for static hosts that
-support this file. Configure equivalent headers at other hosts. Cross-origin
-HTML `download` attributes are advisory; the APK host must serve the file with
-appropriate headers. Confirm headers on the final public URL.
+## Design, research and imagery
 
-For each update: retain package and certificate, increment versionCode in the
-Android source, build/test, publish an immutable asset, refresh verified metadata,
-and rerun the build. No automatic updater is implemented. QR codes are deliberately
-absent until a real public mobile download page is confirmed; add one only then.
+- [UI_RESEARCH.md](docs/UI_RESEARCH.md): actual Yango Ndola/Bolt observations, official Android sources and the design contract.
+- [IMAGE_CREDITS.md](docs/IMAGE_CREDITS.md): Mary Milanzi's real helmeted-motorcyclist photograph from **Mbala, Zambia**, CC BY-SA4.0. Locally served 640/1280 variants; visible photographer/source/license/location credit. No DHW-inRide affiliation or Chongwe-photo claim. Previous artwork preserved, not requested by the page.
+- Visible Admin outside the mobile menu; clear separate passenger/rider paths; larger mobile text/focus/touch areas; consistent rounded controls and no decorative animation.
+- Current launch status, policy drafts and support information remain honest. No invented fares, testimonials, rider/customer counts, availability or safety guarantees. Support contacts follow docs/PILOT_STATUS.md; no contact was made.
 
-## Admin routing and deployment
+## Download configuration and future uploads
 
-Set `adminUrl` to the confirmed live admin root. Its existing root route renders
-Operations sign in when unauthenticated and loads operations after the profile
-role check. Navigation and footer share this value. If unset they point to the
-visible Operations access availability section; no /login path is fabricated.
+[APK_UPLOAD_GUIDE.md](docs/APK_UPLOAD_GUIDE.md) has exact release output paths, static destinations/versioned filenames, existing public GitHub Release asset option, metadata/hash/signature commands, Windows signer-JAR configuration, headers/cache rules, deployment verification and rollback.
 
-No auth, database or RPC code was changed. Existing backend RLS and admin RPC
-checks remain required; a visible link grants no permission. Real admin/non-admin
-login and direct-URL tests require a configured live backend and test accounts.
+Both production release entries remain `null`: disabled buttons/Coming soon with no fake version, size, date or hash. Hero actions lead to the corresponding availability cards. Actual development output APKs are `.development`, debug-signed, push-disabled and **not** suitable for public release. Do not copy them to downloads or substitute them into the manifest.
 
-The existing landing/admin hosting IDs still returned Sites project not found in
-this connected account. Publication and live URL/admin verification are blocked.
-Restore access to these exact projects or supply the correct hosting target and
-admin address. Do not silently create replacements or change audience.
+A configured valid release shows exact bytes/MiB, version, Android minimum, date and expandable SHA-256. Cross-origin links require attachment/binary headers at the final file host; HTML's download attribute alone is insufficient. The build fetches each actual HTTPS APK and verifies size/ZIP/hash/package/version/minSdk/non-debuggable/signing certificate. It fails on missing tools/headers/files or mismatches. `APKSIGNER_JAR` + JAVA_HOME supports invoking the SDK signer without a Windows .bat shell. Actual production APK/download/install is still unverified.
 
-## Verification for this redesign
+## Admin routing and hosting
 
-- Production static checks and seven tests pass.
-- Real Chrome: layouts inspected at 360, 768 and 1440 CSS-pixel frame widths; no
-  horizontal overflow. Mobile menu opens, Escape closes it and link navigation
-  collapses it. FAQ disclosures work and disabled download states are visible.
-- Desktop hero visually inspected; image and module assets load locally.
-- No page-origin console errors observed; browser-extension errors are unrelated.
-- Missing APKs prevent HTTP/package/signature checks. No real APK download URLs,
-  QR destinations or authorized admin login sessions can be verified yet.
+The owner explicitly confirmed the dashboard **has not been hosted**. Actual sign-in route is `/`, from `sites/dhw-inride-admin/app/page.tsx` → `AdminDashboard`; no `/login` exists. Both Admin entries read the single `adminUrl` manifest setting. Leave it null until the actual HTTPS root is deployed and verified: currently links open the honest availability explanation. No localhost/guessed public hostname is committed.
+
+A public link grants no role. Existing Auth/profile checks and backend RLS/RPC restrictions remain unchanged. Local browser checks navigated both configured links to the actual existing admin static export's root sign-in and refreshed it. That is **not** hosted admin/Auth/RLS verification.
+
+No landing/admin deployment target was configured or created. GitHub metadata shows a public repository, Pages false and no deployment records. `dist/_headers` works only on supporting hosts; equivalent headers must be configured elsewhere. No production deployment, APK publication, booking enablement or public release approval occurred.
+
+## Browser verification
+
+The isolated real Chromium suite lives in `tests/browser-ui.mjs`. Test-only tools are installed outside this website. With an existing test-tools directory containing playwright-core and @axe-core/playwright, Chromium and OpenSSL:
+
+```sh
+UI_TEST_TOOLS=/path/to/ui-tools CHROMIUM_PATH=/path/to/chromium \
+UI_TEST_ARTIFACTS=/tmp/inride-ui \
+ADMIN_EXPORT_DIR=/absolute/path/to/sites/dhw-inride-admin/out npm run test:browser
+```
+
+`ADMIN_EXPORT_DIR` is optional; without it no actual admin export navigation is certified. The suite starts only private loopback servers and isolated profiles; temporary fixture certificates/files are removed. A pinned ephemeral public key trusts only the local HTTPS fixture, not arbitrary certificates.
+
+Verified: 320/360/768/1024/1440 widths, no horizontal overflow, zero detected WCAG A/AA violations, zero landing console errors/warnings, keyboard skip/focus/menu/Escape, pending states, disclosure, refresh, no-JS320/1440, and both links to actual local admin sign-in/root refresh. Actual cross-origin HTTPS attachment transfers match a **synthetic non-APK fixture's** bytes/hash; this does not certify any release binary. No connected Android hardware, actual phone install/upgrade or deployed website was verified. Screenshots/results: docs/UI_VERIFICATION.md.

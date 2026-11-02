@@ -1,0 +1,105 @@
+{
+  "scope": "local browser/transport verification; no hosted deployment, release APK or phone install claim",
+  "layouts": [
+    {
+      "width": 320,
+      "overflow": false,
+      "axe_violations": 0,
+      "console_errors": 0,
+      "keyboard_and_reload": "PASS",
+      "downloads": "Both pending",
+      "admin": "Visible; actual hosting absent"
+    },
+    {
+      "width": 360,
+      "overflow": false,
+      "axe_violations": 0,
+      "console_errors": 0,
+      "keyboard_and_reload": "PASS",
+      "downloads": "Both pending",
+      "admin": "Visible; actual hosting absent"
+    },
+    {
+      "width": 768,
+      "overflow": false,
+      "axe_violations": 0,
+      "console_errors": 0,
+      "keyboard_and_reload": "PASS",
+      "downloads": "Both pending",
+      "admin": "Visible; actual hosting absent"
+    },
+    {
+      "width": 1024,
+      "overflow": false,
+      "axe_violations": 0,
+      "console_errors": 0,
+      "keyboard_and_reload": "PASS",
+      "downloads": "Both pending",
+      "admin": "Visible; actual hosting absent"
+    },
+    {
+      "width": 1440,
+      "overflow": false,
+      "axe_violations": 0,
+      "console_errors": 0,
+      "keyboard_and_reload": "PASS",
+      "downloads": "Both pending",
+      "admin": "Visible; actual hosting absent"
+    }
+  ],
+  "checks": [
+    "No-JS 320: honest pending states/navigation/no overflow",
+    "No-JS 1440: honest pending states/navigation/no overflow",
+    "Two actual cross-origin HTTPS attachment downloads: size/checksum match synthetic fixture; not APK validation",
+    "Both Admin links open actual local admin export root sign-in; direct refresh works; hosted origin remains unavailable"
+  ],
+  "static_checks": {
+    "named_tests": 10,
+    "failures": 0,
+    "skips": 0,
+    "javascript_syntax": "PASS",
+    "actionlint": "PASS",
+    "actual_configured_production_APK_checks": "NOT RUN: both entries null",
+    "portable_signer_jar": "PASS inspecting existing debug development APK only; Windows execution unverified"
+  },
+  "owner_confirmed_admin_hosting": "Not hosted; adminUrl remains null",
+  "actual_release_APKs": "Unavailable; existing development APK hashes rechecked and remain excluded",
+  "external_existing_legal_links": {
+    "privacy_policy_main": 200,
+    "terms_main": 200,
+    "approval": "Draft; not operator-approved"
+  },
+  "preview": {
+    "local": "http://127.0.0.1:4173/",
+    "html_modules_image": "PASS",
+    "hidden_and_traversal_and_missing_files": "404 as expected",
+    "public_deployment": false
+  },
+  "physical_installation": "NOT VERIFIED: no connected Android hardware",
+  "captured_at_utc": "2026-11-02T15:44:39.586466+00:00",
+  "source_base": "2c4e1574de2b1101900bcfb8786a433fca8ec28f",
+  "source_hashes": {
+    "dist/assets/dhw-inride-hero.jpg": "153d16c266e15c998f3a17d6261c83a8da58bf42bcf7f9be8cdbab574637ae1d",
+    "dist/assets/mbala-motorcycle-640.jpg": "83c8a1c040f4fc4e0821aa8f34951736316ad324e2d5a24b3d9423a92c61a039",
+    "dist/assets/mbala-motorcycle.jpg": "f3db6a7886053ac9af38dbf0611d3ead0a612801e47df32d0416d58621a9eb88",
+    "dist/index.html": "4d73b4b6bad26b15f939a830a81739e0b360f39da7f9e23f87a7c656b22bccb1",
+    "dist/release-config.mjs": "aa59169ad46002a3db29e44723b6091b1226214ba12e3829b47d670755abace0",
+    "dist/release-validation.mjs": "85960567e24f4579093df54b87a2e5199b38545106efc4328e2c41c6bd2dbfa1",
+    "dist/script.js": "225185d22a14ca7a6094d4ebedc1e296159780885ebfaeb20d37c4fee3901021",
+    "dist/styles.css": "c0efba436d8a3c6694be409f700add533320c2d94e6c939c64c13068c2c7fa0f"
+  },
+  "source_commit": "439765ae703d7bd72a4ef664a6fc9ddb1be0ddee",
+  "slow_network_emulation": {
+    "scope": "desktop Chromium emulation, not actual mobile/network/device evidence",
+    "viewport": 360,
+    "latency_ms": 400,
+    "download_KiB_per_second": 50,
+    "cache_disabled": true,
+    "DOMContentLoaded_and_heading_visible_ms": 1989,
+    "network_idle_ms": 7288,
+    "primary_actions_visible": true,
+    "pending_downloads": 2,
+    "overflow": false
+  },
+  "git_boundary": "Feature-branch synchronization authorized by earlier user request; no merge, public site deployment, APK publication or booking enablement."
+}

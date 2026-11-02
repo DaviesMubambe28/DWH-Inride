@@ -1,3 +1,11 @@
+# Landing UI follow-up — 2 November 2026
+
+Source `439765a` updates the landing UI, attributed real Zambia photography, visible mobile Admin, future download/checksum/installation handling, local preview and browser CI checks. Ten named build tests pass; real Chromium checks at320/360/768/1024/1440 have zero detected axe violations/landing console errors/overflow. Both configured Admin links reached the actual local exported root sign-in and refreshed. Private cross-origin HTTPS attachment fixture passed size/hash checks; **not a production APK**. Owner confirms admin is unhosted; `adminUrl` and both public releases remain null. No actual public download/phone install, public deployment, APK publication or booking enablement. GitHub feature-branch synchronization is separately authorized. Android inputs/artifact hashes remain unchanged; previous backend/release/operational gates and **4.00/10 — Not ready** persist.
+
+Screenshots, exact tested scope, research and future upload guide: [landing UI verification](../../sites/dhw-inride-landing/docs/UI_VERIFICATION.md). The source hashes in its browser receipt correspond to this website follow-up; earlier entries below retain their original scopes.
+
+---
+
 # Current continuation checkpoint — 2 November 2026 (CAT)
 
 **Blocked below 9/10: 4.00/10 — Not ready.** Fixed [rubric/requirements](LAUNCH_REQUIREMENTS.md); [audit](LAUNCH_READINESS_AUDIT_2026-11-02.md); [resume checkpoint](LAUNCH_CHECKPOINT.md); [external handoff](REMEDIATION_HANDOFF_2026-11-02.md); [prepared deployment plan](DEVELOPMENT_DEPLOYMENT_PLAN.md). Began clean at `4cf13cb`; current source through `4aaef22`, subsequent changes documentation/evidence only. No push, hosted write/deploy, publication, real booking enablement or external messages.
