@@ -1,3 +1,24 @@
+# Current master-remediation evidence — 2 November 2026 (UTC)
+
+Current source is `945d14961bc029c5685f778ef2c94514087bbbea` on `feat/release-operations`; evidence documentation follows in later commits. The fixed rubric remains **4.00/10 — Not ready**. No local-only result closes the actual backup/full-service recovery, hosted migration/function, signed release, live delivery, physical-device, hosting or accountable approval gates.
+
+Fresh checks on the current source:
+
+- 60 Android unit tests pass with zero failures/errors/skips; core, passenger and rider lint pass; both development APKs build with the preserved debug signer `18847e…85c9`.
+- Passenger development APK: `passenger-app/build/outputs/apk/development/passenger-app-development.apk`, SHA-256 `9ae7d4064917f9fe49c39b7219e4bd6d115cc9aaf3aaffc0f38c25387f8af760`, 125856533 bytes.
+- Rider development APK: `rider-app/build/outputs/apk/development/rider-app-development.apk`, SHA-256 `f6dd20dfa3a9535e4549db382fed6e5a24ae2ac71c4758cddda394de3e0ec59d`, 125856529 bytes.
+- Both APKs are debuggable package-suffixed `0.1.0-development-no-push`, code 1, minimum SDK 26, target SDK 37. They contain the expected public bindings and no configured management token or service-role marker. They are not release candidates and have not been installed on physical phones.
+- New source behavior restores persisted sessions after Auth initialization, enforces passenger/rider role separation, and provides actual sign-out actions in both apps. Five session/sign-out tests and two role-boundary tests were added; inverting the role predicate made both role tests fail before restoration.
+- Admin typecheck, lint, production export, three unit tests and four-view fixture browser checks pass. The ES-module package declaration removes the previous Node reparsing warning.
+- Landing build has ten passing tests; five-view browser/axe/no-overflow checks pass. Passenger/rider downloads and public Admin remain intentionally unavailable.
+- Local SQL: 14 files / 218 assertions pass. Edge: 18 tests pass. Recovery/preflight: 15 tests pass. The real local Auth/PostgREST/current handler/live-Mapbox trip, cash acknowledgement, concurrency and PIN-lock rehearsal passes and cleans its fixtures.
+- Mapbox origin authentication returns HTTP 200. The configured Supabase URL matches confirmed development-only project `vhckkmzyabbsbgjuhjmq`; hosted state remains 12 of 26 migrations and only `request-trip`. Auth remains localhost/auto-confirm/no custom SMTP.
+- Root dependency audit has zero findings. Admin still has five moderate development-tool paths through legacy ESLint plugins and `minimatch 3.1.5`; npm's offered fix is an incompatible Next/ESLint downgrade. No high or critical finding remains.
+
+Sanitized machine-readable evidence and hashes: [`evidence/master-remediation-20261102/verification.json`](evidence/master-remediation-20261102/verification.json). No hosted write/deployment, booking enablement, public hosting, APK publication, email/FCM/monitoring delivery or real-phone check occurred.
+
+---
+
 # Landing UI follow-up — 2 November 2026
 
 Source `439765a` updates the landing UI, attributed real Zambia photography, visible mobile Admin, future download/checksum/installation handling, local preview and browser CI checks. Ten named build tests pass; real Chromium checks at320/360/768/1024/1440 have zero detected axe violations/landing console errors/overflow. Both configured Admin links reached the actual local exported root sign-in and refreshed. Private cross-origin HTTPS attachment fixture passed size/hash checks; **not a production APK**. Owner confirms admin is unhosted; `adminUrl` and both public releases remain null. No actual public download/phone install, public deployment, APK publication or booking enablement. The initial GitHub push was rejected before execution; following the user’s continuation instruction, all four UI commits were synchronized successfully to `feat/release-operations` through `78b8c41`. No merge or release action was taken. Android inputs/artifact hashes remain unchanged; previous backend/release/operational gates and **4.00/10 — Not ready** persist.
