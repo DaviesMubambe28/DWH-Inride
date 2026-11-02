@@ -1,6 +1,6 @@
 # Windows backup and isolated database restore
 
-Prepared from `533a2a5` for **development-only** project `vhckkmzyabbsbgjuhjmq`. This is an operator procedure, not evidence that a backup/restore has run. All four PowerShell blocks passed syntax parsing with official checksum-verified PowerShell 7.5.4 on Linux. The revised inventory SQL ran successfully through the hosted read-only Management API, with numeric counts and security catalog coverage; this does not verify native Windows permissions, TLS, tool execution or restore. Hosted migrations remain blocked until the resulting backup has passed an isolated restore review. Do not upload the archive, role export, inventories, document bytes, password or certificate private keys to Git or chat.
+Prepared from `533a2a5` for **development-only** project `vhckkmzyabbsbgjuhjmq`. This is an operator procedure, not evidence that a backup/restore has run. All five PowerShell blocks passed syntax parsing with official checksum-verified PowerShell 7.5.4 on Linux. The revised inventory SQL ran successfully through the hosted read-only Management API, with numeric counts and security catalog coverage; this does not verify native Windows permissions, TLS, tool execution or restore. Hosted migrations remain blocked until the resulting backup has passed an isolated restore review. Do not upload the archive, role export, inventories, document bytes, password or certificate private keys to Git or chat.
 
 ## Why the cloud route cannot be enabled here
 
@@ -27,7 +27,7 @@ Sources: [Supabase connections](https://supabase.com/docs/guides/database/connec
 
 ## Prepare the Windows machine
 
-Use PowerShell 7 and trusted PostgreSQL **17** client tools, preferably 17.11 or a newer 17.x patch. `psql`, `pg_dump`, `pg_dumpall` and `pg_restore` must be on PATH from the same installation. Download through the official PostgreSQL Windows distribution; keep installer signature verification enabled. Use Docker Desktop with Linux containers for the isolated restore below.
+Use PowerShell 7 and PostgreSQL **17** clients, provided either by a trusted native installation or the pinned Docker client mode below. Native `psql` is **not required** in Docker client mode. All four tools must come from the same reviewed image/installation. Use Docker Desktop with Linux containers for isolated restore. The Supabase CLI can use Docker, but its default schema dump alone does not satisfy whole-database/role/Auth/Storage-metadata recovery coverage.
 
 Open this project's Supabase dashboard, **Connect → Session pooler → View parameters**, and compare host/port/database/user with the table. If any differs, stop and report only those non-secret fields. Obtain the **existing database password** from your password manager. It is different from SUPABASE_ACCESS_TOKEN. Do not reset it just because it is not available in this cloud runtime.
 
@@ -56,7 +56,29 @@ if (Get-Command docker -CommandType Application -ErrorAction SilentlyContinue) {
 }
 ```
 
-Expected: PowerShell 7, all four PostgreSQL clients reporting 17.x, Docker available, and its server type `linux`. An unavailable Docker server or a missing command is a prerequisite failure, not a backup failure. Share only these program/version results and errors. **Wait for review before the capture step; no password or connection string is needed at this stage.** Existing cloud-side syntax and synthetic restore tests do not substitute for these Windows results.
+Expected: PowerShell 7 and Docker server type `linux`; choose either four native PostgreSQL 17.x tools or Docker client mode. Missing native `psql` is expected in Docker mode. An unavailable Docker server or a missing command is a prerequisite failure, not a backup failure. Share only these program/version results and errors. **Wait for review before the capture step; no password or connection string is needed at this stage.** Existing cloud-side syntax and synthetic restore tests do not substitute for these Windows results.
+
+## Docker client mode — native PostgreSQL installation optional
+
+Operator-reported current Windows facts: PowerShell 5.1.26100.9711 was used, PowerShell 7 is available via `pwsh`, Docker 29.8.2 and Supabase CLI 2.121.0 are installed, native `psql` is absent. These are reported program facts, not verified source TLS/backup/restore results.
+
+First launch `pwsh`, check `$PSVersionTable.PSVersion.ToString()` and `docker info --format '{{.OSType}}'`, and return only those two results/errors. **Wait for review before continuing.** Expected PowerShell ≥7 and Linux containers. The agent cannot operate your Windows computer.
+
+After that review, in the same fresh PowerShell 7 terminal at this repository root, load the provided helper and verify only client versions:
+
+```powershell
+. .\scripts\Use-DockerPostgres.ps1
+psql --version
+pg_dump --version
+pg_dumpall --version
+pg_restore --version
+```
+
+The helper uses the already-reviewed official `supabase/postgres` PostgreSQL 17.11 image pinned by digest `sha256:b15d862126dd2dac02da524696ccfde2dcce2ceaee0a58973b2727befe492706`. Docker may need to download this free image; no paid resource or hosted database change is involved. All four client version commands run with networking disabled and do not ask for a database password. This is **not** `supabase db dump` and does not silently accept default managed-schema exclusions.
+
+Then use the common capture/restore blocks below. The helper supplies session-only functions named `psql`, `pg_dump`, `pg_dumpall`, `pg_restore`; existing functions are not overwritten. Leave the helper loaded in this session. Common setup defines `$Bundle` and `$CaFile`; file arguments inside that bundle are mapped to `/backup/` for Docker, and the CA is mounted read-only. Source calls keep `PGSSLMODE=verify-full`; each `--password` native prompt is masked in an interactive Docker TTY. No password is passed through Docker arguments/environment, stored in the helper, or copied to Git. Do not pipe a password or run password steps in a transcript. Exit the PowerShell session to remove these functions; the user profile is unchanged.
+
+**Verification limits:** helper syntax/client execution can be checked on Linux; Windows path mounting, interactive password/TLS, actual source dump and restore still require your Windows results. A Docker/source permission error is a blocker; do not fall back to schema-only exports or weaken TLS. The full database archive still excludes physical Storage bytes and platform secrets/settings, and role passwords are intentionally omitted; use the separate full-service recovery procedure.
 
 ## Capture the whole database and roles
 
@@ -70,7 +92,7 @@ function Assert-Native([string] $Step) {
     if ($LASTEXITCODE -ne 0) { throw "$Step failed; backup is NOT verified." }
 }
 foreach ($Tool in @('psql', 'pg_dump', 'pg_dumpall', 'pg_restore')) {
-    Get-Command $Tool -CommandType Application -ErrorAction Stop | Out-Null
+    Get-Command $Tool -CommandType Application,Function -ErrorAction Stop | Out-Null
     $Version = & $Tool --version
     Assert-Native "$Tool version check"
     if ($Version -notmatch '\b17\.') { throw 'Use PostgreSQL 17 tools.' }
