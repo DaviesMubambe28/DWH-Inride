@@ -675,6 +675,10 @@ class SupabaseAuthRepository(
     private val appId: String,
 ) : AuthRepository {
 
+    override val passwordRecovery: PasswordRecovery by lazy {
+        supabasePasswordRecovery(client.supabaseHttpUrl, client.supabaseKey)
+    }
+
     private val appContext = context.applicationContext
 
     private val _passengerProfile = MutableStateFlow(PassengerProfile())
@@ -688,6 +692,9 @@ class SupabaseAuthRepository(
         phone: String,
         role: String,
     ): Result<Unit> {
+        if (role != "passenger") {
+            return Result.failure(IllegalArgumentException("Rider accounts must be provisioned by operations."))
+        }
         return try {
             val signupFullName = fullName.trim()
             val signupPhoneNumber = requireNotNull(ZambiaPhoneNumber.normalize(phone)) {
@@ -706,9 +713,6 @@ class SupabaseAuthRepository(
                     // Informational signup intent only. The database trigger always assigns
                     // passenger; rider approval must remain a trusted server-side action.
                 }
-            }
-            if (role == "rider" && client.auth.currentUserOrNull() != null) {
-                client.postgrest.rpc("apply_as_driver").decodeAs<String>()
             }
             _passengerProfile.value = PassengerProfile(
                 client.auth.currentUserOrNull()?.id.orEmpty(),
@@ -744,14 +748,11 @@ class SupabaseAuthRepository(
             }
             val user = client.auth.currentUserOrNull()
             if (user != null) {
-                var profile = client.from("profiles").select { filter { eq("id", user.id) } }.decodeSingle<DbProfile>()
-                if (expectedRole == "rider" && profile.role == "passenger") {
-                    client.postgrest.rpc("apply_as_driver").decodeAs<String>()
-                    profile = client.from("profiles").select { filter { eq("id", user.id) } }.decodeSingle()
-                }
+                val profile = client.from("profiles").select { filter { eq("id", user.id) } }.decodeSingle<DbProfile>()
                 if (profile.role != expectedRole) {
                     client.auth.signOut()
-                    error("This account is registered as ${profile.role}, not $expectedRole.")
+                    error(if (expectedRole == "rider") "Rider accounts must be provisioned by operations."
+                        else "Use an account registered for this app.")
                 }
                 _passengerProfile.value = PassengerProfile(profile.id, profile.fullName, profile.phoneNumber)
             }
@@ -763,6 +764,8 @@ class SupabaseAuthRepository(
                 Log.w("FcmToken", "Token registration failed (${e.javaClass.simpleName})")
             }
             Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure(e)
         }

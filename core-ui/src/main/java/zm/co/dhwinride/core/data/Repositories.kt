@@ -82,6 +82,7 @@ interface RiderRepository {
 }
 
 interface AuthRepository {
+    val passwordRecovery: PasswordRecovery? get() = null
     fun getPassengerProfile(): Flow<PassengerProfile>
     suspend fun signUp(email: String, pass: String, fullName: String, phone: String, role: String): Result<Unit>
     suspend fun signIn(email: String, pass: String, expectedRole: String): Result<Unit>

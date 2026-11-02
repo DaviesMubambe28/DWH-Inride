@@ -50,7 +50,7 @@ enum class AppUserRole(val label: String) {
     Rider("Rider"),
 }
 
-private enum class AccessStage { Welcome, SignIn, SignUp, VerifyEmail, Profile, RiderReview }
+private enum class AccessStage { Welcome, SignIn, SignUp, Recovery, VerifyEmail, Profile, RiderReview }
 
 @Composable
 fun LaunchAccessFlow(role: AppUserRole, authRepository: AuthRepository, onReady: () -> Unit) {
@@ -83,16 +83,20 @@ fun LaunchAccessFlow(role: AppUserRole, authRepository: AuthRepository, onReady:
     }
 
     fun runAuth(operation: suspend () -> Result<Unit>, onSuccess: () -> Unit) {
+        if (isLoading) return
+        isLoading = true
+        errorMessage = null
         scope.launch {
-            isLoading = true
-            errorMessage = null
-            operation().fold(
+            try {
+                operation().fold(
                 onSuccess = { onSuccess() },
                 // Repository failures may originate in HTTP/SDK exceptions. Never display
                 // exception messages because they can include request details or headers.
-                onFailure = { errorMessage = safeAuthFailureMessage(it.message) },
-            )
-            isLoading = false
+                    onFailure = { errorMessage = safeAuthFailureMessage(it.message) },
+                )
+            } finally {
+                isLoading = false
+            }
         }
     }
 
@@ -126,7 +130,7 @@ fun LaunchAccessFlow(role: AppUserRole, authRepository: AuthRepository, onReady:
                 )
                 DhwCard {
                     Text("Secure account", fontWeight = FontWeight.Black)
-                    Text("Email verification and role-based access protect passenger, rider and trip information.", color = DhwMuted)
+                    Text("Role-based access protects passenger, rider and trip information. Follow email confirmation instructions if your account requires them.", color = DhwMuted)
                 }
                 if (role == AppUserRole.Passenger) {
                     PrimaryButton("Create passenger account", { stage = AccessStage.SignUp })
@@ -141,7 +145,7 @@ fun LaunchAccessFlow(role: AppUserRole, authRepository: AuthRepository, onReady:
                 val signingUp = stage == AccessStage.SignUp
                 ScreenTitle(
                     if (signingUp) "Create your account" else "Welcome back",
-                    if (signingUp) "We will send a verification link to your email." else "Sign in to continue.",
+                    if (signingUp) "Use your own email address. If confirmation is required, follow the instructions in your email before signing in." else "Sign in to continue.",
                 )
                 OutlinedTextField(
                     value = email,
@@ -193,28 +197,41 @@ fun LaunchAccessFlow(role: AppUserRole, authRepository: AuthRepository, onReady:
                         supportingText = { phoneError?.let { Text(it, color = Color(0xFFB42318)) } },
                     )
                 }
+                if (!signingUp && authRepository.passwordRecovery != null) {
+                    SecondaryButton("Forgot password?", { password = ""; stage = AccessStage.Recovery }, enabled = !isLoading)
+                }
                 errorMessage?.let { Text(it, color = Color(0xFFB42318), fontSize = 12.sp) }
-                Text(
-                    text = if (signingUp) "Already registered? Sign in" else "New to DHW-inRide? Create account",
-                    color = DhwBlue,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.clickable {
-                        stage = if (signingUp) AccessStage.SignIn else AccessStage.SignUp
-                    },
-                )
+                if (role == AppUserRole.Passenger) {
+                    Text(
+                        text = if (signingUp) "Already registered? Sign in" else "New to DHW-inRide? Create account",
+                        color = DhwBlue,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.clickable(enabled = !isLoading) {
+                            stage = if (signingUp) AccessStage.SignIn else AccessStage.SignUp
+                        },
+                    )
+                } else {
+                    Text("Rider accounts are created and approved by operations. Contact operations if you need access.", color = DhwMuted)
+                }
+            }
+
+            AccessStage.Recovery -> {
+                authRepository.passwordRecovery?.let { recovery ->
+                    PasswordRecoveryForm(recovery) { stage = AccessStage.SignIn }
+                }
             }
 
             AccessStage.VerifyEmail -> {
-                ScreenTitle("Verify your email", "Open the verification link sent to:")
+                ScreenTitle("Continue to sign in", "If confirmation is required, follow your email instructions first:")
                 Surface(color = DhwOrange.copy(alpha = .12f), shape = RoundedCornerShape(18.dp)) {
                     Text(email, color = DhwOrangeDark, fontWeight = FontWeight.Bold, modifier = Modifier.padding(18.dp))
                 }
                 DhwCard {
-                    Text("Why verify?", fontWeight = FontWeight.Black)
-                    Text("Verification helps prevent fake accounts and protects trip history.", color = DhwMuted)
+                    Text("Account confirmation", fontWeight = FontWeight.Black)
+                    Text("Some environments require email confirmation. Continue to sign in to check your account; no email delivery is assumed.", color = DhwMuted)
                 }
                 PrimaryButton(
-                    if (isLoading) "Checking…" else "I have verified my email",
+                    if (isLoading) "Checking…" else "Continue to sign in",
                     enabled = !isLoading,
                     onClick = {
                         runAuth(
@@ -320,6 +337,8 @@ private fun safeAuthFailureMessage(message: String?): String {
             "Verify your email using the latest confirmation link, then sign in."
 
         message in setOf(
+            "Rider accounts must be provisioned by operations.",
+            "Use an account registered for this app.",
             "An account with this email already exists. Please sign in.",
             "Password is too short. Use at least 8 characters.",
             "Password must be at least 6 characters.",
