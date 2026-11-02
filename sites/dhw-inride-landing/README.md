@@ -32,21 +32,27 @@ In the managed environment use `sites-preview start <absolute-site-directory>`.
 
 ## Enable direct APK downloads
 
-There are currently no APK files in the checkout and no published GitHub release
-assets. Both entries in `dist/release-config.mjs` remain `null`. The app cards show
+Development APKs now exist in the Android build outputs with separate
+`.development` package IDs and notifications disabled. They are not public release
+artifacts. No published GitHub release assets were available at inspection. Both
+public release entries in `dist/release-config.mjs` remain `null`. The app cards show
 Coming soon without invented version/size/date values. Hero links take visitors
 to their corresponding availability card; they never simulate a download.
 
 Build signed releases using the existing signing identity and documented process
-in `.github/workflows/pilot-candidate.yml` and `docs/PILOT_RUNBOOK.md`. This checkout
-has no signing inputs, Firebase files or Mapbox/Supabase configuration. Required:
+in `.github/workflows/pilot-candidate.yml` and `docs/PILOT_RUNBOOK.md`. The existing
+release signing inputs and real Firebase files are still required. Runtime public
+Mapbox/Supabase bindings support development builds; they do not establish signed
+release readiness. Required:
 
 - DHWINRIDE_RELEASE_KEYSTORE_PATH pointing to the established keystore
 - DHWINRIDE_RELEASE_STORE_PASSWORD, DHWINRIDE_RELEASE_KEY_ALIAS,
   DHWINRIDE_RELEASE_KEY_PASSWORD
 - Each app's real ignored google-services.json
-- MAPBOX_DOWNLOADS_TOKEN plus MAPBOX_PUBLIC_TOKEN, SUPABASE_URL and the permitted
-  public Supabase key (never a service-role key in an app)
+- MAPBOX_PUBLIC_TOKEN, SUPABASE_URL and the permitted public Supabase key
+  (never a service-role key in an app)
+- Optional MAPBOX_DOWNLOADS_TOKEN with Downloads:Read only if the Maven origin
+  requires it; current dependency resolution succeeded without this token
 
 Do not generate replacement signing identities for existing installs. Do not
 publish a pilot candidate publicly until the owner approves its release. The

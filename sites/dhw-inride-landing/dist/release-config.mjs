@@ -4,6 +4,6 @@
 // (YYYY-MM-DD), packageName, sha256, certificateSha256.
 // Preserve the existing application IDs and established signing certificate.
 export const releases = { passenger: null, rider: null };
-// The deployed admin root already handles sign-in and profile-role checking.
+// The admin app root handles sign-in and profile-role checking.
 // Set only to its confirmed live HTTPS address; no guessed /login route.
 export const adminUrl = null;
