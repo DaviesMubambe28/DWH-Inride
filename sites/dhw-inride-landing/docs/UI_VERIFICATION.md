@@ -18,7 +18,7 @@ Started from clean `2c4e157` on `feat/release-operations`. Existing work preserv
 | Portable signer invocation | PASS: official SDK apksigner JAR runs on existing development APK; build supports APKSIGNER_JAR/JAVA_HOME | Not Windows execution or release signing; no key generated/replaced |
 | Local preview | PASS: `npm run preview`; actual GETs `/`, script/module and photo200 with correct MIME; hidden/traversal/missing-file404 | Loopback only, not a public service; no public deployment |
 | Existing privacy/terms URLs | HTTP200 for both current GitHub main links | Explicit drafts; no legal/privacy/operator approval implied |
-| Workflow | PASS: actionlint quality.yml/pilot-candidate.yml. Added landing browser step reusing existing isolated test tools | No GitHub run/protected setting certified. Automatic approval review rejected the attempted push, citing latest remediation no-push restrictions superseding earlier authorization. New UI commits remain local pending fresh push approval; no merge/deployment |
+| Workflow | PASS: actionlint quality.yml/pilot-candidate.yml. Added landing browser step reusing existing isolated test tools | No GitHub run/protected setting certified. Automatic approval review rejected the attempted push, citing latest remediation no-push restrictions superseding earlier authorization. User subsequently requested continuation; UI synchronization succeeded through `78b8c41`; no merge/deployment |
 | Slow-network usability | Observed in Chromium emulation:360px,50KiB/s,400ms latency, cold cache; DOMContentLoaded/heading visible1989ms, network idle7288ms, primary actions visible and no overflow | Not actual phone/network or a Core Web Vitals certification |
 | Actual APK download/install/upgrade | BLOCKED / NOT VERIFIED | Need owner-approved signed/minified production artifacts, established signer/configuration, actual hosting and real supported phones |
 
@@ -38,3 +38,7 @@ Detailed machine-readable results/source hashes: [browser-verification.json](bro
 ## GitHub synchronization status
 
 Implementation and documentation are committed locally. The attempted `git push origin HEAD:refs/heads/feat/release-operations` was rejected by automatic approval review **before execution**. Stated reason: latest remediation instructions prohibit pushing and supersede earlier push authorization. No workaround/retry was used. Existing remote remains at the previously fetched `2c4e157`; fresh explicit authorization is required to synchronize this UI work. This block affects remote synchronization, not the verified local UI or its screenshots. Public deployment/APK publication/bookings remain separately unauthorized.
+
+### Synchronization resumed — 2 November 2026 (CAT)
+
+After the user requested continuation of the pending push, all four UI commits were synchronized successfully to `feat/release-operations` through `78b8c41`; the earlier rejection above is historical. The remote had no divergent work, and 31 outgoing blob versions were scanned with zero configured-secret/private-key/APK findings. No tests were repeated because no implementation changed. This follow-up changes documentation only. No merge, public deployment, APK publication or booking enablement.
