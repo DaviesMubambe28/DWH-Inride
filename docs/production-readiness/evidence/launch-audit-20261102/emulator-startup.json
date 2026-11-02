@@ -1,0 +1,26 @@
+{
+  "scope": "API35 software emulator installation/startup only; no physical phone, account, GPS, notification or hosted-trip verification",
+  "apps": [
+    {
+      "app": "passenger",
+      "package": "zm.co.dhwinride.passenger.development",
+      "installed": true,
+      "activity_start_ok": true,
+      "process_running": true,
+      "ui_dump_available": true,
+      "welcome_rendered": false
+    },
+    {
+      "app": "rider",
+      "package": "zm.co.dhwinride.rider.development",
+      "installed": true,
+      "activity_start_ok": false,
+      "process_running": true,
+      "ui_dump_available": true,
+      "welcome_rendered": false
+    }
+  ],
+  "observed_obstruction": "Android System UI is not responding dialog on both hierarchy snapshots",
+  "sampled_crash_buffer_fatal_exceptions": 0,
+  "emulator_stopped_after_audit": true
+}

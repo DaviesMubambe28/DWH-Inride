@@ -1,0 +1,17 @@
+{
+  "scope": "Isolated software API35 emulator, not physical-device or hosted-journey verification",
+  "initial_install": "timed out during boot; not counted passed",
+  "boot_completed": true,
+  "apps": [
+    {
+      "app": "passenger",
+      "install": "PASS",
+      "package": "zm.co.dhwinride.passenger.development"
+    },
+    {
+      "app": "rider",
+      "install": "PASS",
+      "package": "zm.co.dhwinride.rider.development"
+    }
+  ]
+}

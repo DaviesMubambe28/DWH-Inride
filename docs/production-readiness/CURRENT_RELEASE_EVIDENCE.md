@@ -1,3 +1,15 @@
+# Independent launch audit — 2 November 2026 (CAT)
+
+**Public-launch rating: 3/10. Verdict: Not ready.** Current saved engineering through `227df3e`; Android development artifacts from `be7a1bb` still match current Android inputs. See [LAUNCH_READINESS_AUDIT_2026-11-02.md](LAUNCH_READINESS_AUDIT_2026-11-02.md) for every check's Verified/Partially verified/Failed/Not verified status, exact evidence, user impact and next action.
+
+Current evidence includes actual local Auth/API/live-Mapbox trip flow, real local Chromium admin/role checks, two installed development APKs on an API35 software emulator, and 68 affected SQL assertions. System UI ANR prevented reliable welcome-screen observation; no physical phone or full hosted journey is verified. Development APKs are separately labelled/debug-signed with push disabled; no signed/minified release candidate exists.
+
+Two real backend bugs were reproduced and fixed only locally: cash acknowledgement and wrong-four-digit-PIN counter rollback. Hosted definitions still match the old faulty versions. Hosted state remains 12 recorded migrations against 25 local files (13 unrecorded); only request-trip v2 is deployed, with new pilot/notification/retention controls absent. No hosted backup is available/verified. Monitoring/FCM, real email recovery, existing release signing, production separation and operator/legal/insurance/support/retention approvals remain open.
+
+No hosted deployment, Git push, public APK publication, real booking enablement or production-data mutation was performed in the audit. Public download/admin URL entries remain null. Earlier sections are historical and do not override this assessment. Sanitized current receipts: `evidence/launch-audit-20261102/`.
+
+---
+
 # TCP capability and Windows backup fallback — 2 November 2026 (CAT)
 
 Continuation from preserved `533a2a5`. **Release and hosted migrations remain BLOCKED.** No hosted writes, network configuration changes, environment publication or production/APK publication were performed.

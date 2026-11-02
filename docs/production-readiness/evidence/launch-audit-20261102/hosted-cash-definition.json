@@ -1,0 +1,5 @@
+{
+  "matches_legacy_trigger": true,
+  "matches_pending_cash_fix": false,
+  "scope": "Hosted read-only definition comparison; no hosted payment RPC executed"
+}
