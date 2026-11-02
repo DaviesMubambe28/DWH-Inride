@@ -86,6 +86,7 @@ class TestRiderRepository(private val trips: TestTripRepository) : RiderReposito
 class TestAuthRepository : AuthRepository {
     private val profile = MutableStateFlow(PassengerProfile(id = "passenger", name = "Test Passenger", phone = "+260000000"))
     override fun getPassengerProfile() = profile.asStateFlow()
+    override suspend fun restoreSession(expectedRole: String) = Result.success(false)
     override suspend fun signUp(email: String, pass: String, fullName: String, phone: String, role: String) = Result.success(Unit)
     override suspend fun signIn(email: String, pass: String, expectedRole: String) = Result.success(Unit)
     override suspend fun signOut() = Unit

@@ -43,6 +43,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
 import zm.co.dhwinride.core.data.AuthRepository
 
 enum class AppUserRole(val label: String) {
@@ -50,7 +51,23 @@ enum class AppUserRole(val label: String) {
     Rider("Rider"),
 }
 
-private enum class AccessStage { Welcome, SignIn, SignUp, Recovery, VerifyEmail, Profile, RiderReview }
+private enum class AccessStage { RestoringSession, Welcome, SignIn, SignUp, Recovery, VerifyEmail, Profile, RiderReview }
+
+internal suspend fun restoreLaunchSession(
+    authRepository: AuthRepository,
+    role: AppUserRole,
+): Result<Boolean> = authRepository.restoreSession(role.name.lowercase())
+
+internal suspend fun signOutAppSession(authRepository: AuthRepository): Result<Unit> {
+    return try {
+        authRepository.signOut()
+        Result.success(Unit)
+    } catch (error: CancellationException) {
+        throw error
+    } catch (error: Exception) {
+        Result.failure(error)
+    }
+}
 
 @Composable
 fun LaunchAccessFlow(role: AppUserRole, authRepository: AuthRepository, onReady: () -> Unit) {
@@ -67,7 +84,7 @@ fun LaunchAccessFlow(role: AppUserRole, authRepository: AuthRepository, onReady:
             notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
-    var stage by remember { mutableStateOf(AccessStage.Welcome) }
+    var stage by remember { mutableStateOf(AccessStage.RestoringSession) }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var fullName by remember { mutableStateOf("") }
@@ -80,6 +97,23 @@ fun LaunchAccessFlow(role: AppUserRole, authRepository: AuthRepository, onReady:
         "Enter a Zambian number, e.g. +260 971 793 185."
     } else {
         null
+    }
+
+    androidx.compose.runtime.LaunchedEffect(authRepository, role) {
+        restoreLaunchSession(authRepository, role).fold(
+            onSuccess = { restored ->
+                if (restored) {
+                    requestNotificationPermissionIfNeeded()
+                    onReady()
+                } else {
+                    stage = AccessStage.Welcome
+                }
+            },
+            onFailure = {
+                errorMessage = "Your saved session could not be restored. Sign in again."
+                stage = AccessStage.Welcome
+            },
+        )
     }
 
     fun runAuth(operation: suspend () -> Result<Unit>, onSuccess: () -> Unit) {
@@ -123,6 +157,11 @@ fun LaunchAccessFlow(role: AppUserRole, authRepository: AuthRepository, onReady:
         StatusPill("${role.label} app", if (role == AppUserRole.Rider) DhwBlue else DhwOrange)
 
         when (stage) {
+            AccessStage.RestoringSession -> {
+                ScreenTitle("Restoring your session", "Checking whether you are already signed in.")
+                LoadingState("Checking account access…")
+            }
+
             AccessStage.Welcome -> {
                 ScreenTitle(
                     title = if (role == AppUserRole.Rider) "Ride. Earn. Safe." else "Your boda, minutes away",
@@ -132,6 +171,7 @@ fun LaunchAccessFlow(role: AppUserRole, authRepository: AuthRepository, onReady:
                     Text("Secure account", fontWeight = FontWeight.Black)
                     Text("Role-based access protects passenger, rider and trip information. Follow email confirmation instructions if your account requires them.", color = DhwMuted)
                 }
+                errorMessage?.let { Text(it, color = Color(0xFFB42318), fontSize = 12.sp) }
                 if (role == AppUserRole.Passenger) {
                     PrimaryButton("Create passenger account", { stage = AccessStage.SignUp })
                     SecondaryButton("I already have an account", { stage = AccessStage.SignIn })

@@ -84,6 +84,7 @@ interface RiderRepository {
 interface AuthRepository {
     val passwordRecovery: PasswordRecovery? get() = null
     fun getPassengerProfile(): Flow<PassengerProfile>
+    suspend fun restoreSession(expectedRole: String): Result<Boolean>
     suspend fun signUp(email: String, pass: String, fullName: String, phone: String, role: String): Result<Unit>
     suspend fun signIn(email: String, pass: String, expectedRole: String): Result<Unit>
     suspend fun signOut()
@@ -92,3 +93,6 @@ interface AuthRepository {
 }
 
 class IntegrationRequiredException(message: String) : IllegalStateException(message)
+
+internal fun sessionRoleMatches(profileRole: String, expectedRole: String): Boolean =
+    profileRole == expectedRole

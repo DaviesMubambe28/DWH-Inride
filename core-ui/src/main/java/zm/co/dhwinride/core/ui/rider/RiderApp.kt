@@ -37,6 +37,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -83,6 +84,8 @@ import zm.co.dhwinride.core.ui.PrimaryButton
 import zm.co.dhwinride.core.ui.ScreenTitle
 import zm.co.dhwinride.core.ui.SecondaryButton
 import zm.co.dhwinride.core.ui.StatusPill
+import zm.co.dhwinride.core.ui.signOutAppSession
+import kotlinx.coroutines.launch
 
 @Composable
 fun RiderApp(viewModel: RiderViewModel, authRepository: AuthRepository) {
@@ -95,6 +98,9 @@ fun RiderApp(viewModel: RiderViewModel, authRepository: AuthRepository) {
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
     var accessReady by remember { mutableStateOf(false) }
+    var signOutBusy by remember { mutableStateOf(false) }
+    var signOutError by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     val availabilityPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
@@ -121,6 +127,19 @@ fun RiderApp(viewModel: RiderViewModel, authRepository: AuthRepository) {
     if (!accessReady) {
         LaunchAccessFlow(AppUserRole.Rider, authRepository) { accessReady = true }
         return
+    }
+
+    fun signOut() {
+        if (signOutBusy) return
+        signOutBusy = true
+        signOutError = null
+        scope.launch {
+            signOutAppSession(authRepository).fold(
+                onSuccess = { accessReady = false },
+                onFailure = { signOutError = "Sign out could not be completed. Check your connection and try again." },
+            )
+            signOutBusy = false
+        }
     }
 
     Scaffold(
@@ -159,6 +178,7 @@ fun RiderApp(viewModel: RiderViewModel, authRepository: AuthRepository) {
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
             uiState.errorMessage?.let { message -> ErrorNotice(message, onRefresh = viewModel::refreshOnForeground) }
+            signOutError?.let { message -> ErrorNotice(message, onRefresh = ::signOut) }
             Box(Modifier.weight(1f)) {
                 when (screen) {
                     RiderNavScreen.Home -> RiderHome(
@@ -223,6 +243,8 @@ fun RiderApp(viewModel: RiderViewModel, authRepository: AuthRepository) {
                         onRegistration = { viewModel.navigateTo(RiderNavScreen.Registration) },
                         onVerification = { viewModel.navigateTo(RiderNavScreen.Verification) },
                         onSafety = { viewModel.navigateTo(RiderNavScreen.Safety) },
+                        signOutBusy = signOutBusy,
+                        onSignOut = ::signOut,
                     )
                     RiderNavScreen.Registration -> RegistrationScreen(
                         profile = uiState.profile,
@@ -574,6 +596,8 @@ private fun RiderProfile(
     onRegistration: () -> Unit,
     onVerification: () -> Unit,
     onSafety: () -> Unit,
+    signOutBusy: Boolean,
+    onSignOut: () -> Unit,
 ) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         ScreenTitle("Rider profile", "Motorcycle and account details")
@@ -601,6 +625,7 @@ private fun RiderProfile(
         ProfileOption("Documents & verification", "Licence, NRC and motorcycle papers", onVerification)
         ProfileOption("Motorcycle", "${profile.motorcycleModel.ifBlank { "Not provided" }} • ${profile.plateNumber.ifBlank { "Not provided" }}", {}, enabled = false)
         ProfileOption("Safety & incidents", "Emergency and support tools", onSafety)
+        SecondaryButton(if (signOutBusy) "Signing out…" else "Sign out", onSignOut, enabled = !signOutBusy)
     }
 }
 
