@@ -67,11 +67,21 @@ jobs:
           done
           curl -fsS http://127.0.0.1:3000/ >/dev/null
           npm run test:browser
+      - name: Landing browser and accessibility checks
+        working-directory: sites/dhw-inride-landing
+        env:
+          UI_TEST_TOOLS: ${{ runner.temp }}/ui-tools
+          UI_TEST_ARTIFACTS: ${{ runner.temp }}/landing-ui
+          CHROMIUM_PATH: /usr/bin/google-chrome
+        # Reuse isolated tools; no hosted credentials, publication or APK assets.
+        run: npm run test:browser
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: failure()
         with:
           name: browser-fixture-screenshots
-          path: ${{ runner.temp }}/ui-review
+          path: |
+            ${{ runner.temp }}/ui-review
+            ${{ runner.temp }}/landing-ui
           if-no-files-found: ignore
   database:
     runs-on: ubuntu-24.04
