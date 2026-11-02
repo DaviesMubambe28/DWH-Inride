@@ -18,7 +18,7 @@ Started from clean `2c4e157` on `feat/release-operations`. Existing work preserv
 | Portable signer invocation | PASS: official SDK apksigner JAR runs on existing development APK; build supports APKSIGNER_JAR/JAVA_HOME | Not Windows execution or release signing; no key generated/replaced |
 | Local preview | PASS: `npm run preview`; actual GETs `/`, script/module and photo200 with correct MIME; hidden/traversal/missing-file404 | Loopback only, not a public service; no public deployment |
 | Existing privacy/terms URLs | HTTP200 for both current GitHub main links | Explicit drafts; no legal/privacy/operator approval implied |
-| Workflow | PASS: actionlint quality.yml/pilot-candidate.yml. Added landing browser step reusing existing isolated test tools | No GitHub run/protected setting certified; feature-branch synchronization uses the owner’s earlier GitHub authorization, with no merge/deployment |
+| Workflow | PASS: actionlint quality.yml/pilot-candidate.yml. Added landing browser step reusing existing isolated test tools | No GitHub run/protected setting certified. Automatic approval review rejected the attempted push, citing latest remediation no-push restrictions superseding earlier authorization. New UI commits remain local pending fresh push approval; no merge/deployment |
 | Slow-network usability | Observed in Chromium emulation:360px,50KiB/s,400ms latency, cold cache; DOMContentLoaded/heading visible1989ms, network idle7288ms, primary actions visible and no overflow | Not actual phone/network or a Core Web Vitals certification |
 | Actual APK download/install/upgrade | BLOCKED / NOT VERIFIED | Need owner-approved signed/minified production artifacts, established signer/configuration, actual hosting and real supported phones |
 
@@ -34,3 +34,7 @@ Detailed machine-readable results/source hashes: [browser-verification.json](bro
 2. Complete actual-source backup/restore, reviewed hosted backend fixes and release gates; supply established signing identity and real Firebase/client inputs. Verify production-appropriate artifacts and real-phone journeys before public release.
 3. Choose the actual landing/APK hosting target or approve immutable GitHub Release assets; follow APK_UPLOAD_GUIDE.md. Production entries remain null until real HTTP/header/hash/package/signer/backend checks and release approval.
 4. Final operator/legal/insurance/privacy/retention/support approval remains required. These UI checks provide no launch approval. Do not enable bookings or publish an APK from this result alone.
+
+## GitHub synchronization status
+
+Implementation and documentation are committed locally. The attempted `git push origin HEAD:refs/heads/feat/release-operations` was rejected by automatic approval review **before execution**. Stated reason: latest remediation instructions prohibit pushing and supersede earlier push authorization. No workaround/retry was used. Existing remote remains at the previously fetched `2c4e157`; fresh explicit authorization is required to synchronize this UI work. This block affects remote synchronization, not the verified local UI or its screenshots. Public deployment/APK publication/bookings remain separately unauthorized.

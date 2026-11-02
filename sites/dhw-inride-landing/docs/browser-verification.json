@@ -101,5 +101,5 @@
     "pending_downloads": 2,
     "overflow": false
   },
-  "git_boundary": "Feature-branch synchronization authorized by earlier user request; no merge, public site deployment, APK publication or booking enablement."
+  "git_boundary": "Local UI commits only. Push rejected before execution by automatic approval review: latest remediation no-push restrictions supersede earlier authorization. Await fresh explicit push approval; no merge, deployment, APK publication or bookings."
 }
