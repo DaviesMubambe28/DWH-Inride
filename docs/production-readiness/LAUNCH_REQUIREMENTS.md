@@ -33,7 +33,7 @@ The audit's full per-check matrix is incorporated by reference: [LAUNCH_READINES
 | C06 | BLOCKED: signed candidates/Firebase | Both real Firebase files and four release bindings absent; distribution identity unknown | Signing owner confirms prior distribution/certificate/highest versionCode; secure destinations in handoff |
 | C07 | BLOCKED: hosted deploy/journeys/delivery | Backup gate and required new explicit deployment authorization/configuration | Prepared DEVELOPMENT_DEPLOYMENT_PLAN.md with exact versions, full hardening proof, backup/authorization preconditions and forward recovery; no hosted changes |
 | C08 | BLOCKED: physical devices and accountable approvals | No phone/operator/qualified adviser control here | Device/distribution questions pending; Windows program facts received, next PowerShell7/Linux check pending. External handoff updated |
-| C09 | PASS locally: final diff/evidence/checkpoint | All source changes and test results | Reviewed source and receipts, no configured-secret/private-key/PAT findings, source/artifact hashes match, documentation links/diff checks pass. Save local evidence commit only; no push/deploy/publication |
+| C09 | PASS locally: final diff/evidence/checkpoint | All source changes and test results | Reviewed source and receipts, no configured-secret/private-key/PAT findings, source/artifact hashes match, documentation links/diff checks pass. Saved evidence locally; user subsequently authorized feature-branch GitHub synchronization. No deployment/APK publication/booking enablement authorized |
 
 The deployment plan is [DEVELOPMENT_DEPLOYMENT_PLAN.md](DEVELOPMENT_DEPLOYMENT_PLAN.md).
 
