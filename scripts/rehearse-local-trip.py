@@ -182,6 +182,9 @@ def main():
         trip_id = str(uuid.UUID(trip["trip_id"]))
         passed(("current request-trip handler, actual local Auth/PostgREST and live Mapbox route" if args.live_request_trip else "trusted booking RPC via local HTTP")
                + "; passenger cannot call trusted route-metrics RPC")
+        rpc("create_routed_trip", booking, config["SERVICE_ROLE_KEY"], expected=(409,))
+        assert sql("select count(*) from public.trips where passenger_id='" + ids["passenger"] + "' and status in ('requesting','accepted','arrived','in_progress')") == "1"
+        passed("duplicate booking rejected with one active trip")
         details = request("/rest/v1/authorized_trip_details?select=id,fare_amount,service_fee,driver_fare&id=eq." + trip_id,
                           token=tokens["passenger"])[0]
         assert float(details["fare_amount"]) == 20 and float(details["service_fee"]) == 3 and float(details["driver_fare"]) == 17
@@ -197,6 +200,8 @@ def main():
         loser = next(name for name, result in accepted if not result)
         assert rpc("mark_trip_arrived", {"p_trip_id": trip_id}, tokens[loser]) is False
         assert rpc("mark_trip_arrived", {"p_trip_id": trip_id}, tokens[winner]) is True
+        assert rpc("accept_trip", {"p_trip_id": trip_id}, tokens[winner]) is False
+        assert rpc("mark_trip_arrived", {"p_trip_id": trip_id}, tokens[winner]) is False
         passed("competing HTTP acceptance produces one winner; only assigned rider can arrive")
         pin = rpc("get_trip_pickup_pin", {"p_trip_id": trip_id}, tokens["passenger"])
         assert isinstance(pin, str) and len(pin) == 4
@@ -205,7 +210,11 @@ def main():
         assert rpc("verify_trip_pin_and_start", {"p_trip_id": trip_id, "p_pin": wrong_pin}, tokens[winner]) is False
         assert sql("select pin_failed_attempts from public.trips where id='" + trip_id + "'") == "1"
         assert rpc("verify_trip_pin_and_start", {"p_trip_id": trip_id, "p_pin": pin}, tokens[loser]) is False
+        sql("update public.profiles set approval_status='rejected' where id='" + ids[winner] + "';")
+        rpc("verify_trip_pin_and_start", {"p_trip_id": trip_id, "p_pin": pin}, tokens[winner], expected=(403,))
+        sql("update public.profiles set approval_status='approved' where id='" + ids[winner] + "';")
         assert rpc("verify_trip_pin_and_start", {"p_trip_id": trip_id, "p_pin": pin}, tokens[winner]) is True
+        assert rpc("verify_trip_pin_and_start", {"p_trip_id": trip_id, "p_pin": pin}, tokens[winner]) is False
         assert rpc("complete_trip", {"p_trip_id": trip_id}, tokens[loser]) is False
         assert rpc("complete_trip", {"p_trip_id": trip_id}, tokens[winner]) is True
         passed("passenger PIN retrieval, four-digit wrong-PIN counter persistence, other-rider denial, start and completion")
@@ -216,6 +225,10 @@ def main():
         final = request("/rest/v1/authorized_trip_details?select=status,payment_status,fare_amount&id=eq." + trip_id,
                         token=tokens["passenger"])[0]
         assert final == {"status": "completed", "payment_status": "rider_confirmed", "fare_amount": 20.0}
+        assert rpc("complete_trip", {"p_trip_id": trip_id}, tokens[winner]) is False
+        assert rpc("mark_passenger_paid", {"p_trip_id": trip_id}, tokens["passenger"]) is False
+        assert rpc("confirm_rider_payment", {"p_trip_id": trip_id}, tokens[winner]) is False
+        passed("duplicate arrival/start/completion/payment are harmless; approval revocation blocks start")
         passed("cash recording by correct passenger and assigned rider; completed state persisted")
         if args.keep_browser_fixture:
             receipt = {"origin": ORIGIN, "public_key": config["ANON_KEY"], "synthetic_fixture": True,
