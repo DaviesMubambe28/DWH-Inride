@@ -1,4 +1,7 @@
 {
+  "name": "dhw-inride",
+  "private": true,
+  "type": "module",
   "devDependencies": {
     "supabase": "2.121.0"
   }
