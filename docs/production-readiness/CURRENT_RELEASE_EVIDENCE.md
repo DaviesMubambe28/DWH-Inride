@@ -1,3 +1,29 @@
+# Engineering continuation evidence — 3 November 2026 (CAT)
+
+Current engineering source is `b6de8a0ae71b4319395221d38d57b036f4d5b5e4` on `feat/release-operations`; evidence documentation follows in later commits. The fixed rubric remains **4.00/10 — Not ready** because no local result can close hosted backup/full-service recovery, migration/function deployment, live email/FCM/monitoring, established release signing, physical-device, hosting or accountable approval gates.
+
+New verified engineering results:
+
+- Fixed stale push delivery after sign-out, expired sessions, restoration failures and cross-app role rejection. Local notification display is disabled before remote cleanup, so an offline unregister cannot show the previous user's ride events. Four new push-gate tests bring the Android total to **64**, all passing; core/app lint and both development builds pass.
+- Added a fail-closed signed-candidate verifier and protected `PILOT_RELEASE_CERT_SHA256` input. The workflow now proves exact package/version/SDK, non-debuggable release state, minification mappings, established signer, APK integrity/hash/size and source commit before uploading a protected artifact.
+- Replayed all **26 migrations** from an empty isolated local database; **14 files / 218 SQL assertions** pass. The current local Auth/PostgREST/request handler/live-Mapbox trip, cash, race and PIN-lock rehearsal passes and removes its fixtures.
+- Fresh complete regression: 18 Edge tests and frozen checks pass; three real loopback worker authorization checks pass; 17 recovery/preflight/candidate tests pass; Admin lint/typecheck/build/3 tests/4-view browser checks pass; landing 10 tests/5-view browser and accessibility checks pass.
+- Fresh development-only hosted inspection remains unchanged: ACTIVE_HEALTHY, **12 recorded / 26 repository migrations**, only `request-trip` v2, no listed backups/PITR, localhost Auth URL, no redirects/custom SMTP, and missing FCM/worker/Sentry secrets. Anonymous profiles and missing-JWT function access return 401; anonymous private Storage exposes zero entries. No hosted mutation or deployment occurred.
+- Root and 13 locked Edge npm packages have zero advisories. Admin retains five moderate legacy ESLint/minimatch development-tool paths; the offered remediation is an incompatible major/downgrade, while lint, tests and production build pass.
+
+Rebuilt development APKs (not release candidates; no push; no phone install):
+
+| App | Path | SHA-256 | Bytes |
+|---|---|---|---:|
+| Passenger | `passenger-app/build/outputs/apk/development/passenger-app-development.apk` | `8f529ab7f1c6e369722ed634299c06aab56d68f07b1c8ed79a4f3d21487dd95a` | 125856688 |
+| Rider | `rider-app/build/outputs/apk/development/rider-app-development.apk` | `91f60f3002d325d1a964814b5bbdc678dfd24065fb8b73077530b85779ad4f51` | 125856684 |
+
+Both are version `0.1.0-development-no-push`, code 1, minimum SDK 26, target SDK 37, debuggable, and signed by preserved development certificate `18847e…85c9`. Scans found no configured management token, service-role marker or private-key marker.
+
+Sanitized machine-readable evidence: [`evidence/engineering-continuation-20261103/verification.json`](evidence/engineering-continuation-20261103/verification.json). Production bookings, production deployment, public APK publication and merge to `main` remain disabled.
+
+---
+
 # Current master-remediation evidence — 2 November 2026 (UTC)
 
 Current source is `945d14961bc029c5685f778ef2c94514087bbbea` on `feat/release-operations`; evidence documentation follows in later commits. The fixed rubric remains **4.00/10 — Not ready**. No local-only result closes the actual backup/full-service recovery, hosted migration/function, signed release, live delivery, physical-device, hosting or accountable approval gates.

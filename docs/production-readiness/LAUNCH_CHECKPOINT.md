@@ -1,5 +1,15 @@
 # Resume checkpoint — 2 November 2026 (CAT)
 
+## Engineering continuation — 3 November 2026 (CAT)
+
+Current source is `b6de8a0ae71b4319395221d38d57b036f4d5b5e4` on `feat/release-operations`; evidence documentation follows in later commits. Verdict remains **4.00/10 — Not ready** under the fixed rubric.
+
+Completed since the prior checkpoint: stale notifications are locally suppressed before sign-out cleanup and for absent/invalid/cross-role saved sessions; a protected candidate verifier now requires the established public certificate fingerprint and checks both APKs' identity, version, SDK, debuggability, minification mapping, integrity and provenance; root Node module mode is explicit. Fresh regression is green: 64 Android tests, app/core lint and both development builds; clean 26-migration local replay and 218 SQL assertions; full local live-Mapbox trip/race/PIN-lock/cash rehearsal; 18 Edge tests plus frozen checks and three HTTP authorization harnesses; 17 recovery/preflight/candidate tests; Admin and landing build/unit/browser/accessibility checks. Sanitized receipt: [`evidence/engineering-continuation-20261103/verification.json`](evidence/engineering-continuation-20261103/verification.json).
+
+Fresh hosted state is unchanged and read-only: development project healthy, 12 recorded migrations versus 26 in the repository, only `request-trip` v2, no listed backup/PITR, localhost Auth URL, no custom SMTP, and no FCM/worker/Sentry bindings. No hosted writes, function deployment, schedules, production action, booking enablement or publication occurred. The current runtime has Docker/Supabase/Deno/Android tooling but no source database password or supported public PostgreSQL TCP route; its isolated local restore cannot substitute for a backup of the hosted source. Firebase files/sender, monitoring, worker token, established signer inputs/fingerprint, phone targets, hosting URLs and accountable approvals also remain absent.
+
+Rebuilt development-only APK hashes: passenger `8f529ab7f1c6e369722ed634299c06aab56d68f07b1c8ed79a4f3d21487dd95a`; rider `91f60f3002d325d1a964814b5bbdc678dfd24065fb8b73077530b85779ad4f51`. Both retain development certificate `18847e…85c9`; neither is a signed release candidate or approved download.
+
 ## Master remediation continuation — 2 November 2026 (UTC)
 
 Current source is `945d149` on `feat/release-operations`. The fixed verdict remains **4.00/10 — Not ready** because critical external gates are still open; local software evidence cannot raise those domains above level 2.

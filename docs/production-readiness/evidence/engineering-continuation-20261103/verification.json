@@ -1,0 +1,163 @@
+{
+  "observed_at_utc": "2026-11-03T11:06:56Z",
+  "source_commit": "b6de8a0ae71b4319395221d38d57b036f4d5b5e4",
+  "branch": "feat/release-operations",
+  "verdict": "NOT_READY",
+  "score": 4.0,
+  "environment": {
+    "http_network_policy": "unrestricted_enforced",
+    "docker": "28.4.0 linux x86_64",
+    "supabase_cli": "2.121.0",
+    "deno": "2.9.6",
+    "node": "24.19.0",
+    "android_sdk": "37",
+    "connected_android_targets": 0,
+    "ready_public_bindings": [
+      "SUPABASE_URL",
+      "SUPABASE_PUBLISHABLE_KEY",
+      "MAPBOX_PUBLIC_TOKEN",
+      "SUPABASE_ACCESS_TOKEN"
+    ],
+    "missing_release_bindings": [
+      "SUPABASE_DB_PASSWORD",
+      "FCM_SERVICE_ACCOUNT_JSON",
+      "OPERATIONS_WORKER_TOKEN",
+      "SENTRY_DSN",
+      "DHWINRIDE_RELEASE_KEYSTORE_PATH",
+      "DHWINRIDE_RELEASE_STORE_PASSWORD",
+      "DHWINRIDE_RELEASE_KEY_ALIAS",
+      "DHWINRIDE_RELEASE_KEY_PASSWORD",
+      "PILOT_RELEASE_CERT_SHA256"
+    ],
+    "missing_files": [
+      "passenger-app/google-services.json",
+      "rider-app/google-services.json",
+      ".pilot/owner.json"
+    ]
+  },
+  "hosted_development_read_only": {
+    "project_ref": "vhckkmzyabbsbgjuhjmq",
+    "status": "ACTIVE_HEALTHY",
+    "region": "eu-west-1",
+    "repository_migrations": 26,
+    "recorded_migrations": 12,
+    "unrecorded_migrations": 14,
+    "deployed_functions": [
+      {
+        "slug": "request-trip",
+        "version": 2,
+        "status": "ACTIVE",
+        "verify_jwt": true
+      }
+    ],
+    "backups": 0,
+    "pitr_enabled": false,
+    "auth_site_url": "http://localhost:3000",
+    "auth_redirect_count": 0,
+    "email_autoconfirm": true,
+    "custom_smtp_configured": false,
+    "required_function_secrets_missing": [
+      "FCM_SERVICE_ACCOUNT_JSON",
+      "OPERATIONS_WORKER_TOKEN",
+      "SENTRY_DSN"
+    ],
+    "preserved_function_secret": "MAPBOX_SERVER_TOKEN",
+    "anonymous_profiles_http": 401,
+    "anonymous_private_storage_visible_entries": 0,
+    "missing_user_jwt_request_trip_http": 401,
+    "mutations_or_deployments": 0
+  },
+  "verification": {
+    "android_unit_tests": {
+      "tests": 64,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "android_core_and_app_lint": "PASS",
+    "android_development_builds": "PASS",
+    "database_migration_replay": "PASS: all 26 migrations from an empty isolated local database",
+    "database_contracts": {
+      "files": 14,
+      "assertions": 218,
+      "result": "PASS"
+    },
+    "edge_tests": {
+      "tests": 18,
+      "failures": 0
+    },
+    "edge_type_checks": "PASS: four functions with frozen cached locks",
+    "edge_http_authorization": "PASS: three real loopback function entrypoints",
+    "recovery_preflight_candidate_tests": {
+      "tests": 17,
+      "failures": 0
+    },
+    "admin": {
+      "unit_tests": 3,
+      "lint": "PASS",
+      "typecheck": "PASS",
+      "production_build_with_development_public_bindings": "PASS",
+      "browser_fixture_viewports": 4,
+      "runtime_errors": 0
+    },
+    "landing": {
+      "build_tests": 10,
+      "browser_viewports": 5,
+      "axe_violations": 0,
+      "downloads": "unavailable_fail_closed",
+      "admin_url": "unavailable"
+    },
+    "local_trip": "PASS: local Auth/PostgREST/current handler/live Mapbox/approval/booking/acceptance/arrival/PIN/start/completion/cash/races/PIN lock; fixtures removed and pause state restored",
+    "dependency_audit": {
+      "root_total": 0,
+      "edge_locked_npm_packages": 13,
+      "edge_advisories": 0,
+      "admin_moderate_development_tool": 5,
+      "admin_high": 0,
+      "admin_critical": 0,
+      "admin_compatible_fix": false
+    }
+  },
+  "fixes": [
+    "Push display is disabled locally before sign-out cleanup and whenever a saved session is absent, invalid, or belongs to the other application role.",
+    "The protected candidate workflow now rejects a signing certificate mismatch and records package, version, SDK, debuggability, minification mapping, certificate, size, hash, and source commit evidence.",
+    "The repository root declares ES-module mode, eliminating Edge-test module reparsing ambiguity."
+  ],
+  "development_apks": {
+    "passenger": {
+      "path": "passenger-app/build/outputs/apk/development/passenger-app-development.apk",
+      "sha256": "8f529ab7f1c6e369722ed634299c06aab56d68f07b1c8ed79a4f3d21487dd95a",
+      "bytes": 125856688,
+      "package": "zm.co.dhwinride.passenger.development",
+      "version_name": "0.1.0-development-no-push",
+      "version_code": 1
+    },
+    "rider": {
+      "path": "rider-app/build/outputs/apk/development/rider-app-development.apk",
+      "sha256": "91f60f3002d325d1a964814b5bbdc678dfd24065fb8b73077530b85779ad4f51",
+      "bytes": 125856684,
+      "package": "zm.co.dhwinride.rider.development",
+      "version_name": "0.1.0-development-no-push",
+      "version_code": 1
+    },
+    "minimum_sdk": 26,
+    "target_sdk": 37,
+    "debuggable": true,
+    "signer_sha256": "18847ebd25a7a4ecdb9ce13499e74ee00b5bf37ac1e1925576a6fa8fc5ee85c9",
+    "management_token_matches": 0,
+    "service_role_markers": 0,
+    "private_key_markers": 0,
+    "release_candidate": false,
+    "physical_install_verified": false
+  },
+  "blocked_gates": [
+    "Actual hosted source backup plus isolated database and full-service restore",
+    "Reconciled and deployed hosted migrations and missing Edge Functions",
+    "Configured SMTP with real confirmation and recovery delivery",
+    "Firebase client files, sender credential, real FCM delivery, worker credential, and monitoring receipt",
+    "Established release certificate and keystore bindings plus signed/minified APKs",
+    "Hosted Admin and approved HTTPS passenger/rider download URLs",
+    "Two-phone hosted journey, interruption, install, and upgrade evidence",
+    "Operator, legal, insurance, privacy-retention, support, and release approvals"
+  ]
+}
