@@ -1,3 +1,139 @@
+# Engineering continuation evidence — 3 November 2026 (CAT)
+
+Current engineering source is `b6de8a0ae71b4319395221d38d57b036f4d5b5e4` on `feat/release-operations`; evidence documentation follows in later commits. The fixed rubric remains **4.00/10 — Not ready** because no local result can close hosted backup/full-service recovery, migration/function deployment, live email/FCM/monitoring, established release signing, physical-device, hosting or accountable approval gates.
+
+New verified engineering results:
+
+- Fixed stale push delivery after sign-out, expired sessions, restoration failures and cross-app role rejection. Local notification display is disabled before remote cleanup, so an offline unregister cannot show the previous user's ride events. Four new push-gate tests bring the Android total to **64**, all passing; core/app lint and both development builds pass.
+- Added a fail-closed signed-candidate verifier and protected `PILOT_RELEASE_CERT_SHA256` input. The workflow now proves exact package/version/SDK, non-debuggable release state, minification mappings, established signer, APK integrity/hash/size and source commit before uploading a protected artifact.
+- Replayed all **26 migrations** from an empty isolated local database; **14 files / 218 SQL assertions** pass. The current local Auth/PostgREST/request handler/live-Mapbox trip, cash, race and PIN-lock rehearsal passes and removes its fixtures.
+- Fresh complete regression: 18 Edge tests and frozen checks pass; three real loopback worker authorization checks pass; 17 recovery/preflight/candidate tests pass; Admin lint/typecheck/build/3 tests/4-view browser checks pass; landing 10 tests/5-view browser and accessibility checks pass.
+- Fresh development-only hosted inspection remains unchanged: ACTIVE_HEALTHY, **12 recorded / 26 repository migrations**, only `request-trip` v2, no listed backups/PITR, localhost Auth URL, no redirects/custom SMTP, and missing FCM/worker/Sentry secrets. Anonymous profiles and missing-JWT function access return 401; anonymous private Storage exposes zero entries. No hosted mutation or deployment occurred.
+- Root and 13 locked Edge npm packages have zero advisories. Admin retains five moderate legacy ESLint/minimatch development-tool paths; the offered remediation is an incompatible major/downgrade, while lint, tests and production build pass.
+
+Rebuilt development APKs (not release candidates; no push; no phone install):
+
+| App | Path | SHA-256 | Bytes |
+|---|---|---|---:|
+| Passenger | `passenger-app/build/outputs/apk/development/passenger-app-development.apk` | `8f529ab7f1c6e369722ed634299c06aab56d68f07b1c8ed79a4f3d21487dd95a` | 125856688 |
+| Rider | `rider-app/build/outputs/apk/development/rider-app-development.apk` | `91f60f3002d325d1a964814b5bbdc678dfd24065fb8b73077530b85779ad4f51` | 125856684 |
+
+Both are version `0.1.0-development-no-push`, code 1, minimum SDK 26, target SDK 37, debuggable, and signed by preserved development certificate `18847e…85c9`. Scans found no configured management token, service-role marker or private-key marker.
+
+Sanitized machine-readable evidence: [`evidence/engineering-continuation-20261103/verification.json`](evidence/engineering-continuation-20261103/verification.json). Production bookings, production deployment, public APK publication and merge to `main` remain disabled.
+
+---
+
+# Current master-remediation evidence — 2 November 2026 (UTC)
+
+Current source is `945d14961bc029c5685f778ef2c94514087bbbea` on `feat/release-operations`; evidence documentation follows in later commits. The fixed rubric remains **4.00/10 — Not ready**. No local-only result closes the actual backup/full-service recovery, hosted migration/function, signed release, live delivery, physical-device, hosting or accountable approval gates.
+
+Fresh checks on the current source:
+
+- 60 Android unit tests pass with zero failures/errors/skips; core, passenger and rider lint pass; both development APKs build with the preserved debug signer `18847e…85c9`.
+- Passenger development APK: `passenger-app/build/outputs/apk/development/passenger-app-development.apk`, SHA-256 `9ae7d4064917f9fe49c39b7219e4bd6d115cc9aaf3aaffc0f38c25387f8af760`, 125856533 bytes.
+- Rider development APK: `rider-app/build/outputs/apk/development/rider-app-development.apk`, SHA-256 `f6dd20dfa3a9535e4549db382fed6e5a24ae2ac71c4758cddda394de3e0ec59d`, 125856529 bytes.
+- Both APKs are debuggable package-suffixed `0.1.0-development-no-push`, code 1, minimum SDK 26, target SDK 37. They contain the expected public bindings and no configured management token or service-role marker. They are not release candidates and have not been installed on physical phones.
+- New source behavior restores persisted sessions after Auth initialization, enforces passenger/rider role separation, and provides actual sign-out actions in both apps. Five session/sign-out tests and two role-boundary tests were added; inverting the role predicate made both role tests fail before restoration.
+- Admin typecheck, lint, production export, three unit tests and four-view fixture browser checks pass. The ES-module package declaration removes the previous Node reparsing warning.
+- Landing build has ten passing tests; five-view browser/axe/no-overflow checks pass. Passenger/rider downloads and public Admin remain intentionally unavailable.
+- Local SQL: 14 files / 218 assertions pass. Edge: 18 tests pass. Recovery/preflight: 15 tests pass. The real local Auth/PostgREST/current handler/live-Mapbox trip, cash acknowledgement, concurrency and PIN-lock rehearsal passes and cleans its fixtures.
+- Mapbox API authentication and the exact 11.33.0 Maven POM each return HTTP 200. The configured Supabase URL matches confirmed development-only project `vhckkmzyabbsbgjuhjmq`; hosted state remains 12 of 26 migrations and only `request-trip`. Auth remains localhost/auto-confirm/no custom SMTP.
+- Root dependency audit has zero findings. Admin still has five moderate development-tool paths through legacy ESLint plugins and `minimatch 3.1.5`; npm's offered fix is an incompatible Next/ESLint downgrade. No high or critical finding remains.
+
+Sanitized machine-readable evidence and hashes: [`evidence/master-remediation-20261102/verification.json`](evidence/master-remediation-20261102/verification.json). No hosted write/deployment, booking enablement, public hosting, APK publication, email/FCM/monitoring delivery or real-phone check occurred.
+
+---
+
+# Landing UI follow-up — 2 November 2026
+
+Source `439765a` updates the landing UI, attributed real Zambia photography, visible mobile Admin, future download/checksum/installation handling, local preview and browser CI checks. Ten named build tests pass; real Chromium checks at320/360/768/1024/1440 have zero detected axe violations/landing console errors/overflow. Both configured Admin links reached the actual local exported root sign-in and refreshed. Private cross-origin HTTPS attachment fixture passed size/hash checks; **not a production APK**. Owner confirms admin is unhosted; `adminUrl` and both public releases remain null. No actual public download/phone install, public deployment, APK publication or booking enablement. The initial GitHub push was rejected before execution; following the user’s continuation instruction, all four UI commits were synchronized successfully to `feat/release-operations` through `78b8c41`. No merge or release action was taken. Android inputs/artifact hashes remain unchanged; previous backend/release/operational gates and **4.00/10 — Not ready** persist.
+
+Screenshots, exact tested scope, research and future upload guide: [landing UI verification](../../sites/dhw-inride-landing/docs/UI_VERIFICATION.md). The source hashes in its browser receipt correspond to this website follow-up; earlier entries below retain their original scopes.
+
+---
+
+# Current continuation checkpoint — 2 November 2026 (CAT)
+
+**Blocked below 9/10: 4.00/10 — Not ready.** Fixed [rubric/requirements](LAUNCH_REQUIREMENTS.md); [audit](LAUNCH_READINESS_AUDIT_2026-11-02.md); [resume checkpoint](LAUNCH_CHECKPOINT.md); [external handoff](REMEDIATION_HANDOFF_2026-11-02.md); [prepared deployment plan](DEVELOPMENT_DEPLOYMENT_PLAN.md). Began clean at `4cf13cb`; current source through `4aaef22`, subsequent changes documentation/evidence only. No push, hosted write/deploy, publication, real booking enablement or external messages.
+
+| Gate | Result | Current evidence and scope |
+|---|---|---|
+| Rider saved-state/privacy and action guards | PASS locally | Nine new regressions; persisted PIN removed, acceptance/PIN rapid duplicates gated, stale/removed/started/completed trips and restart navigation reconciled. Inverted guard caught; original restored |
+| Android unit/lint/development artifacts | PASS development only | 53 tests, zero failures/errors/skips; core lint 0 errors/37 warnings, each app 0 errors/4 warnings. Both development APKs rebuilt with unchanged debug identity; signatures/16KiB alignment/public bindings/known-secret scan pass. [Current hashes and source provenance](evidence/continuation-20261102/android-artifacts.json) |
+| Current APK installation, same-identity release upgrade | BLOCKED | Zero connected devices; release signer/history/Firebase absent. Old emulator installs/ANR apply to older hashes only. No production candidate or current install claim |
+| Local trip and concurrency | PASS local API scope | Real local Auth/PostgREST/current handler/live Mapbox; full trip/cash and role/fare/revocation/duplicates. Nine parallel cancellation races with both winner outcomes observed; six wrong-PIN calls persist five and lock, correct PIN denied while locked. Fixtures removed; original local policy paused |
+| SQL/site/admin/worker/dependency checks | Retained, not rerun | No corresponding SQL/site/worker/dependency changes. Previous 26 migrations/218 SQL assertions, seven landing and admin/browser/worker results remain scoped historical evidence; five moderate dev-tool findings still open |
+| Fresh hosted safety/configuration | FAIL/BLOCKED | 12 records vs 26 local, 14 pending; legacy cash/PIN/start behavior and only request-trip v2. No listed backup/PITR/custom SMTP/new workers; missing FCM/operations/Sentry inputs. Read-only inspection only; existing Mapbox secret preserved |
+| Backup/restore path | Prepared, actual gate BLOCKED | Native psql is optional using new pinned Docker PostgreSQL17.11 helper. Four versions, file mapping with spaces and invalid-archive rejection pass on Linux; five guide blocks/helper syntax pass. Actual Windows mount/TLS/source archive/isolated source restore/full-service recovery remain unverified |
+| Email/FCM/monitoring/hosted two-phone journey | BLOCKED | Missing configuration and real recipients/devices/operator observations; local generated OTP test did not send email |
+| Operator/legal/insurance, privacy/retention, support | BLOCKED separately | Required accountable approvals and actual drills remain absent; local code/fixtures cannot close these gates |
+
+Operator returned PS5.1.26100.9711, pwsh available, Docker29.8.2, CLI2.121.0, native psql absent. **Next step only:** launch `pwsh`, then return `$PSVersionTable.PSVersion.ToString()` and `docker info --format '{{.OSType}}'`. Do not enter a database password or start a dump yet. We then guide the reviewed helper versions, CA/native verified-TLS connection, masked whole-database/role capture and isolated restore in order. No native PostgreSQL installation is required for this alternative.
+
+Earlier sections below are historical and do not override current evidence.
+
+---
+
+# TCP capability and Windows backup fallback — 2 November 2026 (CAT)
+
+Continuation from preserved `533a2a5`. **Release and hosted migrations remain BLOCKED.** No hosted writes, network configuration changes, environment publication or production/APK publication were performed.
+
+| Gate | Status | Current evidence |
+|---|---|---|
+| TCP capability diagnosis | PASS | Detailed runtime reference requires VPN plus a TCP grant and private IPv4 destinations only. This public pooler is ineligible. VPN false, grants empty; unchanged proxy probe not repeated |
+| Public TCP activation | BLOCKED | No supported public-TCP activation tool or documented UI setting/click path. Previous suggestion to add a pooler TCP grant was incorrect and is superseded |
+| Supabase endpoint identity | PASS | Management API reconfirmed actual host, database, username and transaction port 6543. Official docs establish session port 5432; operator must cross-check project Connect panel. PostgreSQL 17.11 and 12 migration records confirmed |
+| Native PostgreSQL TLS/login | BLOCKED | No eligible cloud transport. Windows procedure requires certificate validation and identity check before export; no successful native connection is claimed |
+| Windows whole-database backup/restore procedure | PREPARED | Secure native password prompts, verify-full TLS, schema+data archive, roles, private inventories/checksums and isolated restore/ownership/RLS checks documented. PowerShell 7 syntax PASS; actual Windows capture/restore NOT RUN |
+| Inventory SQL | PASS | New query validated via read-only hosted Management endpoint; required catalog and table keys present. This does not verify native Windows role permissions or a backup |
+| Hosted backup/migrations/functions/journeys | BLOCKED | No verified recoverable archive, so no history repair, SQL/Edge deployment or synthetic journey writes |
+| Android core release variant | PASS | assembleRelease and lintRelease succeed: shared AAR, zero lint errors, 37 warnings. Hash recorded in evidence; not an application APK or minification/signing result |
+| Passenger/rider release candidates | BLOCKED | Real Firebase files and established signing identity inputs still required; no replacement keys generated |
+| Live FCM/monitoring/full-service/device/operator approvals | BLOCKED | Prior limitations remain; no simulated delivery/recovery/physical or legal/support approval substituted |
+
+Use [WINDOWS_SUPABASE_BACKUP.md](WINDOWS_SUPABASE_BACKUP.md). It corrects the previous TCP-grant recommendation, provides verified connection fields and the exact local capture/isolated-restore procedure, and distinguishes full database schema/data from Storage bytes/platform secrets/full-service recovery. Start by cross-checking the project's **Connect → Session pooler → View parameters** and obtaining its trusted CA from Database settings. Enter the existing database password only at the native tools' masked prompts. No password needs to be sent in chat or stored in Git.
+
+Current metadata: `evidence/tcp-windows-fallback/verification.json`. Earlier sections are historical and do not override this correction. Existing passed Android debug/SQL/Edge/web/recovery suites were not repeated.
+
+---
+
+# Development Supabase phase — 2 November 2026
+
+Current engineering commit: `debebd7` (based on preserved `bbc181a`). Target `vhckkmzyabbsbgjuhjmq` is owner-confirmed development-only. The owner has authorized reviewed non-production backup/migration/function work. **No hosted changes were made because the required recoverable backup is blocked.**
+
+| Gate | Status | Verified result |
+|---|---|---|
+| Management/HTTP/Mapbox dependencies | PASS | Existing management binding works; effective unrestricted HTTP policy; real Mapbox origin POM 200 and Android dependency resolution/compilation succeed |
+| Development backup | BLOCKED | Provider lists no backups; PITR off. TCP grants empty and advertised TCP proxy refuses connection before CONNECT response. No recoverable hosted database backup created |
+| Eleven pending migrations compared | PASS | New objects/alter preconditions checked. Hardening body, security attributes, all column/table grants and execution restrictions already match. Other replacement bodies match recorded baseline; substantive pending work remains |
+| Migration reconciliation/application | BLOCKED | Backup gate prevents history repair or SQL deployment; 12 recorded versions remain unchanged |
+| Function source inspection | PASS | Existing request-trip source exported outside Git; lacks local pilot precheck, so update is required after backup. MAPBOX_SERVER_TOKEN preserved |
+| Three worker/function deployments and hosted journeys | BLOCKED | No deployment/test identities/data mutations before backup; synthetic rider/approval, trip authorization, acceptance race and fare checks not run hosted |
+| Android shared core | PASS | Compiled; 34 tests, 0 failures/errors/skips; lint 0 errors, 37 warnings. Fixed notification permission declaration and geographically invalid test fixtures; added outside-area denial coverage |
+| Signed/minified passenger and rider candidates | BLOCKED | Both Firebase JSON files and existing signing inputs absent; no replacement keys or APKs generated |
+| Real FCM/monitoring | BLOCKED | Hosted FCM_SERVICE_ACCOUNT_JSON, OPERATIONS_WORKER_TOKEN and SENTRY_DSN still missing; no delivery/alert claim |
+| Auth email/callback journeys | BLOCKED | localhost Site URL, empty redirects, no custom SMTP; Android confirmation/reset deep link not implemented. Password sign-in requires no redirect. Confirmation remains disabled pending verified email delivery |
+| Full-service recovery | BLOCKED | Prior local database-only restore carried forward; hosted export and isolated Auth/Storage/functions/config recovery unverified |
+| Operator/legal/support/device approvals | BLOCKED | Actual physical-device, operator/safety, support coverage, insurance/licensing and privacy/retention evidence remain outstanding |
+| Production/public bookings/APK publication | BLOCKED | Release not approved; no production resources or public publication enabled |
+
+See [DEVELOPMENT_SUPABASE_PHASE.md](DEVELOPMENT_SUPABASE_PHASE.md) and `evidence/development-supabase-phase/` for exact reconciliation, Auth/secret handoff and backup limitations. **Single next action:** enable development TCP session access to `aws-0-eu-west-1.pooler.supabase.com:5432` and activate its TCP proxy through supported environment settings/admin support. No HTTP draft edit was made. Attempt temporary CLI login before requesting a database password. After this gate, proceed with verified backup and authorized hosted work, then FCM configuration first, one service at a time.
+
+Older sections below are historical observations and do not override these current results. Previously passing, unaffected SQL/Edge/recovery/web suites were not repeated.
+
+---
+
+# Current Supabase inspection — 2 November 2026
+
+**PASS:** management read access with the configured token and project URL. **Owner-confirmed development-only target:** `vhckkmzyabbsbgjuhjmq`; no production service exists yet. There is only one visible project and no branches, so a separate staging/production pair is not established.
+
+Read-only inspection found 12 recorded/23 local migrations (11 pending), only request-trip v2 deployed, and no new pilot/retention/outbox tables. The apply_as_driver fix already matches a locally pending hardening migration, demonstrating migration-history drift. Existing MAPBOX_SERVER_TOKEN is present and must be preserved. Hosted FCM_SERVICE_ACCOUNT_JSON, OPERATIONS_WORKER_TOKEN and SENTRY_DSN are absent. Auth auto-confirm is enabled, Site URL is localhost, redirect allowlist is empty and custom SMTP is unconfigured. No hosted changes or user-data queries were performed.
+
+See **SUPABASE_INSPECTION.md** and `evidence/supabase-inspection/` for verified metadata and the pending migration list. Earlier statements below that management access/networking are blocked are historical; they do not override this inspection. **Release remains BLOCKED** pending deployment reconciliation, live journeys, actual candidates, notifications/monitoring, full recovery and operator/legal evidence.
+
+---
+
 # Staging configuration recheck — 2 November 2026 (CAT)
 
 Tested commit: `53cd67932ff90165600122fb6672639437c834d2` on `feat/release-operations`, initially clean and preserved. Time: `2026-11-02T01:57:58.063409+02:00`. **Release remains BLOCKED.** The user has authorized reviewed staging migration/function deployment once the exact staging target/access is available. Production deployment, booking enablement and APK publication remain unauthorized. No additional blanket staging approval is needed.

@@ -1,0 +1,5 @@
+Docker PostgreSQL client mode loaded for this session only. No database connection or backup has run.
+psql (PostgreSQL) 17.11
+pg_dump (PostgreSQL) 17.11
+pg_dumpall (PostgreSQL) 17.11
+pg_restore (PostgreSQL) 17.11

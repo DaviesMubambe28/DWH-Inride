@@ -1,0 +1,5 @@
+{
+  "pin_rpc_matches_original": true,
+  "trip_guard_matches_locally_reproduced_guard": true,
+  "scope": "Read-only deployed definition comparison; no hosted PIN attempts or data changes"
+}

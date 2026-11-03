@@ -1,0 +1,85 @@
+{
+  "captured_at_cat": "2026-11-02T16:08:02.914943+02:00",
+  "source_commit": "44c60ba9f64efe593f134c60ee57507f87f0b65e",
+  "hosted_mutations": false,
+  "publications": false,
+  "unit_suites": [
+    {
+      "name": "zm.co.dhwinride.core.data.SignupBoundaryTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "zm.co.dhwinride.core.data.SupabaseClientProviderTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "zm.co.dhwinride.core.data.PasswordRecoveryTest",
+      "tests": 9,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "zm.co.dhwinride.core.ui.PassengerViewModelTest",
+      "tests": 10,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "zm.co.dhwinride.core.domain.FareCalculatorTest",
+      "tests": 14,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "zm.co.dhwinride.core.ui.RiderViewModelTest",
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "unit_totals": {
+    "tests": 44,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "recovery_guard_mutation": "inverted guard causes test failures; original restored; affected Android verification passes",
+  "sql": {
+    "isolated_ordered_migrations": 26,
+    "assertions": 218,
+    "failures": 0,
+    "affected_existing_local_assertions": 74,
+    "scope": "synthetic local PostgreSQL, not hosted or full service"
+  },
+  "powershell": {
+    "blocks": 4,
+    "syntax_errors": 0,
+    "executed_on_windows": false
+  },
+  "review": {
+    "new_dependencies": false,
+    "security_guard_weakening": false,
+    "known_privileged_value_scan": "zero findings; bounded to configured values and private-key/PAT markers",
+    "limitations": [
+      "No current-artifact phone/emulator install",
+      "No actual email dispatch",
+      "No FCM or Sentry receipt",
+      "No hosted backup/restore/deploy",
+      "No legal/operator/support/retention approval"
+    ],
+    "entire_remediation_changed_files_scanned": 29,
+    "final_diff_check": "PASS",
+    "local_markdown_link_check": "PASS, zero broken file links"
+  },
+  "local_test_services": "Own loopback request-trip harness stopped; existing Supabase services preserved and booking settings restored paused."
+}

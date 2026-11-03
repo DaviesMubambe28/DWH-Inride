@@ -13,6 +13,19 @@ concurrency:
   group: quality-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 jobs:
+  landing:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: sites/dhw-inride-landing
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24.19.0
+      # Static site: no dependency installation or artifact publication.
+      - run: npm run build
   dashboard:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -54,11 +67,21 @@ jobs:
           done
           curl -fsS http://127.0.0.1:3000/ >/dev/null
           npm run test:browser
+      - name: Landing browser and accessibility checks
+        working-directory: sites/dhw-inride-landing
+        env:
+          UI_TEST_TOOLS: ${{ runner.temp }}/ui-tools
+          UI_TEST_ARTIFACTS: ${{ runner.temp }}/landing-ui
+          CHROMIUM_PATH: /usr/bin/google-chrome
+        # Reuse isolated tools; no hosted credentials, publication or APK assets.
+        run: npm run test:browser
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: failure()
         with:
           name: browser-fixture-screenshots
-          path: ${{ runner.temp }}/ui-review
+          path: |
+            ${{ runner.temp }}/ui-review
+            ${{ runner.temp }}/landing-ui
           if-no-files-found: ignore
   database:
     runs-on: ubuntu-24.04
@@ -111,9 +134,21 @@ jobs:
       - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
       - run: sdkmanager "platforms;android-37.0" "build-tools;37.0.0"
       - run: bash gradlew :core-ui:testDebugUnitTest :core-ui:lintDebug --no-daemon --max-workers=2
+      # Compile the real app sources without runtime bindings, Firebase files or
+      # release signing. These separate .development APKs are never uploaded.
+      - name: Compile and lint both development apps (notifications unavailable)
+        run: bash gradlew :passenger-app:assembleDevelopment :rider-app:assembleDevelopment :passenger-app:lintDevelopment :rider-app:lintDevelopment --no-daemon --max-workers=2
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: android-core-reports
           path: core-ui/build/reports/
           if-no-files-found: error
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: android-development-lint-reports
+          path: |
+            passenger-app/build/reports/
+            rider-app/build/reports/
+          if-no-files-found: ignore

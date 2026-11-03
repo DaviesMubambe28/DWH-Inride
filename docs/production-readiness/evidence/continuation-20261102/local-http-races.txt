@@ -1,0 +1,14 @@
+PASS: real local Auth account creation/password login; signup metadata cannot assign admin
+PASS: rider application/admin provisioning/approval boundaries and availability; synthetic attestations only
+PASS: real request-trip handler rejects invalid JWT/rider booking and paused service
+PASS: current request-trip handler, actual local Auth/PostgREST and live Mapbox route; passenger cannot call trusted route-metrics RPC
+PASS: duplicate booking rejected with one active trip
+PASS: cross-user trip privacy and server ZMW20/3/17 fare protection
+PASS: competing HTTP acceptance produces one winner; only assigned rider can arrive
+PASS: passenger PIN retrieval, four-digit wrong-PIN counter persistence, other-rider denial, start and completion
+PASS: duplicate arrival/start/completion/payment are harmless; approval revocation blocks start
+PASS: cash recording by correct passenger and assigned rider; completed state persisted
+PASS: nine concurrent local HTTP cancellation/start/completion races; one durable outcome/review; observed {"cancel_before_complete": 1, "cancel_before_start": 2, "complete_wins": 2, "start_wins": 1}
+PASS: six concurrent wrong-PIN calls persist five attempts and lock; correct PIN denied while locked; no actual expiry wait
+PASS: original paused local service settings restored; fixtures removed
+PASS: local HTTP lifecycle plus live routing; hosted/device/FCM/email checks remain separate

@@ -1,0 +1,4 @@
+PASS: wrong recovery OTP denied; generated recovery OTP authenticates only its synthetic user
+PASS: consumed recovery OTP replay denied
+PASS: new password works, old password fails, previous refresh session revoked
+LIMITATION: existing access JWTs can remain valid until expiry; no email sent or Android UI exercised

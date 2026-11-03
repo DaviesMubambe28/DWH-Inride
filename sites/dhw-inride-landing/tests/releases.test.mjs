@@ -16,6 +16,7 @@ test("admin links reject unsafe schemes and embedded credentials", () => {
   assert.equal(validateAdminUrl("https://operations.example.org/"), true);
   assert.equal(validateAdminUrl("javascript:alert(1)"), false);
   assert.equal(validateAdminUrl("https://user:password@example.org"), false);
+  assert.equal(validateAdminUrl("https://operations.example.org/?token=temporary"), false);
 });
 test("production configuration fails closed", () => {
   for (const [app,release] of Object.entries(releases)) assert.ok(release === null || validateRelease(release, app));

@@ -675,11 +675,42 @@ class SupabaseAuthRepository(
     private val appId: String,
 ) : AuthRepository {
 
+    override val passwordRecovery: PasswordRecovery by lazy {
+        supabasePasswordRecovery(client.supabaseHttpUrl, client.supabaseKey)
+    }
+
     private val appContext = context.applicationContext
 
     private val _passengerProfile = MutableStateFlow(PassengerProfile())
 
     override fun getPassengerProfile(): Flow<PassengerProfile> = _passengerProfile.asStateFlow()
+
+    override suspend fun restoreSession(expectedRole: String): Result<Boolean> {
+        return try {
+            client.auth.awaitInitialization()
+            val user = client.auth.currentUserOrNull() ?: run {
+                FcmTokenRegistrar.disableLocalDelivery(appContext)
+                return Result.success(false)
+            }
+            val profile = client.from("profiles").select { filter { eq("id", user.id) } }.decodeSingle<DbProfile>()
+            if (!sessionRoleMatches(profile.role, expectedRole)) {
+                FcmTokenRegistrar.disableLocalDelivery(appContext)
+                client.auth.signOut()
+                _passengerProfile.value = PassengerProfile()
+                Result.success(false)
+            } else {
+                _passengerProfile.value = PassengerProfile(profile.id, profile.fullName, profile.phoneNumber)
+                registerTokenWithoutBlockingAccess()
+                Result.success(true)
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            FcmTokenRegistrar.disableLocalDelivery(appContext)
+            Log.w("SupabaseSession", "Session restoration failed (${e.javaClass.simpleName})")
+            Result.failure(IllegalStateException("Your saved session could not be restored. Sign in again."))
+        }
+    }
 
     override suspend fun signUp(
         email: String,
@@ -688,6 +719,9 @@ class SupabaseAuthRepository(
         phone: String,
         role: String,
     ): Result<Unit> {
+        if (role != "passenger") {
+            return Result.failure(IllegalArgumentException("Rider accounts must be provisioned by operations."))
+        }
         return try {
             val signupFullName = fullName.trim()
             val signupPhoneNumber = requireNotNull(ZambiaPhoneNumber.normalize(phone)) {
@@ -706,9 +740,6 @@ class SupabaseAuthRepository(
                     // Informational signup intent only. The database trigger always assigns
                     // passenger; rider approval must remain a trusted server-side action.
                 }
-            }
-            if (role == "rider" && client.auth.currentUserOrNull() != null) {
-                client.postgrest.rpc("apply_as_driver").decodeAs<String>()
             }
             _passengerProfile.value = PassengerProfile(
                 client.auth.currentUserOrNull()?.id.orEmpty(),
@@ -744,25 +775,19 @@ class SupabaseAuthRepository(
             }
             val user = client.auth.currentUserOrNull()
             if (user != null) {
-                var profile = client.from("profiles").select { filter { eq("id", user.id) } }.decodeSingle<DbProfile>()
-                if (expectedRole == "rider" && profile.role == "passenger") {
-                    client.postgrest.rpc("apply_as_driver").decodeAs<String>()
-                    profile = client.from("profiles").select { filter { eq("id", user.id) } }.decodeSingle()
-                }
-                if (profile.role != expectedRole) {
+                val profile = client.from("profiles").select { filter { eq("id", user.id) } }.decodeSingle<DbProfile>()
+                if (!sessionRoleMatches(profile.role, expectedRole)) {
+                    FcmTokenRegistrar.disableLocalDelivery(appContext)
                     client.auth.signOut()
-                    error("This account is registered as ${profile.role}, not $expectedRole.")
+                    error(if (expectedRole == "rider") "Rider accounts must be provisioned by operations."
+                        else "Use an account registered for this app.")
                 }
                 _passengerProfile.value = PassengerProfile(profile.id, profile.fullName, profile.phoneNumber)
             }
-            try {
-                FcmTokenRegistrar.registerIfSignedIn(appContext, client, appId)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Log.w("FcmToken", "Token registration failed (${e.javaClass.simpleName})")
-            }
+            registerTokenWithoutBlockingAccess()
             Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -786,6 +811,16 @@ class SupabaseAuthRepository(
         _passengerProfile.value = _passengerProfile.value.copy(name = fullName, phone = phone)
         val user = requireNotNull(client.auth.currentUserOrNull()) { "Sign in before updating the profile." }
         client.from("profiles").update(mapOf("full_name" to fullName, "phone_number" to phone)) { filter { eq("id", user.id) } }
+    }
+
+    private suspend fun registerTokenWithoutBlockingAccess() {
+        try {
+            FcmTokenRegistrar.registerIfSignedIn(appContext, client, appId)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.w("FcmToken", "Token registration failed (${e.javaClass.simpleName})")
+        }
     }
 }
 

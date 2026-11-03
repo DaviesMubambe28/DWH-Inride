@@ -42,6 +42,7 @@ data class RiderUiState(
     val isLoadingRequests: Boolean = false,
     val acceptingTripId: String? = null,
     val cancellingTrip: Boolean = false,
+    val verifyingPin: Boolean = false,
 )
 
 class RiderViewModel(
@@ -101,26 +102,34 @@ class RiderViewModel(
         viewModelScope.launch {
             tripRepository.getActiveTrip().collect { trip ->
                 updateState { state ->
-                    val recoveredScreen = when (trip?.status) {
-                        zm.co.dhwinride.core.model.TripStatus.RIDER_ASSIGNED -> RiderNavScreen.Pickup
-                        zm.co.dhwinride.core.model.TripStatus.RIDER_ARRIVED -> RiderNavScreen.Pin
-                        zm.co.dhwinride.core.model.TripStatus.TRIP_IN_PROGRESS -> RiderNavScreen.ActiveTrip
-                        zm.co.dhwinride.core.model.TripStatus.TRIP_COMPLETED ->
-                            if (trip.passengerMarkedPaid && !trip.riderConfirmedPayment) RiderNavScreen.Cash
-                            else RiderNavScreen.Complete
-                        else -> null
-                    }
                     state.copy(
                         activeTrip = trip,
-                        screen = if (trip != null && state.screen in setOf(RiderNavScreen.Home, RiderNavScreen.Request)) {
-                            recoveredScreen ?: RiderNavScreen.Request
-                        } else state.screen,
+                        screen = reconciledScreen(state.screen, trip),
+                        pinInput = if (trip?.status != TripStatus.RIDER_ARRIVED || trip.id != state.activeTrip?.id) "" else state.pinInput,
+                        paymentReceived = if (trip == null || trip.id != state.activeTrip?.id) false else state.paymentReceived,
                     )
                 }
                 syncRiderLocation(trip)
             }
         }
         if (authRepository == null) startRequestFeed()
+    }
+
+    private fun reconciledScreen(current: RiderNavScreen, trip: Trip?): RiderNavScreen {
+        val tripScreen = current in setOf(
+            RiderNavScreen.Pickup, RiderNavScreen.Arrival, RiderNavScreen.Pin,
+            RiderNavScreen.ActiveTrip, RiderNavScreen.Complete, RiderNavScreen.Cash,
+        )
+        // Profile/history navigation is independent; active-trip screens follow server state.
+        if (!tripScreen && current !in setOf(RiderNavScreen.Home, RiderNavScreen.Request)) return current
+        if (trip == null) return if (tripScreen) RiderNavScreen.Home else current
+        return when (trip.status) {
+            TripStatus.RIDER_ASSIGNED -> RiderNavScreen.Pickup
+            TripStatus.RIDER_ARRIVED -> if (current == RiderNavScreen.Arrival) current else RiderNavScreen.Pin
+            TripStatus.TRIP_IN_PROGRESS -> RiderNavScreen.ActiveTrip
+            TripStatus.TRIP_COMPLETED -> if (trip.passengerMarkedPaid && !trip.riderConfirmedPayment) RiderNavScreen.Cash else RiderNavScreen.Complete
+            else -> if (tripScreen) RiderNavScreen.Home else RiderNavScreen.Request
+        }
     }
 
     private fun startRequestFeed() {
@@ -158,10 +167,12 @@ class RiderViewModel(
     }
 
     private fun restoreState(): RiderUiState {
+        // Scrub legacy saved-state credentials; a pickup PIN must remain memory-only.
+        savedStateHandle.remove<String>("rider.pinInput")
         val screen = savedStateHandle.get<String>("rider.screen")?.let { runCatching { RiderNavScreen.valueOf(it) }.getOrNull() } ?: RiderNavScreen.Home
         return RiderUiState(
             screen = screen,
-            pinInput = savedStateHandle["rider.pinInput"] ?: "",
+            pinInput = "",
             paymentReceived = savedStateHandle["rider.paymentReceived"] ?: false,
             isLoadingRequests = false,
         )
@@ -169,7 +180,7 @@ class RiderViewModel(
 
     private fun persistState(state: RiderUiState) {
         savedStateHandle["rider.screen"] = state.screen.name
-        savedStateHandle["rider.pinInput"] = state.pinInput
+        savedStateHandle.remove<String>("rider.pinInput")
         savedStateHandle["rider.paymentReceived"] = state.paymentReceived
     }
 
@@ -217,18 +228,25 @@ class RiderViewModel(
         val current = _uiState.value
         val tripId = current.selectedRequest?.id ?: return
         if (current.acceptingTripId != null) return
+        // Set the guard before dispatch so two taps in the same frame cannot race.
+        updateState { it.copy(acceptingTripId = tripId, errorMessage = null) }
         viewModelScope.launch {
-            updateState { it.copy(acceptingTripId = tripId, errorMessage = null) }
-            tripRepository.acceptTrip(tripId, current.profile.id)
-                .onSuccess { assigned -> updateState { state -> state.copy(activeTrip = assigned, selectedRequest = null, screen = RiderNavScreen.Pickup, acceptingTripId = null) } }
-                .onFailure { error -> updateState { state ->
+            try {
+                val assigned = tripRepository.acceptTrip(tripId, current.profile.id).getOrThrow()
+                updateState { state -> state.copy(activeTrip = assigned, selectedRequest = null, screen = RiderNavScreen.Pickup) }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                updateState { state ->
                     val stillAvailable = state.availableRequests.any { it.id == tripId }
                     state.copy(
                         selectedRequest = if (stillAvailable) state.selectedRequest else null,
-                        acceptingTripId = null,
-                        errorMessage = error.message ?: "This trip could not be accepted. Refresh and try again.",
+                        errorMessage = "This trip could not be accepted. Refresh and try again.",
                     )
-                } }
+                }
+            } finally {
+                updateState { it.copy(acceptingTripId = null) }
+            }
         }
     }
 
@@ -247,12 +265,13 @@ class RiderViewModel(
     }
 
     fun appendPinDigit(digit: String) {
+        if (_uiState.value.verifyingPin) return
         val currentPin = _uiState.value.pinInput
         if (digit == "⌫") {
             updateState { it.copy(pinInput = currentPin.dropLast(1)) }
         } else if (digit == "✓") {
             verifyPin()
-        } else if (currentPin.length < 4) {
+        } else if (currentPin.length < 4 && digit.matches(Regex("[0-9]"))) {
             val updated = currentPin + digit
             updateState { it.copy(pinInput = updated) }
             if (updated.length == 4) {
@@ -262,14 +281,35 @@ class RiderViewModel(
     }
 
     fun verifyPin() {
+        val state = _uiState.value
+        val tripId = state.activeTrip?.id ?: return
+        val code = state.pinInput
+        if (state.verifyingPin || !code.matches(Regex("[0-9]{4}"))) return
+        updateState { it.copy(verifyingPin = true, errorMessage = null) }
         viewModelScope.launch {
-            val currentTrip = _uiState.value.activeTrip ?: return@launch
-            runCatching { tripRepository.verifyPin(currentTrip.id, _uiState.value.pinInput) }
-                .onSuccess { verified ->
-                    if (verified) updateState { it.copy(screen = RiderNavScreen.ActiveTrip, pinInput = "", errorMessage = null) }
-                    else updateState { it.copy(errorMessage = "That pickup PIN was not accepted. Check the code and try again.") }
+            try {
+                val verified = tripRepository.verifyPin(tripId, code)
+                // An interrupted/cancelled trip must not be resurrected by a late response.
+                val authoritativeTrip = _uiState.value.activeTrip
+                if (authoritativeTrip?.id == tripId && (
+                    authoritativeTrip.status == TripStatus.RIDER_ARRIVED ||
+                        (verified && authoritativeTrip.status == TripStatus.TRIP_IN_PROGRESS)
+                )) {
+                    updateState { it.copy(
+                        screen = if (verified) RiderNavScreen.ActiveTrip else it.screen,
+                        pinInput = "",
+                        errorMessage = if (verified) null else "That pickup PIN was not accepted. Check the code and try again.",
+                    ) }
                 }
-                .onFailure { error -> updateState { it.copy(errorMessage = error.message ?: "Could not verify the pickup PIN.") } }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                if (_uiState.value.activeTrip?.id == tripId) updateState {
+                    it.copy(pinInput = "", errorMessage = "Could not verify the pickup PIN. Refresh trip details and try again.")
+                }
+            } finally {
+                updateState { it.copy(verifyingPin = false) }
+            }
         }
     }
 

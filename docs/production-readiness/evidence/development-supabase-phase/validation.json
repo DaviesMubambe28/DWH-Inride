@@ -1,0 +1,38 @@
+{
+  "verified_code_commit": "debebd78250407b8a0122bebbb1f58a6eafad64d",
+  "android_core": {
+    "status": "PASS",
+    "command": "bash gradlew :core-ui:testDebugUnitTest :core-ui:lintDebug --console=plain",
+    "tests": {
+      "tests": 34,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "lint": {
+      "Error": 0,
+      "Fatal": 0,
+      "Warning": 37
+    }
+  },
+  "hosted_backup": {
+    "status": "BLOCKED",
+    "provider_backup_count": 0,
+    "pitr_enabled": false,
+    "walg_enabled": true,
+    "tcp_domains": [],
+    "tcp_proxy_probe": "ConnectionRefusedError before CONNECT response",
+    "required_session_destination": "aws-0-eu-west-1.pooler.supabase.com:5432"
+  },
+  "hosted_writes_performed": false,
+  "request_trip_source_export": {
+    "status": "PASS",
+    "scope": "Existing deployed source only; not a full backup",
+    "bundle_sha256": "f147b0510a663d52ba2e4f5e49190a2a00037d721b6252794ca66837098656cb",
+    "hosted_index_sha256": "0bad05429d05fdb14d11442a5081a2398cfabad0ee17106121ea931ef4d73af0",
+    "local_index_sha256": "f8123cf659ba45c4812bdd8a0dbb55145a4526f473ba3a780364a01b1a9fbd39",
+    "hosted_pilot_precheck_present": false,
+    "local_pilot_precheck_present": true
+  },
+  "production_publication": "DISABLED"
+}

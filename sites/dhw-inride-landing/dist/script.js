@@ -1,6 +1,8 @@
 import { releases, adminUrl } from "./release-config.mjs";
 import { validateRelease, validateAdminUrl } from "./release-validation.mjs";
 
+document.documentElement.classList.add("js-ready");
+
 const menu = document.querySelector("#main-menu");
 const toggle = document.querySelector(".menu-toggle");
 const mobile = window.matchMedia("(max-width: 1020px)");
@@ -36,18 +38,24 @@ for (const [app, release] of Object.entries(releases)) {
   card.querySelector(".release-badge").textContent = "Available";
   for (const [field, value] of Object.entries({
     version: release.version,
-    size: `${(release.bytes / 1048576).toFixed(1)} MB`,
+    sha256: release.sha256.toLowerCase(),
+    size: `${(release.bytes / 1048576).toFixed(1)} MiB (${new Intl.NumberFormat("en-GB").format(release.bytes)} bytes)`,
     android: `${release.android}+`,
     date: new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(release.releaseDate)),
   })) card.querySelector(`[data-field="${field}"]`).textContent = value;
   card.querySelector(".release-status").textContent = "Signed Android APK · direct download";
 }
 
+const availableApps = Object.entries(releases).filter(([app, release]) => release && validateRelease(release, app)).length;
+document.querySelector("#app-availability").textContent = availableApps === 2
+  ? "Verified APKs are available below."
+  : availableApps === 1 ? "One app is available; check each release below." : "Public releases are coming soon.";
+
 if (adminUrl && validateAdminUrl(adminUrl)) {
   document.querySelectorAll(".admin-entry").forEach((link) => { link.href = adminUrl; });
   const link = document.createElement("a");
   link.href = adminUrl;
-  link.textContent = "Admin Login";
+  link.textContent = "Admin";
   const status = document.querySelector("#admin-status");
   status.textContent = "Sign in to operations: ";
   status.append(link);

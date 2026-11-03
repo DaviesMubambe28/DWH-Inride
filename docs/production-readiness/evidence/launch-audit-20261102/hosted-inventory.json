@@ -1,0 +1,79 @@
+{
+  "project_ref": "vhckkmzyabbsbgjuhjmq",
+  "hosted_mutations": false,
+  "projects": [
+    {
+      "id": "vhckkmzyabbsbgjuhjmq",
+      "status": "ACTIVE_HEALTHY",
+      "region": "eu-west-1"
+    }
+  ],
+  "backups": {
+    "walg_enabled": true,
+    "pitr_enabled": false,
+    "backup_count": 0
+  },
+  "functions": [
+    {
+      "slug": "request-trip",
+      "version": 2,
+      "status": "ACTIVE",
+      "verify_jwt": true
+    }
+  ],
+  "hosted_secret_names": [
+    "MAPBOX_SERVER_TOKEN",
+    "SUPABASE_ANON_KEY",
+    "SUPABASE_DB_URL",
+    "SUPABASE_JWKS",
+    "SUPABASE_PUBLISHABLE_KEYS",
+    "SUPABASE_SECRET_KEYS",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "SUPABASE_URL"
+  ],
+  "auth": {
+    "site_url": "http://localhost:3000",
+    "uri_allow_list": "",
+    "mailer_autoconfirm": true,
+    "external_email_enabled": true,
+    "disable_signup": false,
+    "jwt_exp": 3600,
+    "refresh_token_rotation_enabled": true,
+    "security_refresh_token_reuse_interval": 10,
+    "smtp_host_present": false,
+    "smtp_user_present": false,
+    "smtp_password_present": false,
+    "smtp_from_present": false
+  },
+  "branches": [],
+  "schema": [
+    {
+      "security_inventory": {
+        "outbox": false,
+        "fcm_table": false,
+        "latest_version": "20261025130000",
+        "pilot_controls": false,
+        "cron_jobs_table": false,
+        "migration_count": 12,
+        "retention_policy": false,
+        "anonymous_trip_select": false,
+        "authenticated_fare_update": false,
+        "authenticated_role_update": false,
+        "authenticated_trip_insert": false,
+        "authenticated_approval_update": false
+      }
+    }
+  ],
+  "local_binding_presence": {
+    "SUPABASE_ACCESS_TOKEN": true,
+    "SUPABASE_DB_PASSWORD": false,
+    "MAPBOX_PUBLIC_TOKEN": true,
+    "FCM_SERVICE_ACCOUNT_JSON": false,
+    "OPERATIONS_WORKER_TOKEN": false,
+    "SENTRY_DSN": false,
+    "DHWINRIDE_RELEASE_KEYSTORE_PATH": false,
+    "DHWINRIDE_RELEASE_STORE_PASSWORD": false,
+    "DHWINRIDE_RELEASE_KEY_ALIAS": false,
+    "DHWINRIDE_RELEASE_KEY_PASSWORD": false
+  }
+}

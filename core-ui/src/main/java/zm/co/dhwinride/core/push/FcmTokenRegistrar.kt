@@ -16,6 +16,7 @@ object FcmTokenRegistrar {
     private const val PREFERENCES = "dhw_push"
     private const val PENDING_TOKEN = "pending_fcm_token"
     private const val REGISTERED_TOKEN = "registered_fcm_token"
+    private const val SESSION_ACTIVE = "push_session_active"
 
     /** Syncs the latest installation token only when Supabase has an authenticated user. */
     suspend fun registerIfSignedIn(context: Context, client: SupabaseClient, appId: String) {
@@ -42,11 +43,25 @@ object FcmTokenRegistrar {
             .edit()
             .putString(PENDING_TOKEN, token)
             .putString(REGISTERED_TOKEN, token)
+            .putBoolean(SESSION_ACTIVE, true)
             .apply()
     }
 
+    /** Suppresses delivery immediately, including when remote token cleanup is offline. */
+    fun disableLocalDelivery(context: Context) {
+        context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(SESSION_ACTIVE, false)
+            .apply()
+    }
+
+    fun localDeliveryEnabled(context: Context): Boolean =
+        context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
+            .getBoolean(SESSION_ACTIVE, false)
+
     /** Call before Supabase sign-out so the current user's installation row is removed. */
     suspend fun unregisterCurrentTokenIfSignedIn(context: Context, client: SupabaseClient) {
+        disableLocalDelivery(context)
         if (client.auth.currentUserOrNull() == null) return
 
         val preferences = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)

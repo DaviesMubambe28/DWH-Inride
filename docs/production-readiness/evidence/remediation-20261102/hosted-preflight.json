@@ -1,0 +1,90 @@
+{
+  "project_ref": "vhckkmzyabbsbgjuhjmq",
+  "backup_count": 0,
+  "pitr_enabled": false,
+  "functions": [
+    {
+      "slug": "request-trip",
+      "version": 2,
+      "verify_jwt": true
+    }
+  ],
+  "secret_names": [
+    "MAPBOX_SERVER_TOKEN",
+    "SUPABASE_ANON_KEY",
+    "SUPABASE_DB_URL",
+    "SUPABASE_JWKS",
+    "SUPABASE_PUBLISHABLE_KEYS",
+    "SUPABASE_SECRET_KEYS",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "SUPABASE_URL"
+  ],
+  "auth": {
+    "site_url": "http://localhost:3000",
+    "uri_allow_list": "",
+    "mailer_autoconfirm": true,
+    "smtp_configured": false
+  },
+  "migrations": [
+    {
+      "version": "20261013221902",
+      "name": "init_schema"
+    },
+    {
+      "version": "20261013221915",
+      "name": "storage_and_security"
+    },
+    {
+      "version": "20261013221919",
+      "name": "rls_policies"
+    },
+    {
+      "version": "20261013221924",
+      "name": "indexes"
+    },
+    {
+      "version": "20261013232004",
+      "name": "external_mobile_money"
+    },
+    {
+      "version": "20261016005149",
+      "name": "production_operations"
+    },
+    {
+      "version": "20261016013132",
+      "name": "production_trip_workflow"
+    },
+    {
+      "version": "20261017120000",
+      "name": "rider_available_feed_policy"
+    },
+    {
+      "version": "20261018103000",
+      "name": "validate_signup_profile_metadata"
+    },
+    {
+      "version": "20261020120000",
+      "name": "grant_trip_feed_columns"
+    },
+    {
+      "version": "20261024120000",
+      "name": "secure_trip_access"
+    },
+    {
+      "version": "20261025130000",
+      "name": "trip_ratings"
+    }
+  ],
+  "local_migration_count": 25,
+  "local_missing_inputs": [
+    "SUPABASE_DB_PASSWORD",
+    "FCM_SERVICE_ACCOUNT_JSON",
+    "OPERATIONS_WORKER_TOKEN",
+    "SENTRY_DSN",
+    "DHWINRIDE_RELEASE_KEYSTORE_PATH",
+    "DHWINRIDE_RELEASE_STORE_PASSWORD",
+    "DHWINRIDE_RELEASE_KEY_ALIAS",
+    "DHWINRIDE_RELEASE_KEY_PASSWORD"
+  ],
+  "note": "Read-only inspection preceded the new local migration; current local total is 26, with 14 unrecorded hosted versions. No hosted mutation."
+}

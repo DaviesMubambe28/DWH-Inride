@@ -90,6 +90,19 @@ class PassengerViewModelTest {
     }
 
     @Test
+    fun `outside pilot area cannot create a trip`() = runTest {
+        chooseBookingLocations()
+        viewModel.choosePlace(Place("Outside destination", "Outside address", "", -15.2, 28.7))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.requestRide()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertNull(viewModel.uiState.value.activeTrip)
+        assertTrue(viewModel.uiState.value.errorMessage.orEmpty().contains("within 4 km"))
+    }
+
+    @Test
     fun `booking timeout shows reconciliation guidance and does not navigate to success`() = runTest {
         chooseBookingLocations()
         repository.requestFailure = java.net.SocketTimeoutException("Read timed out")
@@ -183,8 +196,8 @@ class PassengerViewModelTest {
     }
 
     private suspend fun chooseBookingLocations() {
-        viewModel.choosePlace(Place("Pickup", "Pickup address", "", -15.3, 28.6))
-        viewModel.choosePlace(Place("Destination", "Destination address", "", -15.2, 28.7))
+        viewModel.choosePlace(Place("Pickup", "Pickup address", "", -15.3292, 28.6820))
+        viewModel.choosePlace(Place("Destination", "Destination address", "", -15.3300, 28.6900))
         testDispatcher.scheduler.advanceUntilIdle()
     }
 }

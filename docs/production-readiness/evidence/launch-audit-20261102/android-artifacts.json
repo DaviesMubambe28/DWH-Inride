@@ -1,0 +1,106 @@
+{
+  "artifacts": [
+    {
+      "path": "/workspace/DWH-Inride/passenger-app/build/outputs/apk/development/passenger-app-development.apk",
+      "type": "development-debug-signed-not-for-public-distribution",
+      "package": "zm.co.dhwinride.passenger.development",
+      "version_name": "0.1.0-development-no-push",
+      "version_code": "1",
+      "min_sdk": "26",
+      "target_sdk": "37",
+      "debuggable": true,
+      "notification_capability": "UNAVAILABLE; Firebase JSON omitted only for development variant; messaging auto-init false and app messaging service absent",
+      "bytes": 125716780,
+      "sha256": "091f0f72b341e3218630f1f3c51cf113e23beaa7857de4b0a939073e5df8445b",
+      "certificate_sha256": "18847ebd25a7a4ecdb9ce13499e74ee00b5bf37ac1e1925576a6fa8fc5ee85c9",
+      "apk_signature_v2": "PASS",
+      "zipalign_16k": "PASS",
+      "public_config_matches_current_bindings": true,
+      "configured_secret_values_in_dex": false,
+      "lint": {
+        "Error": 0,
+        "Fatal": 0,
+        "Warning": 4
+      },
+      "physical_device_install": "Not verified; no physical phone tested",
+      "emulator_install": "Verified on API35 isolated software emulator",
+      "abis": [
+        "arm64-v8a",
+        "armeabi-v7a",
+        "x86",
+        "x86_64"
+      ],
+      "elf_load_alignment_64bit_16k": "PASS",
+      "elf_32bit_libraries_with_4k_alignment": [
+        "lib/armeabi-v7a/libc++_shared.so",
+        "lib/armeabi-v7a/libmapbox-common.so",
+        "lib/armeabi-v7a/libmapbox-maps.so",
+        "lib/x86/libc++_shared.so",
+        "lib/x86/libmapbox-common.so",
+        "lib/x86/libmapbox-maps.so"
+      ],
+      "emulator_ui": "Not verified; System UI ANR obstructed welcome screen observation"
+    },
+    {
+      "path": "/workspace/DWH-Inride/rider-app/build/outputs/apk/development/rider-app-development.apk",
+      "type": "development-debug-signed-not-for-public-distribution",
+      "package": "zm.co.dhwinride.rider.development",
+      "version_name": "0.1.0-development-no-push",
+      "version_code": "1",
+      "min_sdk": "26",
+      "target_sdk": "37",
+      "debuggable": true,
+      "notification_capability": "UNAVAILABLE; Firebase JSON omitted only for development variant; messaging auto-init false and app messaging service absent",
+      "bytes": 125716771,
+      "sha256": "5a68dc8a809ecf3ca592c06f809fc656dd114ab67c34643672cca78c698dc373",
+      "certificate_sha256": "18847ebd25a7a4ecdb9ce13499e74ee00b5bf37ac1e1925576a6fa8fc5ee85c9",
+      "apk_signature_v2": "PASS",
+      "zipalign_16k": "PASS",
+      "public_config_matches_current_bindings": true,
+      "configured_secret_values_in_dex": false,
+      "lint": {
+        "Error": 0,
+        "Fatal": 0,
+        "Warning": 4
+      },
+      "physical_device_install": "Not verified; no physical phone tested",
+      "emulator_install": "Verified on API35 isolated software emulator",
+      "abis": [
+        "arm64-v8a",
+        "armeabi-v7a",
+        "x86",
+        "x86_64"
+      ],
+      "elf_load_alignment_64bit_16k": "PASS",
+      "elf_32bit_libraries_with_4k_alignment": [
+        "lib/armeabi-v7a/libc++_shared.so",
+        "lib/armeabi-v7a/libmapbox-common.so",
+        "lib/armeabi-v7a/libmapbox-maps.so",
+        "lib/x86/libc++_shared.so",
+        "lib/x86/libmapbox-common.so",
+        "lib/x86/libmapbox-maps.so"
+      ],
+      "emulator_ui": "Not verified; System UI ANR obstructed welcome screen observation"
+    }
+  ],
+  "source_commit": "be7a1bb8cbacf4d25c0f0963076d5f51057e669c",
+  "final_build_log": "/workspace/release-tools/sprint-android-development-final.log",
+  "final_build_from_committed_android_source": "PASS",
+  "android_input_hashes": {
+    "build.gradle.kts": "600a1093fdbca63e26930cef2a00913852758665abd41fe2a392636cacdfed12",
+    "settings.gradle.kts": "6eea14a8dc51a35a7ad923363da466d078ede7562eb399303134221baa24f197",
+    "gradle.properties": "f694ce2981206ff7cefa930919357b049bc10d34142ad09583aada32239b3e34",
+    "passenger-app/build.gradle.kts": "cef7334c75d111cb46d215d3f69bb27f006dd20cc35101e208c9482afd4d6ce2",
+    "rider-app/build.gradle.kts": "2ea3d18d68f450e908c86d2d778d3493c114772e3bf40ba3e0ac1c7b97982213",
+    "passenger-app/src/main/AndroidManifest.xml": "53f5e4ce3effac51d2ffaa1ed40e8719e252fe804f7a125c8461533264b3a688",
+    "rider-app/src/main/AndroidManifest.xml": "94ce11122b231900ea8307206191262759b13e5e75529d6e15f6ffd44aa715fa",
+    "passenger-app/src/development/AndroidManifest.xml": "440244a617ad3e21dc60f98cdde85ed92821238b5837a997839421c384a75a60",
+    "rider-app/src/development/AndroidManifest.xml": "440244a617ad3e21dc60f98cdde85ed92821238b5837a997839421c384a75a60"
+  },
+  "negative_guards": {
+    "status": "PASS; four expected denials executed",
+    "release_signing_missing_inputs_rejected": 2,
+    "normal_debug_missing_firebase_rejected": 2,
+    "source_release_guard_changed": false
+  }
+}

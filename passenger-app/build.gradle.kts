@@ -1,4 +1,6 @@
 import java.util.Properties
+import com.google.gms.googleservices.GoogleServicesTask
+import com.google.gms.googleservices.GoogleServicesPlugin.MissingGoogleServicesStrategy
 
 plugins {
     id("com.android.application")
@@ -34,18 +36,42 @@ android {
         targetSdk = 37
         versionCode = 1
         versionName = "0.1.0"
+        resValue("string", "app_name", "DHW-inRide")
         buildConfigField("String", "SUPABASE_URL", "\"${configuredValue("SUPABASE_URL")}\"")
         buildConfigField("String", "SUPABASE_KEY", "\"${configuredValue("SUPABASE_ANON_KEY")}\"")
         buildConfigField("String", "MAPBOX_PUBLIC_TOKEN", "\"${configuredValue("MAPBOX_PUBLIC_TOKEN")}\"")
     }
 
+    buildTypes {
+        create("development") {
+            initWith(getByName("debug"))
+            matchingFallbacks += listOf("debug")
+            applicationIdSuffix = ".development"
+            versionNameSuffix = "-development-no-push"
+            resValue("string", "app_name", "DHW-inRide Passenger DEVELOPMENT (no push)")
+        }
+    }
+
     buildFeatures {
         compose = true
         buildConfig = true
+        resValues = true
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
+}
+
+// This explicitly separate debug-signed variant exercises the development
+// backend without fabricating Firebase credentials. Debug/release still require
+// their real Google Services configuration, and all release guards remain active.
+androidComponents {
+    onVariants(selector().withBuildType("development")) {
+        tasks.named<GoogleServicesTask>("processDevelopmentGoogleServices") {
+            googleServicesJsonFiles.set(emptyList())
+            missingGoogleServicesStrategy.set(MissingGoogleServicesStrategy.WARN)
+        }
     }
 }
 

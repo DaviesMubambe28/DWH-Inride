@@ -1,0 +1,6 @@
+{
+  "http_status": 200,
+  "configured_public_key_accepted": true,
+  "email_provider_enabled": true,
+  "scope": "Public Auth settings only; no hosted signup/sign-in or user-data mutation"
+}

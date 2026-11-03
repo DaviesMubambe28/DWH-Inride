@@ -11,6 +11,12 @@ This directory documents release signing without containing a keystore, password
 5. Build both release artifacts and verify their signatures with `apksigner`.
 6. Install the signed artifacts on a test device and verify upgrade compatibility.
 
+The protected GitHub `pilot` environment also requires the non-secret variable
+`PILOT_RELEASE_CERT_SHA256`. Set it to the established 64-hex-character signing
+certificate SHA-256 from the distribution record. The candidate workflow fails
+if either APK uses another certificate, is debuggable, has the wrong package or
+version, lacks a minification mapping, or targets unexpected Android SDK levels.
+
 Do not commit the keystore, passwords, or the copied private signing script. Both app modules use the shared guarded release configuration. No signed artifact is claimed.
 
 ## Suggested secret names
@@ -44,6 +50,6 @@ keytool -genkeypair -storetype PKCS12 -keystore /SECURE-OFF-REPOSITORY/dhwinride
 
 Enter a unique strong password at the prompt; do not put it in the command, shell history, chat or repository. PKCS12 normally uses the store password for the key password too. Store the password in the approved secret manager, separately from encrypted keystore backups. Keep at least two encrypted backups under separate controlled custody, with a named recovery owner. Record the alias and public certificate fingerprint. Rehearse restoration of a backup and compare the certificate fingerprint before using it to build. Never export the private key to a shared evidence artifact.
 
-Local builds use `DHWINRIDE_RELEASE_KEYSTORE_PATH`, `DHWINRIDE_RELEASE_STORE_PASSWORD`, `DHWINRIDE_RELEASE_KEY_ALIAS`, `DHWINRIDE_RELEASE_KEY_PASSWORD`; the last three may also be in ignored `secrets.properties`. In protected GitHub environment `pilot`, use `DHWINRIDE_RELEASE_KEYSTORE_B64` plus the same password/alias secrets. Base64 is encoding, not encryption. `pilot-candidate.yml` decodes the key into RUNNER_TEMP, restricts file permissions and removes it after the build. Preserve that cleanup and environment approvals.
+Local builds use `DHWINRIDE_RELEASE_KEYSTORE_PATH`, `DHWINRIDE_RELEASE_STORE_PASSWORD`, `DHWINRIDE_RELEASE_KEY_ALIAS`, `DHWINRIDE_RELEASE_KEY_PASSWORD`; the last three may also be in ignored `secrets.properties`. In protected GitHub environment `pilot`, use `DHWINRIDE_RELEASE_KEYSTORE_B64` plus the same password/alias secrets. Base64 is encoding, not encryption. `pilot-candidate.yml` decodes the key into RUNNER_TEMP, restricts file permissions, verifies both APKs against `PILOT_RELEASE_CERT_SHA256`, records sanitized artifact evidence, and removes temporary configuration after the build. Preserve that cleanup and environment approvals.
 
 Both package versionCodes are currently 1. Before any update to a distributed app, confirm the highest published versionCode and increment it. Verify release signatures, SHA-256 APK hashes, non-debuggable/minified manifests, package IDs and backend target, then install and upgrade on actual devices. A valid signature alone does not prove the correct existing identity or a safe release.

@@ -1,0 +1,38 @@
+{
+  "verified_at": "2026-11-02T09:34:17.577359+02:00",
+  "baseline_commit": "bcaf6ba",
+  "procedure_sha256": "0281a7cdd274320637b2e56ab240c5e70d6faa77a1f34aec2bbf90b15faafdd0",
+  "status": "PASS",
+  "scope": "Synthetic Linux database mechanics only; not Windows execution or hosted recovery",
+  "fixed_failure": {
+    "command": "pg_dumpall --dbname postgres",
+    "observed": "missing equals sign in connection info string",
+    "correction": "pg_dumpall --dbname dbname=postgres; --password remains a native masked prompt"
+  },
+  "isolated_network": "none",
+  "published_ports": "{}",
+  "postgres_image": "supabase/postgres:17.11.0.004",
+  "image_digest": "supabase/postgres@sha256:b15d862126dd2dac02da524696ccfde2dcce2ceaee0a58973b2727befe492706",
+  "checks": {
+    "status": "PASS",
+    "scope": "local synthetic mechanics, not Windows or hosted recovery",
+    "table_counts_match": true,
+    "security_catalogs_match": true,
+    "rightful_subject_rows": 1,
+    "cross_subject_rows": 0,
+    "protected_role_update_denied": true,
+    "pgcrypto_operational": true,
+    "database_login_passwords_excluded": true,
+    "schemas": [
+      "auth",
+      "public",
+      "private",
+      "storage",
+      "supabase_migrations"
+    ]
+  },
+  "hosted_backup_gate": "BLOCKED; no actual hosted export/restore",
+  "hosted_writes_performed": false,
+  "powershell_syntax": "PASS: corrected three-block procedure parsed with PowerShell 7.5.4 on Linux",
+  "synthetic_container_cleanup": "PASS: only the uniquely named isolated review container and its volumes removed"
+}

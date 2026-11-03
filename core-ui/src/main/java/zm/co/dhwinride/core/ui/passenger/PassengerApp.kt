@@ -38,6 +38,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -91,6 +92,8 @@ import zm.co.dhwinride.core.ui.PrimaryButton
 import zm.co.dhwinride.core.ui.ScreenTitle
 import zm.co.dhwinride.core.ui.SecondaryButton
 import zm.co.dhwinride.core.ui.StatusPill
+import zm.co.dhwinride.core.ui.signOutAppSession
+import kotlinx.coroutines.launch
 
 @Composable
 fun PassengerApp(viewModel: PassengerViewModel, authRepository: AuthRepository) {
@@ -104,6 +107,9 @@ fun PassengerApp(viewModel: PassengerViewModel, authRepository: AuthRepository) 
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
     var accessReady by remember { mutableStateOf(false) }
+    var signOutBusy by remember { mutableStateOf(false) }
+    var signOutError by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val locationPermissionLauncher = rememberLauncherForActivityResult(
@@ -136,6 +142,19 @@ fun PassengerApp(viewModel: PassengerViewModel, authRepository: AuthRepository) 
     if (!accessReady) {
         LaunchAccessFlow(AppUserRole.Passenger, authRepository) { accessReady = true }
         return
+    }
+
+    fun signOut() {
+        if (signOutBusy) return
+        signOutBusy = true
+        signOutError = null
+        scope.launch {
+            signOutAppSession(authRepository).fold(
+                onSuccess = { accessReady = false },
+                onFailure = { signOutError = "Sign out could not be completed. Check your connection and try again." },
+            )
+            signOutBusy = false
+        }
     }
 
     Scaffold(
@@ -183,6 +202,7 @@ fun PassengerApp(viewModel: PassengerViewModel, authRepository: AuthRepository) 
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
             uiState.errorMessage?.let { message -> ErrorNotice(message, onRefresh = viewModel::refreshOnForeground) }
+            signOutError?.let { message -> ErrorNotice(message, onRefresh = ::signOut) }
             Box(Modifier.weight(1f)) {
                 when (screen) {
                     PassengerNavScreen.Home -> HomeScreen(
@@ -276,6 +296,8 @@ fun PassengerApp(viewModel: PassengerViewModel, authRepository: AuthRepository) 
                     )
                     PassengerNavScreen.Profile -> ProfileScreen(
                         profile = uiState.passengerProfile,
+                        signOutBusy = signOutBusy,
+                        onSignOut = ::signOut,
                     )
                     PassengerNavScreen.Safety -> SafetyScreen()
                 }
@@ -751,7 +773,11 @@ private fun HistoryScreen(history: List<Trip>, onReceipt: () -> Unit) {
 }
 
 @Composable
-private fun ProfileScreen(profile: PassengerProfile) {
+private fun ProfileScreen(
+    profile: PassengerProfile,
+    signOutBusy: Boolean,
+    onSignOut: () -> Unit,
+) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         ScreenTitle("Profile", "Account and settings")
         DhwCard {
@@ -774,7 +800,7 @@ private fun ProfileScreen(profile: PassengerProfile) {
         SettingsCard("Saved places", "Home, work and favourite destinations")
         SettingsCard("Privacy", "Location sharing and data controls")
         SettingsCard("Notifications", "Ride and safety alerts")
-        SettingsCard("Sign out", "End this session")
+        SecondaryButton(if (signOutBusy) "Signing out…" else "Sign out", onSignOut, enabled = !signOutBusy)
     }
 }
 

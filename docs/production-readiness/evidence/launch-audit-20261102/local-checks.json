@@ -1,0 +1,71 @@
+{
+  "checked_at": "2026-11-02T15:15:10.589706+02:00",
+  "source_commit": "227df3ef20e99339fdb1e4b26e738ab9ef57985a",
+  "sql": {
+    "cash_recording.test.sql": {
+      "status": "Verified",
+      "passed": 12,
+      "failed": 0,
+      "scope": "Rolled-back local real PostgreSQL assertions; not hosted/device proof"
+    },
+    "pin_attempts.test.sql": {
+      "status": "Verified",
+      "passed": 13,
+      "failed": 0,
+      "scope": "Rolled-back local real PostgreSQL assertions; not hosted/device proof"
+    },
+    "trip_workflow.test.sql": {
+      "status": "Verified",
+      "passed": 22,
+      "failed": 0,
+      "scope": "Rolled-back local real PostgreSQL assertions; not hosted/device proof"
+    },
+    "security_denials.test.sql": {
+      "status": "Verified",
+      "passed": 21,
+      "failed": 0,
+      "scope": "Rolled-back local real PostgreSQL assertions; not hosted/device proof"
+    }
+  },
+  "pin_before_fix": {
+    "status": "Failed",
+    "failed_assertions": 2,
+    "sqlstate": "42501",
+    "observed": "invalid rider trip status transition; failed counter stayed zero"
+  },
+  "live_trip": {
+    "status": "Verified",
+    "scope": "Actual loopback Deno handler/localAuth/REST and liveMapbox; synthetic accounts and simulated operator attestations; no physical/hosted journey",
+    "checkpoints": [
+      "real local Auth account creation/password login; signup metadata cannot assign admin",
+      "rider application/admin provisioning/approval boundaries and availability; synthetic attestations only",
+      "real request-trip handler rejects invalid JWT/rider booking and paused service",
+      "current request-trip handler, actual local Auth/PostgREST and live Mapbox route; passenger cannot call trusted route-metrics RPC",
+      "cross-user trip privacy and server ZMW20/3/17 fare protection",
+      "competing HTTP acceptance produces one winner; only assigned rider can arrive",
+      "passenger PIN retrieval, four-digit wrong-PIN counter persistence, other-rider denial, start and completion",
+      "cash recording by correct passenger and assigned rider; completed state persisted",
+      "browser fixture credentials retained only in the requested private off-repository file",
+      "original paused local service settings restored; fixtures retained for browser check",
+      "local HTTP lifecycle plus live routing; hosted/device/FCM/email checks remain separate"
+    ]
+  },
+  "admin_build": {
+    "status": "Verified",
+    "output": "Static export",
+    "privileged_value_matches_in_export": 0
+  },
+  "landing_build": {
+    "status": "Verified",
+    "named_tests": 7,
+    "failed": 0,
+    "skipped": 0,
+    "public_releases": "both null",
+    "admin_url": "null"
+  },
+  "publication": {
+    "deployment": false,
+    "git_push": false,
+    "production_data_mutation": false
+  }
+}

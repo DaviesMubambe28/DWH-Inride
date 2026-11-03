@@ -1,0 +1,109 @@
+{
+  "scope": "Local landing public download availability only; external font CSS isolated, no release download/artifact test",
+  "checks": [
+    {
+      "javascript": true,
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "cards": [
+        {
+          "app": "passenger",
+          "buttonDisabled": true,
+          "apkLinks": 0,
+          "badge": "Coming soon",
+          "status": "Coming soon. A verified signed APK is not yet published."
+        },
+        {
+          "app": "rider",
+          "buttonDisabled": true,
+          "apkLinks": 0,
+          "badge": "Coming soon",
+          "status": "Coming soon. A verified signed APK is not yet published."
+        }
+      ],
+      "pageErrors": [],
+      "isolatedExternalHosts": [],
+      "status": "PASS"
+    },
+    {
+      "javascript": true,
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "cards": [
+        {
+          "app": "passenger",
+          "buttonDisabled": true,
+          "apkLinks": 0,
+          "badge": "Coming soon",
+          "status": "Coming soon. A verified signed APK is not yet published."
+        },
+        {
+          "app": "rider",
+          "buttonDisabled": true,
+          "apkLinks": 0,
+          "badge": "Coming soon",
+          "status": "Coming soon. A verified signed APK is not yet published."
+        }
+      ],
+      "pageErrors": [],
+      "isolatedExternalHosts": [],
+      "status": "PASS"
+    },
+    {
+      "javascript": false,
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "cards": [
+        {
+          "app": "passenger",
+          "buttonDisabled": true,
+          "apkLinks": 0,
+          "badge": "Coming soon",
+          "status": "Coming soon. A verified signed APK is not yet published."
+        },
+        {
+          "app": "rider",
+          "buttonDisabled": true,
+          "apkLinks": 0,
+          "badge": "Coming soon",
+          "status": "Coming soon. A verified signed APK is not yet published."
+        }
+      ],
+      "pageErrors": [],
+      "isolatedExternalHosts": [],
+      "status": "PASS"
+    },
+    {
+      "javascript": false,
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "cards": [
+        {
+          "app": "passenger",
+          "buttonDisabled": true,
+          "apkLinks": 0,
+          "badge": "Coming soon",
+          "status": "Coming soon. A verified signed APK is not yet published."
+        },
+        {
+          "app": "rider",
+          "buttonDisabled": true,
+          "apkLinks": 0,
+          "badge": "Coming soon",
+          "status": "Coming soon. A verified signed APK is not yet published."
+        }
+      ],
+      "pageErrors": [],
+      "isolatedExternalHosts": [],
+      "status": "PASS"
+    }
+  ]
+}

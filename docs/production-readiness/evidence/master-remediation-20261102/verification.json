@@ -1,0 +1,73 @@
+{
+  "observed_at_utc": "2026-11-02T23:04:44Z",
+  "source_commit": "945d14961bc029c5685f778ef2c94514087bbbea",
+  "branch": "feat/release-operations",
+  "verdict": "NOT_READY",
+  "score": 4.0,
+  "fresh_checks": {
+    "mapbox_origin": { "http_status": 200, "result": "PASS" },
+    "mapbox_maven_artifact": { "http_status": 200, "downloads_token_configured": false, "result": "PASS" },
+    "supabase_project": {
+      "reference": "vhckkmzyabbsbgjuhjmq",
+      "development_only": true,
+      "runtime_url_matches": true,
+      "hosted_migrations": 12,
+      "repository_migrations": 26,
+      "hosted_functions": ["request-trip"],
+      "auth_site_url": "http://localhost:3000",
+      "email_autoconfirm": true,
+      "custom_smtp_configured": false
+    },
+    "android_unit_tests": { "tests": 60, "failures": 0, "errors": 0, "skipped": 0 },
+    "android_lint_and_development_builds": "PASS",
+    "sql_tests": { "files": 14, "assertions": 218, "result": "PASS" },
+    "edge_tests": { "tests": 18, "failures": 0, "skipped": 0 },
+    "recovery_and_preflight_tests": { "tests": 15, "failures": 0 },
+    "admin": { "unit_tests": 3, "typecheck": "PASS", "lint": "PASS", "production_build": "PASS", "browser_fixture_viewports": 4 },
+    "landing": { "build_tests": 10, "browser_viewports": 5, "axe_violations": 0, "downloads": "unavailable" },
+    "local_trip": "PASS: local Auth/PostgREST/current request handler/live Mapbox/full cash trip/race and PIN-lock scope",
+    "dependency_audit": { "root_total": 0, "admin_moderate_dev_tool": 5, "admin_high": 0, "admin_critical": 0 }
+  },
+  "development_apks": {
+    "passenger": {
+      "path": "passenger-app/build/outputs/apk/development/passenger-app-development.apk",
+      "sha256": "9ae7d4064917f9fe49c39b7219e4bd6d115cc9aaf3aaffc0f38c25387f8af760",
+      "bytes": 125856533,
+      "package": "zm.co.dhwinride.passenger.development",
+      "version_name": "0.1.0-development-no-push",
+      "version_code": 1
+    },
+    "rider": {
+      "path": "rider-app/build/outputs/apk/development/rider-app-development.apk",
+      "sha256": "f6dd20dfa3a9535e4549db382fed6e5a24ae2ac71c4758cddda394de3e0ec59d",
+      "bytes": 125856529,
+      "package": "zm.co.dhwinride.rider.development",
+      "version_name": "0.1.0-development-no-push",
+      "version_code": 1
+    },
+    "minimum_sdk": 26,
+    "target_sdk": 37,
+    "debuggable": true,
+    "signer_sha256": "18847ebd25a7a4ecdb9ce13499e74ee00b5bf37ac1e1925576a6fa8fc5ee85c9",
+    "management_token_matches": 0,
+    "service_role_markers": 0,
+    "release_candidate": false,
+    "physical_install_verified": false
+  },
+  "new_fixes": [
+    "Persisted passenger and rider sessions are restored only after Auth initialization and role validation.",
+    "Cross-app and administrative persisted roles are rejected.",
+    "Passenger and rider profile screens now perform real sign-out with explicit failure handling.",
+    "The admin package declares its ES module format, removing Node reparsing warnings."
+  ],
+  "blocked_gates": [
+    "Verified source backup and isolated full-service restore",
+    "Reconciled and deployed hosted migrations and missing Edge Functions",
+    "Working SMTP, FCM delivery and monitoring receipt",
+    "Existing release signing identity and both Firebase application files",
+    "Signed and minified release APKs with install/upgrade evidence",
+    "Two-phone hosted trip and interruption rehearsal",
+    "Hosted admin and approved public distribution URLs",
+    "Operator, legal, insurance, privacy/retention and support approvals"
+  ]
+}

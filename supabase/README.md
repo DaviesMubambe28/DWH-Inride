@@ -6,6 +6,10 @@ indexes, automatic passenger profile creation, and Realtime publication.
 
 No remote project credentials are stored in this repository.
 
+## Hosted-change prerequisite
+
+Current hosted changes are blocked by the unverified actual-source backup/restore. Read [the prepared development deployment plan](../docs/production-readiness/DEVELOPMENT_DEPLOYMENT_PLAN.md) and its backup/authorization gates before the generic commands below. A successful local replay does not satisfy those gates; never reset a hosted target or repair history without proving its effects.
+
 ## Apply to a hosted Supabase project
 
 The CLI is pinned in the repository root. Run these commands from the repository root:
