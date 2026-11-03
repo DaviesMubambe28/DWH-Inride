@@ -7,8 +7,9 @@ select is((select service_fee + driver_fare from private.calculate_trip_financia
 select is((select center_latitude from private.pilot_service_settings), -15.3292::double precision, 'approved centre latitude is installed');
 select is((select center_longitude from private.pilot_service_settings), 28.6820::double precision, 'approved centre longitude is installed');
 select is((select radius_km from private.pilot_service_settings), 4::double precision, 'approved radius is exactly four kilometres');
-select is((select support_phone from private.pilot_service_settings), '+260971793185', 'primary monitored support number is installed');
-select is((select support_email from private.pilot_service_settings), 'garumitech@gmail.com', 'monitored support email is installed');
+select is((select support_phone from private.pilot_service_settings), '+260770001203', 'primary monitored support number is installed');
+select is((select support_secondary_phone from private.pilot_service_settings), '+260975461121', 'secondary monitored support number is installed');
+select is((select support_email from private.pilot_service_settings), 'gershmukuka1@gmail.com', 'monitored support email is installed');
 select is((select enabled from private.pilot_service_settings), false, 'approved parameters do not automatically enable real trips');
 select ok(private.pilot_point_allowed(-15.3292 + degrees(3.999 / 6371.0088), 28.6820), 'point just inside four kilometres is allowed');
 select is(private.pilot_point_allowed(-15.3292 + degrees(4.001 / 6371.0088), 28.6820), false, 'point just outside four kilometres is denied');

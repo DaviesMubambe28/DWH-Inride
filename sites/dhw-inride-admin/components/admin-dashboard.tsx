@@ -221,7 +221,7 @@ function OperationsDashboard({ user }: { user: User }) {
         {section === "live" ? <div className="dashboard-stack"><section className="panel trip-controls" aria-label="Filter trips"><label>Search trips<input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Trip ID, person, or place" /></label><label>Trip status<select value={filter} onChange={(event) => setFilter(event.target.value)}><option value="active">Active trips</option><option value="all">All trips</option>{["requesting", "accepted", "arrived", "in_progress", "completed", "cancelled"].map((status) => <option key={status} value={status}>{tripPresentation(status).label}</option>)}</select></label><button className="secondary-action" onClick={() => { setSearch(""); setFilter("all"); }}>Clear filters</button><span role="status">{shownTrips.length} matching trips</span></section><TripsPanel trips={shownTrips} profiles={profilesById} title="Trip control" /><CancellationReviews records={data.cancellations} onReviewed={refresh} /></div> : null}
         {section === "verification" ? <div className="dashboard-stack"><RiderProvisionForm candidates={data.profiles.filter((p) => p.role === "passenger")} onProvisioned={refresh} /><Verification riders={riders} documents={data.documents} /></div> : null}
         {section === "finance" ? <Finance trips={data.trips} profiles={profilesById} /> : null}
-        {section === "incidents" ? <Unsupported title="Incident tracking is unavailable" detail="Incident records are not connected yet. Follow your established support procedure for passenger or rider concerns." /> : null}
+        {section === "incidents" ? <SupportProcedure /> : null}
         {section === "analytics" ? <Analytics trips={data.trips} /> : null}
         {section === "roles" ? <Roles profiles={data.profiles} /> : null}
       </div>
@@ -290,4 +290,6 @@ function Roles({ profiles }: { profiles: Profile[] }) {
   return <section className="roles-grid">{roles.map((role, index) => <article className="panel role-card" key={role}><span className={`role-badge role-${index}`}><Users size={20} /></span><h2>{role[0].toUpperCase() + role.slice(1)}</h2><p>Role stored and enforced through database policies.</p><div><span>{profiles.filter((p) => p.role === role).length} members</span><Badge tone={role === "admin" ? "red" : "blue"}>{role}</Badge></div></article>)}</section>;
 }
 
-function Unsupported({ title, detail }: { title: string; detail: string }) { return <section className="panel"><PanelHeader title={title} /><EmptyState title="Backend required" detail={detail} /></section>; }
+function SupportProcedure() {
+  return <section className="panel"><PanelHeader title="Incident tracking is unavailable" /><EmptyState title="Backend required" detail="Incident records are not connected yet. Use a monitored support channel while following the incident runbook." /><p className="support-actions"><a href="tel:+260770001203">Call 0770 001 203</a> · <a href="tel:+260975461121">Call 0975 461 121</a> · <a href="mailto:gershmukuka1@gmail.com">Email support</a></p></section>;
+}

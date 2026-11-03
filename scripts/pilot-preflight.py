@@ -48,7 +48,7 @@ def validate_owner(config, staging=False):
     for field in (() if staging else ("privacy_url", "terms_url")):
         if not str(config.get(field, "")).startswith("https://"):
             errors.append(f"{field}: an HTTPS publication URL is required")
-    if str(config.get("support_phone", "")).replace(" ", "") != "+260971793185" or str(config.get("support_secondary_phone", "")).replace(" ", "") != "+260761741656" or config.get("support_email") != "garumitech@gmail.com":
+    if str(config.get("support_phone", "")).replace(" ", "") != "+260770001203" or str(config.get("support_secondary_phone", "")).replace(" ", "") != "+260975461121" or config.get("support_email") != "gershmukuka1@gmail.com":
         errors.append("support contacts must match the owner-approved monitored primary, secondary, and email")
     area = config.get("service_area") or {}
     for field, low, high in (("center_latitude", -90, 90), ("center_longitude", -180, 180)):
