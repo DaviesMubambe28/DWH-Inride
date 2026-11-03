@@ -12,6 +12,7 @@ import sys
 import tempfile
 import zipfile
 from pathlib import Path
+from typing import NoReturn
 
 
 EXPECTED_PACKAGES = {
@@ -20,7 +21,7 @@ EXPECTED_PACKAGES = {
 }
 
 
-def fail(message: str) -> "NoReturn":
+def fail(message: str) -> NoReturn:
     raise SystemExit(f"Candidate verification failed: {message}")
 
 
@@ -47,7 +48,7 @@ def parse_badging(output: str) -> dict[str, object]:
         output,
         re.MULTILINE,
     )
-    minimum = re.search(r"^sdkVersion:'(\d+)'", output, re.MULTILINE)
+    minimum = re.search(r"^(?:minSdkVersion|sdkVersion):'(\d+)'", output, re.MULTILINE)
     target = re.search(r"^targetSdkVersion:'(\d+)'", output, re.MULTILINE)
     if not package or not minimum or not target:
         fail("aapt2 returned incomplete package metadata")

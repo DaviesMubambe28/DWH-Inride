@@ -39,7 +39,7 @@ class AndroidCandidateVerificationTest(unittest.TestCase):
 apk = pathlib.Path(sys.argv[-1]).name
 package = 'zm.co.dhwinride.passenger' if apk.startswith('passenger') else 'zm.co.dhwinride.rider'
 print(f\"package: name='{package}' versionCode='1' versionName='0.1.0' platformBuildVersionName='15'\")
-print(\"sdkVersion:'26'\")
+print(\"minSdkVersion:'26'\")
 print(\"targetSdkVersion:'37'\")
 print(\"application-label:'DHW-inRide'\")
 """,
