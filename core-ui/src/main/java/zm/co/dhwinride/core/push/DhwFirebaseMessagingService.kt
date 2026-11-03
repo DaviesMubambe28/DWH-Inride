@@ -23,6 +23,7 @@ class DhwFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     override fun onMessageReceived(message: RemoteMessage) {
+        if (!FcmTokenRegistrar.localDeliveryEnabled(this)) return
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED
         ) return
@@ -32,7 +33,7 @@ class DhwFirebaseMessagingService : FirebaseMessagingService() {
         val eventId = message.data["event_id"]?.takeIf { it.matches(Regex("[a-fA-F0-9-]{36}")) }
         val preferences = getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
         val seen = preferences.getStringSet("delivered_events", emptySet()).orEmpty()
-        if (eventId != null && eventId in seen) return
+        if (!shouldDisplayPush(eventId, seen)) return
 
         val title = message.notification?.title ?: message.data["title"] ?: "DHW-inRide"
         val body = message.notification?.body ?: message.data["body"] ?: return
@@ -87,3 +88,6 @@ class DhwFirebaseMessagingService : FirebaseMessagingService() {
         const val CHANNEL_ID = "dhw_rides"
     }
 }
+
+internal fun shouldDisplayPush(eventId: String?, seenEventIds: Set<String>): Boolean =
+    eventId == null || eventId !in seenEventIds

@@ -688,9 +688,13 @@ class SupabaseAuthRepository(
     override suspend fun restoreSession(expectedRole: String): Result<Boolean> {
         return try {
             client.auth.awaitInitialization()
-            val user = client.auth.currentUserOrNull() ?: return Result.success(false)
+            val user = client.auth.currentUserOrNull() ?: run {
+                FcmTokenRegistrar.disableLocalDelivery(appContext)
+                return Result.success(false)
+            }
             val profile = client.from("profiles").select { filter { eq("id", user.id) } }.decodeSingle<DbProfile>()
             if (!sessionRoleMatches(profile.role, expectedRole)) {
+                FcmTokenRegistrar.disableLocalDelivery(appContext)
                 client.auth.signOut()
                 _passengerProfile.value = PassengerProfile()
                 Result.success(false)
@@ -702,6 +706,7 @@ class SupabaseAuthRepository(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            FcmTokenRegistrar.disableLocalDelivery(appContext)
             Log.w("SupabaseSession", "Session restoration failed (${e.javaClass.simpleName})")
             Result.failure(IllegalStateException("Your saved session could not be restored. Sign in again."))
         }
@@ -772,6 +777,7 @@ class SupabaseAuthRepository(
             if (user != null) {
                 val profile = client.from("profiles").select { filter { eq("id", user.id) } }.decodeSingle<DbProfile>()
                 if (!sessionRoleMatches(profile.role, expectedRole)) {
+                    FcmTokenRegistrar.disableLocalDelivery(appContext)
                     client.auth.signOut()
                     error(if (expectedRole == "rider") "Rider accounts must be provisioned by operations."
                         else "Use an account registered for this app.")
