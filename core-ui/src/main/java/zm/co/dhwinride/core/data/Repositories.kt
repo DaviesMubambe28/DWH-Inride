@@ -86,10 +86,53 @@ interface AuthRepository {
     fun getPassengerProfile(): Flow<PassengerProfile>
     suspend fun restoreSession(expectedRole: String): Result<Boolean>
     suspend fun signUp(email: String, pass: String, fullName: String, phone: String, role: String): Result<Unit>
+    suspend fun signUpRider(email: String, pass: String, fullName: String, phone: String, application: RiderApplicationDetails): Result<Unit> =
+        Result.failure(IntegrationRequiredException("Rider applications are not configured."))
     suspend fun signIn(email: String, pass: String, expectedRole: String): Result<Unit>
+    suspend fun getRiderAccessState(): RiderAccessState = RiderAccessState.NotSubmitted
+    suspend fun submitRiderDocument(documentType: String, fileName: String, bytes: ByteArray) {
+        throw IntegrationRequiredException("Rider document submission is not configured.")
+    }
+    suspend fun getSubmittedRiderDocuments(): Set<String> = emptySet()
     suspend fun signOut()
     suspend fun verifyEmail(email: String): Boolean
     suspend fun updateProfile(fullName: String, phone: String)
+}
+
+data class RiderApplicationDetails(
+    val motorcycleMake: String,
+    val motorcycleModel: String,
+    val motorcycleYear: Int,
+    val motorcyclePlate: String,
+    val motorcycleColor: String,
+    val drivingLicenceNumber: String,
+) {
+    fun normalized(): RiderApplicationDetails {
+        require(motorcycleMake.trim().length in 1..80) { "Enter the motorcycle make." }
+        require(motorcycleModel.trim().length in 1..80) { "Enter the motorcycle model." }
+        require(motorcycleYear in 1950..2100) { "Enter a valid motorcycle year." }
+        require(motorcyclePlate.trim().length in 2..32) { "Enter the motorcycle registration number." }
+        require(motorcycleColor.trim().length in 1..40) { "Enter the motorcycle colour." }
+        require(drivingLicenceNumber.trim().length in 3..64) { "Enter the driving licence number." }
+        return copy(
+            motorcycleMake = motorcycleMake.trim(),
+            motorcycleModel = motorcycleModel.trim(),
+            motorcyclePlate = motorcyclePlate.trim().uppercase(),
+            motorcycleColor = motorcycleColor.trim(),
+            drivingLicenceNumber = drivingLicenceNumber.trim().uppercase(),
+        )
+    }
+}
+
+enum class RiderAccessState { NotSubmitted, Pending, Rejected, Active }
+
+internal fun riderAccessState(profileRole: String, profileApproval: String?, applicationStatus: String?): RiderAccessState = when {
+    profileRole == "rider" && profileApproval == "approved" -> RiderAccessState.Active
+    profileRole == "rider" && profileApproval == "rejected" -> RiderAccessState.Rejected
+    profileRole == "rider" -> RiderAccessState.Pending
+    applicationStatus == "rejected" -> RiderAccessState.Rejected
+    applicationStatus in setOf("pending", "approved") -> RiderAccessState.Pending
+    else -> RiderAccessState.NotSubmitted
 }
 
 class IntegrationRequiredException(message: String) : IllegalStateException(message)

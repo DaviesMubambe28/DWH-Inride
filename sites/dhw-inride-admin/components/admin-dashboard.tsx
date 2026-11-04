@@ -9,6 +9,7 @@ import type { User } from "@supabase/supabase-js";
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CancellationReviews, type CancellationReview } from "@/components/cancellation-review";
 import { RiderProvisionForm } from "@/components/rider-provision-form";
+import { RiderApplicationReview, type RiderApplication } from "@/components/rider-application-review";
 import { matchesTripFilter, tripPresentation } from "@/lib/trip-presentation";
 import { getSupabaseBrowserClient, getSupabaseConfig } from "@/lib/supabase";
 
@@ -19,9 +20,9 @@ type Profile = { id: string; role: "passenger" | "rider" | "admin"; full_name: s
 type Trip = { id: string; passenger_id: string; rider_id: string | null; status: string; pickup_address: string; dropoff_address: string; fare_amount: number | null; payment_method: string; payment_status: string; created_at: string; completed_at: string | null };
 type RiderDocument = { id: string; rider_id: string; document_type: string; storage_url: string; verification_status: string; submitted_at: string };
 type TripLocation = { id: number; trip_id: string; rider_id: string; lat: number; lng: number; recorded_at: string };
-type DashboardData = { profiles: Profile[]; trips: Trip[]; documents: RiderDocument[]; locations: TripLocation[]; cancellations: CancellationReview[] };
+type DashboardData = { profiles: Profile[]; trips: Trip[]; documents: RiderDocument[]; locations: TripLocation[]; cancellations: CancellationReview[]; applications: RiderApplication[] };
 
-const emptyData: DashboardData = { profiles: [], trips: [], documents: [], locations: [], cancellations: [] };
+const emptyData: DashboardData = { profiles: [], trips: [], documents: [], locations: [], cancellations: [], applications: [] };
 const navItems = [
   { id: "overview" as Section, label: "Overview", icon: LayoutDashboard },
   { id: "verification" as Section, label: "Rider verification", icon: ClipboardCheck },
@@ -149,15 +150,16 @@ function OperationsDashboard({ user }: { user: User }) {
         client.from("rider_documents").select("id,rider_id,document_type,storage_url,verification_status,submitted_at").order("submitted_at", { ascending: false }),
         client.from("trip_locations").select("id,trip_id,rider_id,lat,lng,recorded_at").order("recorded_at", { ascending: false }).limit(500),
         client.from("pilot_cancellation_reviews").select("trip_id,actor_id,reason,late_warning,review_required,created_at,reviewed_at").order("created_at", { ascending: false }).limit(200),
-      ]).then(([profileResult, tripsResult, docsResult, locationsResult, cancellationsResult]) => {
+        client.from("rider_applications").select("applicant_id,status,motorcycle_make,motorcycle_model,motorcycle_year,motorcycle_plate,motorcycle_color,driving_licence_number,review_note,submitted_at").order("submitted_at", { ascending: false }).limit(500),
+      ]).then(([profileResult, tripsResult, docsResult, locationsResult, cancellationsResult, applicationsResult]) => {
       if (version !== loadVersion.current) return;
       if (profileResult.error) throw profileResult.error;
       const ownProfile = profileResult.data?.find((profile) => profile.id === user.id);
       if (ownProfile?.role !== "admin") { setAuthorized(false); setData(emptyData); setLastUpdated(null); return; }
       setAuthorized(true);
-      const firstError = tripsResult.error ?? docsResult.error ?? locationsResult.error ?? cancellationsResult.error;
+      const firstError = tripsResult.error ?? docsResult.error ?? locationsResult.error ?? cancellationsResult.error ?? applicationsResult.error;
       if (firstError) throw firstError;
-      setData({ profiles: (profileResult.data ?? []) as Profile[], trips: (tripsResult.data ?? []) as Trip[], documents: (docsResult.data ?? []) as RiderDocument[], locations: (locationsResult.data ?? []) as TripLocation[], cancellations: (cancellationsResult.data ?? []) as CancellationReview[] });
+      setData({ profiles: (profileResult.data ?? []) as Profile[], trips: (tripsResult.data ?? []) as Trip[], documents: (docsResult.data ?? []) as RiderDocument[], locations: (locationsResult.data ?? []) as TripLocation[], cancellations: (cancellationsResult.data ?? []) as CancellationReview[], applications: (applicationsResult.data ?? []) as RiderApplication[] });
       setLastUpdated(new Date()); setError("");
     }).catch(() => {
       if (version === loadVersion.current) setError("We couldn’t refresh operations data. Check your connection and try again.");
@@ -189,7 +191,8 @@ function OperationsDashboard({ user }: { user: User }) {
 
   const navigation = <nav className="side-nav" aria-label="Operations sections">{navItems.map((item) => {
     const Icon = item.icon;
-    return <button key={item.id} aria-current={section === item.id ? "page" : undefined} className={section === item.id ? "nav-item active" : "nav-item"} onClick={() => navigate(item.id)}><Icon size={18} aria-hidden="true" /><span>{item.label}</span>{item.id === "verification" && riders.some((r) => r.approval_status === "pending") ? <em aria-label="Pending rider applications">{riders.filter((r) => r.approval_status === "pending").length}</em> : null}</button>;
+    const pendingCount = riders.filter((r) => r.approval_status === "pending").length + data.applications.filter((a) => a.status === "pending").length;
+    return <button key={item.id} aria-current={section === item.id ? "page" : undefined} className={section === item.id ? "nav-item active" : "nav-item"} onClick={() => navigate(item.id)}><Icon size={18} aria-hidden="true" /><span>{item.label}</span>{item.id === "verification" && pendingCount > 0 ? <em aria-label="Pending rider applications">{pendingCount}</em> : null}</button>;
   })}</nav>;
   return <div className="admin-shell">
     <a className="skip-link" href="#operations-content">Skip to operations</a>
@@ -217,9 +220,9 @@ function OperationsDashboard({ user }: { user: User }) {
         {error ? <div className="error-banner" role="alert"><AlertTriangle size={18} /><span>{error} Previously loaded records are shown below.</span><button disabled={loading || !online} onClick={() => refresh()}>Retry</button></div> : null}
         {pauseMessage ? <p className="panel" role="status">{pauseMessage}</p> : null}
         <p className="data-scope">Latest {data.trips.length} trips loaded (maximum 500). Totals describe this loaded set.</p>
-        {section === "overview" ? <Overview trips={data.trips} riders={riders} activeTrips={activeTrips} profiles={profilesById} onDispatch={() => { setFilter("requesting"); navigate("live"); }} onVerification={() => navigate("verification")} /> : null}
+        {section === "overview" ? <Overview trips={data.trips} riders={riders} pendingApplications={data.applications.filter((application) => application.status === "pending").length} activeTrips={activeTrips} profiles={profilesById} onDispatch={() => { setFilter("requesting"); navigate("live"); }} onVerification={() => navigate("verification")} /> : null}
         {section === "live" ? <div className="dashboard-stack"><section className="panel trip-controls" aria-label="Filter trips"><label>Search trips<input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Trip ID, person, or place" /></label><label>Trip status<select value={filter} onChange={(event) => setFilter(event.target.value)}><option value="active">Active trips</option><option value="all">All trips</option>{["requesting", "accepted", "arrived", "in_progress", "completed", "cancelled"].map((status) => <option key={status} value={status}>{tripPresentation(status).label}</option>)}</select></label><button className="secondary-action" onClick={() => { setSearch(""); setFilter("all"); }}>Clear filters</button><span role="status">{shownTrips.length} matching trips</span></section><TripsPanel trips={shownTrips} profiles={profilesById} title="Trip control" /><CancellationReviews records={data.cancellations} onReviewed={refresh} /></div> : null}
-        {section === "verification" ? <div className="dashboard-stack"><RiderProvisionForm candidates={data.profiles.filter((p) => p.role === "passenger")} onProvisioned={refresh} /><Verification riders={riders} documents={data.documents} /></div> : null}
+        {section === "verification" ? <div className="dashboard-stack"><RiderApplicationReview applications={data.applications} applicants={profilesById} onReviewed={refresh} /><RiderProvisionForm candidates={data.profiles.filter((p) => p.role === "passenger" && !data.applications.some((a) => a.applicant_id === p.id))} onProvisioned={refresh} /><Verification riders={riders} documents={data.documents} /></div> : null}
         {section === "finance" ? <Finance trips={data.trips} profiles={profilesById} /> : null}
         {section === "incidents" ? <SupportProcedure /> : null}
         {section === "analytics" ? <Analytics trips={data.trips} /> : null}
@@ -229,10 +232,10 @@ function OperationsDashboard({ user }: { user: User }) {
   </div>;
 }
 
-function Overview({ trips, riders, activeTrips, profiles, onDispatch, onVerification }: { trips: Trip[]; riders: Profile[]; activeTrips: Trip[]; profiles: Map<string, Profile>; onDispatch: () => void; onVerification: () => void }) {
+function Overview({ trips, riders, pendingApplications, activeTrips, profiles, onDispatch, onVerification }: { trips: Trip[]; riders: Profile[]; pendingApplications: number; activeTrips: Trip[]; profiles: Map<string, Profile>; onDispatch: () => void; onVerification: () => void }) {
   const today = new Date().toDateString(); const tripsToday = trips.filter((trip) => new Date(trip.created_at).toDateString() === today).length;
   const cards = [["Trips today", tripsToday, "blue"], ["Riders online", riders.filter((r) => r.is_online).length, "green"], ["Active trips", activeTrips.length, "orange"], ["Awaiting dispatch", activeTrips.filter((t) => t.status === "requesting").length, "red"]] as const;
-  return <div className="dashboard-stack"><section className="panel attention-summary"><div><h2>Needs attention</h2><p>Review waiting requests and pending rider applications.</p></div><button className="secondary-action" onClick={onDispatch}>Awaiting rider · {activeTrips.filter((t) => t.status === "requesting").length}</button><button className="secondary-action" onClick={onVerification}>Pending verification · {riders.filter((r) => r.approval_status === "pending").length}</button></section><section className="kpi-grid">{cards.map(([label, value, tone], index) => <article className="kpi-card" key={label}><div className={`kpi-icon tone-${tone}`}>{[<Activity key="a" />, <Bike key="b" />, <Clock3 key="c" />, <AlertTriangle key="d" />][index]}</div><span>{label}</span><strong>{value}</strong><small>Loaded records</small></article>)}</section><TripsPanel trips={activeTrips.slice(0, 10)} profiles={profiles} title="Active trips" /></div>;
+  return <div className="dashboard-stack"><section className="panel attention-summary"><div><h2>Needs attention</h2><p>Review waiting requests and pending rider applications.</p></div><button className="secondary-action" onClick={onDispatch}>Awaiting rider · {activeTrips.filter((t) => t.status === "requesting").length}</button><button className="secondary-action" onClick={onVerification}>Pending verification · {riders.filter((r) => r.approval_status === "pending").length + pendingApplications}</button></section><section className="kpi-grid">{cards.map(([label, value, tone], index) => <article className="kpi-card" key={label}><div className={`kpi-icon tone-${tone}`}>{[<Activity key="a" />, <Bike key="b" />, <Clock3 key="c" />, <AlertTriangle key="d" />][index]}</div><span>{label}</span><strong>{value}</strong><small>Loaded records</small></article>)}</section><TripsPanel trips={activeTrips.slice(0, 10)} profiles={profiles} title="Active trips" /></div>;
 }
 
 function TripsPanel({ trips, profiles, title }: { trips: Trip[]; profiles: Map<string, Profile>; title: string }) {

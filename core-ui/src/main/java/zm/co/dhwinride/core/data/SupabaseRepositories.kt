@@ -94,7 +94,11 @@ private data class DbProfile(
     val role: String,
     @SerialName("full_name") val fullName: String,
     @SerialName("phone_number") val phoneNumber: String,
+    @SerialName("approval_status") val approvalStatus: String? = null,
 )
+
+@Serializable
+private data class DbRiderApplication(val status: String)
 
 @Serializable
 private data class DbRiderState(
@@ -693,7 +697,13 @@ class SupabaseAuthRepository(
                 return Result.success(false)
             }
             val profile = client.from("profiles").select { filter { eq("id", user.id) } }.decodeSingle<DbProfile>()
-            if (!sessionRoleMatches(profile.role, expectedRole)) {
+            val riderState = if (expectedRole == "rider") riderAccessStateFor(user.id, profile) else null
+            if (expectedRole == "rider" && riderState != RiderAccessState.NotSubmitted) {
+                _passengerProfile.value = PassengerProfile(profile.id, profile.fullName, profile.phoneNumber)
+                if (riderState == RiderAccessState.Active) registerTokenWithoutBlockingAccess()
+                else FcmTokenRegistrar.disableLocalDelivery(appContext)
+                Result.success(riderState == RiderAccessState.Active)
+            } else if (!sessionRoleMatches(profile.role, expectedRole)) {
                 FcmTokenRegistrar.disableLocalDelivery(appContext)
                 client.auth.signOut()
                 _passengerProfile.value = PassengerProfile()
@@ -722,49 +732,36 @@ class SupabaseAuthRepository(
         if (role != "passenger") {
             return Result.failure(IllegalArgumentException("Rider accounts must be provisioned by operations."))
         }
-        return try {
-            val signupFullName = fullName.trim()
-            val signupPhoneNumber = requireNotNull(ZambiaPhoneNumber.normalize(phone)) {
-                "Enter a valid Zambian phone number, for example +260 971 793 185."
-            }
-            val metadata = mapOf(
-                "full_name" to signupFullName,
-                "phone_number" to signupPhoneNumber,
-                "role" to role,
-            ).filterValues { it.isNotBlank() }
-            client.auth.signUpWith(Email) {
-                this.email = email
-                this.password = pass
-                data = buildJsonObject {
-                    metadata.forEach { (key, value) -> put(key, value) }
-                    // Informational signup intent only. The database trigger always assigns
-                    // passenger; rider approval must remain a trusted server-side action.
-                }
-            }
-            _passengerProfile.value = PassengerProfile(
-                client.auth.currentUserOrNull()?.id.orEmpty(),
-                signupFullName,
-                signupPhoneNumber,
-            )
-            Result.success(Unit)
-        } catch (e: AuthRestException) {
-            Log.w("SupabaseSignup", "Auth signup rejected with HTTP ${e.statusCode}")
-            Result.failure(IllegalStateException(authErrorMessage(e.statusCode, "${e.error} ${e.errorDescription}")))
-        } catch (e: RestException) {
-            Log.w("SupabaseSignup", "Profile signup request rejected with HTTP ${e.statusCode}")
-            Result.failure(IllegalStateException(authErrorMessage(e.statusCode, "${e.error} ${e.description}")))
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: IOException) {
-            val causeType = generateSequence(e as Throwable?) { it.cause }
-                .firstOrNull { it is UnknownHostException || it is SocketTimeoutException || it is ConnectException || it is SSLException }
-                ?.javaClass?.simpleName ?: e.javaClass.simpleName
-            Log.w("SupabaseSignup", "Signup transport failure ($causeType)")
-            Result.failure(IllegalStateException(networkErrorMessage(e)))
-        } catch (e: Exception) {
-            Log.e("SupabaseSignup", "Unexpected signup failure (${e.javaClass.simpleName})")
-            Result.failure(IllegalStateException(authErrorMessage(null, e.message.orEmpty())))
+        return signUpAccount(email, pass, fullName, phone, emptyMap())
+    }
+
+    override suspend fun signUpRider(
+        email: String,
+        pass: String,
+        fullName: String,
+        phone: String,
+        application: RiderApplicationDetails,
+    ): Result<Unit> {
+        val details = try {
+            application.normalized()
+        } catch (error: IllegalArgumentException) {
+            return Result.failure(error)
         }
+        return signUpAccount(
+            email = email,
+            pass = pass,
+            fullName = fullName,
+            phone = phone,
+            extraMetadata = mapOf(
+                "account_intent" to "rider",
+                "motorcycle_make" to details.motorcycleMake,
+                "motorcycle_model" to details.motorcycleModel,
+                "motorcycle_year" to details.motorcycleYear.toString(),
+                "motorcycle_plate" to details.motorcyclePlate,
+                "motorcycle_color" to details.motorcycleColor,
+                "driving_licence_number" to details.drivingLicenceNumber,
+            ),
+        )
     }
 
     override suspend fun signIn(email: String, pass: String, expectedRole: String): Result<Unit> {
@@ -776,6 +773,13 @@ class SupabaseAuthRepository(
             val user = client.auth.currentUserOrNull()
             if (user != null) {
                 val profile = client.from("profiles").select { filter { eq("id", user.id) } }.decodeSingle<DbProfile>()
+                val riderState = if (expectedRole == "rider") riderAccessStateFor(user.id, profile) else null
+                if (expectedRole == "rider" && riderState != RiderAccessState.NotSubmitted) {
+                    _passengerProfile.value = PassengerProfile(profile.id, profile.fullName, profile.phoneNumber)
+                    if (riderState == RiderAccessState.Active) registerTokenWithoutBlockingAccess()
+                    else FcmTokenRegistrar.disableLocalDelivery(appContext)
+                    return Result.success(Unit)
+                }
                 if (!sessionRoleMatches(profile.role, expectedRole)) {
                     FcmTokenRegistrar.disableLocalDelivery(appContext)
                     client.auth.signOut()
@@ -811,6 +815,89 @@ class SupabaseAuthRepository(
         _passengerProfile.value = _passengerProfile.value.copy(name = fullName, phone = phone)
         val user = requireNotNull(client.auth.currentUserOrNull()) { "Sign in before updating the profile." }
         client.from("profiles").update(mapOf("full_name" to fullName, "phone_number" to phone)) { filter { eq("id", user.id) } }
+    }
+
+    override suspend fun getRiderAccessState(): RiderAccessState {
+        val user = client.auth.currentUserOrNull() ?: return RiderAccessState.NotSubmitted
+        val profile = client.from("profiles").select { filter { eq("id", user.id) } }.decodeSingle<DbProfile>()
+        return riderAccessStateFor(user.id, profile)
+    }
+
+    override suspend fun submitRiderDocument(documentType: String, fileName: String, bytes: ByteArray) {
+        val user = requireNotNull(client.auth.currentUserOrNull()) { "Sign in before submitting documents." }
+        require(getRiderAccessState() != RiderAccessState.NotSubmitted) { "Submit a rider application before adding documents." }
+        require(documentType in setOf("nrc", "license", "vehicle_registration")) { "Unsupported document type." }
+        require(bytes.isNotEmpty()) { "The selected document is empty." }
+        require(bytes.size <= 10 * 1024 * 1024) { "Choose a document smaller than 10 MB." }
+        val safeName = fileName.substringAfterLast('/').replace(Regex("[^A-Za-z0-9._-]"), "_").ifBlank { "document.jpg" }
+        val path = "${user.id}/$documentType-${UUID.randomUUID()}-$safeName"
+        client.storage.from("rider-documents").upload(path, bytes)
+        try {
+            client.from("rider_documents").insert(
+                mapOf("rider_id" to user.id, "document_type" to documentType, "storage_url" to path, "verification_status" to "pending"),
+            )
+        } catch (error: Exception) {
+            runCatching { client.storage.from("rider-documents").delete(path) }
+            throw error
+        }
+    }
+
+    override suspend fun getSubmittedRiderDocuments(): Set<String> {
+        val user = requireNotNull(client.auth.currentUserOrNull()) { "Sign in before loading documents." }
+        return client.from("rider_documents").select { filter { eq("rider_id", user.id) }; limit(100) }
+            .decodeList<DbRiderDocument>()
+            .filter { it.verificationStatus != "rejected" }
+            .map { it.documentType }
+            .toSet()
+    }
+
+    private suspend fun riderAccessStateFor(userId: String, profile: DbProfile): RiderAccessState {
+        val applicationStatus = if (profile.role == "passenger") {
+            client.from("rider_applications").select { filter { eq("applicant_id", userId) }; limit(1) }
+                .decodeList<DbRiderApplication>().firstOrNull()?.status
+        } else null
+        return riderAccessState(profile.role, profile.approvalStatus, applicationStatus)
+    }
+
+    private suspend fun signUpAccount(
+        email: String,
+        pass: String,
+        fullName: String,
+        phone: String,
+        extraMetadata: Map<String, String>,
+    ): Result<Unit> {
+        return try {
+            val signupFullName = fullName.trim()
+            val signupPhoneNumber = requireNotNull(ZambiaPhoneNumber.normalize(phone)) {
+                "Enter a valid Zambian phone number, for example +260 971 793 185."
+            }
+            val metadata = (mapOf("full_name" to signupFullName, "phone_number" to signupPhoneNumber) + extraMetadata)
+                .filterValues { it.isNotBlank() }
+            client.auth.signUpWith(Email) {
+                this.email = email
+                this.password = pass
+                data = buildJsonObject { metadata.forEach { (key, value) -> put(key, value) } }
+            }
+            _passengerProfile.value = PassengerProfile(client.auth.currentUserOrNull()?.id.orEmpty(), signupFullName, signupPhoneNumber)
+            Result.success(Unit)
+        } catch (e: AuthRestException) {
+            Log.w("SupabaseSignup", "Auth signup rejected with HTTP ${e.statusCode}")
+            Result.failure(IllegalStateException(authErrorMessage(e.statusCode, "${e.error} ${e.errorDescription}")))
+        } catch (e: RestException) {
+            Log.w("SupabaseSignup", "Profile signup request rejected with HTTP ${e.statusCode}")
+            Result.failure(IllegalStateException(authErrorMessage(e.statusCode, "${e.error} ${e.description}")))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: IOException) {
+            val causeType = generateSequence(e as Throwable?) { it.cause }
+                .firstOrNull { it is UnknownHostException || it is SocketTimeoutException || it is ConnectException || it is SSLException }
+                ?.javaClass?.simpleName ?: e.javaClass.simpleName
+            Log.w("SupabaseSignup", "Signup transport failure ($causeType)")
+            Result.failure(IllegalStateException(networkErrorMessage(e)))
+        } catch (e: Exception) {
+            Log.e("SupabaseSignup", "Unexpected signup failure (${e.javaClass.simpleName})")
+            Result.failure(IllegalStateException(authErrorMessage(null, e.message.orEmpty())))
+        }
     }
 
     private suspend fun registerTokenWithoutBlockingAccess() {
