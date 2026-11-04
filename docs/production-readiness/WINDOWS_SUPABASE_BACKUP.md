@@ -233,12 +233,13 @@ foreach ($Entry in $Hashes) {
 }
 $Container = 'inride-recovery-' + [Guid]::NewGuid().ToString('N')
 $RestoreDb = 'inride_restore_' + [Guid]::NewGuid().ToString('N')
+$RestoreImage = 'supabase/postgres@sha256:b15d862126dd2dac02da524696ccfde2dcce2ceaee0a58973b2727befe492706'
 $OldLocalPassword = $env:POSTGRES_PASSWORD
 try {
     # Random disposable LOCAL credential, unrelated to the hosted database password.
     $env:POSTGRES_PASSWORD = [Convert]::ToHexString([Security.Cryptography.RandomNumberGenerator]::GetBytes(32))
     & docker run --detach --name $Container --network none --env POSTGRES_PASSWORD `
-      supabase/postgres:17.11.0.004 postgres -c cron.launch_active_jobs=off
+      $RestoreImage postgres -c cron.launch_active_jobs=off
     Assert-Native 'Start isolated database'
 } finally { $env:POSTGRES_PASSWORD = $OldLocalPassword }
 # No published ports, outbound network, Auth/Storage/Edge services or app clients.
