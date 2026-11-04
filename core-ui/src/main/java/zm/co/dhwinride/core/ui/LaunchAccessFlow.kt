@@ -49,6 +49,7 @@ import java.io.InputStream
 import zm.co.dhwinride.core.data.AuthRepository
 import zm.co.dhwinride.core.data.RiderAccessState
 import zm.co.dhwinride.core.data.RiderApplicationDetails
+import zm.co.dhwinride.core.data.RIDER_DOCUMENT_MAX_BYTES
 
 enum class AppUserRole(val label: String) {
     Passenger("Passenger"),
@@ -73,7 +74,7 @@ internal suspend fun signOutAppSession(authRepository: AuthRepository): Result<U
     }
 }
 
-internal fun readRiderDocument(stream: InputStream, maxBytes: Int = 10 * 1024 * 1024): ByteArray {
+internal fun readRiderDocument(stream: InputStream, maxBytes: Int = RIDER_DOCUMENT_MAX_BYTES): ByteArray {
     val output = ByteArrayOutputStream()
     val buffer = ByteArray(8 * 1024)
     var total = 0
@@ -81,14 +82,14 @@ internal fun readRiderDocument(stream: InputStream, maxBytes: Int = 10 * 1024 * 
         val count = stream.read(buffer)
         if (count < 0) break
         total += count
-        require(total <= maxBytes) { "Choose a document smaller than 10 MB." }
+        require(total <= maxBytes) { "Choose a document that is 5 MB or smaller." }
         output.write(buffer, 0, count)
     }
     return output.toByteArray()
 }
 
 internal fun safeRiderDocumentFailureMessage(message: String?): String = when (message) {
-    "Choose a document smaller than 10 MB.",
+    "Choose a document that is 5 MB or smaller.",
     "The selected document is empty.",
     "The selected document could not be read.",
     -> message

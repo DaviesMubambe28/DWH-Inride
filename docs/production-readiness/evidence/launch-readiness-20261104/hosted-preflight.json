@@ -1,0 +1,31 @@
+{
+  "project_ref": "vhckkmzyabbsbgjuhjmq",
+  "read_only": true,
+  "captured_at_utc": "2026-11-04T08:31:27.030393+00:00",
+  "backup_count": 0,
+  "pitr_enabled": false,
+  "functions": [
+    {
+      "slug": "request-trip",
+      "version": 2,
+      "verify_jwt": true,
+      "status": "ACTIVE"
+    }
+  ],
+  "secret_names": [
+    "MAPBOX_SERVER_TOKEN",
+    "SUPABASE_ANON_KEY",
+    "SUPABASE_DB_URL",
+    "SUPABASE_JWKS",
+    "SUPABASE_PUBLISHABLE_KEYS",
+    "SUPABASE_SECRET_KEYS",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "SUPABASE_URL"
+  ],
+  "auth": {
+    "site_origin": "http://localhost",
+    "redirects_present": false,
+    "auto_confirm": true,
+    "smtp_configured": false
+  }
+}

@@ -1,0 +1,107 @@
+{
+  "date_cat": "2026-11-04",
+  "branch": "feat/release-operations",
+  "source_commit": "f585aefe2cb9b8a92b89d6b8cf137d7a5beaf118",
+  "readiness": {
+    "starting_score": 4.0,
+    "current_score": 4.0,
+    "controlled_pilot": false,
+    "public_launch": false
+  },
+  "hosted_development_read_only": {
+    "project_ref": "vhckkmzyabbsbgjuhjmq",
+    "postgres_version": "17.11",
+    "backups": 0,
+    "pitr_enabled": false,
+    "repository_migrations": 28,
+    "recorded_migrations": 12,
+    "unrecorded_migrations": 16,
+    "remote_only_migrations": 0,
+    "deployed_functions": [
+      {
+        "slug": "request-trip",
+        "version": 2,
+        "verify_jwt": true,
+        "status": "ACTIVE"
+      }
+    ],
+    "auth_site_origin": "http://localhost",
+    "auth_redirects_present": false,
+    "email_auto_confirm": true,
+    "custom_smtp_configured": false,
+    "pilot_service_settings_present": false,
+    "retention_policy_present": false,
+    "push_outbox_present": false,
+    "mutations_or_deployments": 0
+  },
+  "local_service_rehearsal": {
+    "scope": "isolated local services",
+    "auth_http": 200,
+    "rest_http": 200,
+    "storage_http": 200,
+    "rider_signup": "PASS",
+    "untrusted_role_boundary": "PASS",
+    "pending_application": "PASS",
+    "private_document_upload": "PASS",
+    "self_approval_denied": "PASS",
+    "cross_user_application_read_denied": "PASS",
+    "synthetic_auth_users_remaining": 0,
+    "synthetic_storage_objects_remaining": 0,
+    "docker_health_limitation": "internal loopback probes inherited the managed HTTP proxy and received proxy 403"
+  },
+  "android": {
+    "tests": 70,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "passenger_lint_development": "PASS",
+    "rider_lint_development": "PASS",
+    "passenger_assemble_development": "PASS",
+    "rider_assemble_development": "PASS",
+    "document_limit_bytes": 5242880,
+    "document_limit_matches_storage_bucket": true,
+    "development_signer_sha256": "1b6488a0186c81ca769a0c47a41135cdf7a950ff856d59d5685ea396eb6fd14f",
+    "apk_secret_scan": "PASS",
+    "connected_targets": 0
+  },
+  "development_apks": {
+    "passenger": {
+      "path": "passenger-app/build/outputs/apk/development/passenger-app-development.apk",
+      "sha256": "942bb62c213d81f9063fd8e044ec64fa7ecfd71c82af0e234b8985bca018f9d0",
+      "bytes": 125778931,
+      "package": "zm.co.dhwinride.passenger.development"
+    },
+    "rider": {
+      "path": "rider-app/build/outputs/apk/development/rider-app-development.apk",
+      "sha256": "09e46295a9081b5f63870c9fe0c230544de0c9a985cdf8fa0fefaee54aa0ef2c",
+      "bytes": 125778927,
+      "package": "zm.co.dhwinride.rider.development"
+    },
+    "version_name": "0.1.0-development-no-push",
+    "version_code": 1,
+    "minimum_sdk": 26,
+    "target_sdk": 37,
+    "release_candidate": false,
+    "physical_install_verified": false
+  },
+  "retained_unaffected_evidence": {
+    "database_contracts": "15 files / 249 assertions PASS",
+    "edge_tests": "18 PASS",
+    "admin": "lint, typecheck, 3 unit tests, production build and 4-view browser fixture PASS",
+    "landing": "10 build tests and 5-view browser/accessibility checks PASS"
+  },
+  "blocked_gates": [
+    "Real hosted backup, integrity verification and isolated restore",
+    "Hosted deployment of 16 reconciled migrations and three missing workers",
+    "Hosted passenger, rider and Admin journeys",
+    "Real SMTP, FCM and monitoring receipt",
+    "Established release signing identity and signed/minified APKs",
+    "Two-phone physical installation, interruption, upgrade and trip checks",
+    "Admin and landing HTTPS hosting with verified release downloads",
+    "Operator, legal, insurance, privacy-retention, support and release approvals"
+  ],
+  "production_deployment": false,
+  "public_bookings_enabled": false,
+  "apk_publication": false,
+  "merged_to_main": false
+}

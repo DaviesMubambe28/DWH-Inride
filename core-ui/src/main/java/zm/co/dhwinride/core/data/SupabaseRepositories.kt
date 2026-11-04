@@ -828,7 +828,7 @@ class SupabaseAuthRepository(
         require(getRiderAccessState() != RiderAccessState.NotSubmitted) { "Submit a rider application before adding documents." }
         require(documentType in setOf("nrc", "license", "vehicle_registration")) { "Unsupported document type." }
         require(bytes.isNotEmpty()) { "The selected document is empty." }
-        require(bytes.size <= 10 * 1024 * 1024) { "Choose a document smaller than 10 MB." }
+        require(bytes.size <= RIDER_DOCUMENT_MAX_BYTES) { "Choose a document that is 5 MB or smaller." }
         val safeName = fileName.substringAfterLast('/').replace(Regex("[^A-Za-z0-9._-]"), "_").ifBlank { "document.jpg" }
         val path = "${user.id}/$documentType-${UUID.randomUUID()}-$safeName"
         client.storage.from("rider-documents").upload(path, bytes)
