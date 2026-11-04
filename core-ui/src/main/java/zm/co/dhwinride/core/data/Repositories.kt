@@ -99,6 +99,8 @@ interface AuthRepository {
     suspend fun updateProfile(fullName: String, phone: String)
 }
 
+internal const val RIDER_DOCUMENT_MAX_BYTES = 5 * 1024 * 1024
+
 data class RiderApplicationDetails(
     val motorcycleMake: String,
     val motorcycleModel: String,

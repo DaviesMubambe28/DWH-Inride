@@ -39,14 +39,21 @@ class RiderApplicationTest {
     }
 
     @Test
+    fun `default document limit matches the five megabyte private bucket`() {
+        assertInvalid {
+            readRiderDocument(ByteArrayInputStream(ByteArray(5 * 1024 * 1024 + 1)))
+        }
+    }
+
+    @Test
     fun `document failures hide backend details`() {
         assertEquals(
             "The document could not be submitted. Check your connection and try again.",
             safeRiderDocumentFailureMessage("new row violates row-level security policy for path user-id/license.pdf"),
         )
         assertEquals(
-            "Choose a document smaller than 10 MB.",
-            safeRiderDocumentFailureMessage("Choose a document smaller than 10 MB."),
+            "Choose a document that is 5 MB or smaller.",
+            safeRiderDocumentFailureMessage("Choose a document that is 5 MB or smaller."),
         )
     }
 
