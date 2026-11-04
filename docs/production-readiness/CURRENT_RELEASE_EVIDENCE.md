@@ -1,3 +1,15 @@
+# Launch-readiness continuation — 4 November 2026 (CAT)
+
+Engineering source is `f585aefe2cb9b8a92b89d6b8cf137d7a5beaf118` on `feat/release-operations`; documentation follows in a later commit. Read-only hosted inspection confirms zero backups/PITR, one deployed function (`request-trip` v2), **12 hosted records / 28 repository migrations**, localhost Auth origin, no redirect allowlist or custom SMTP, and none of the new pilot/retention/outbox tables. No hosted mutation occurred.
+
+Actual isolated local Auth/PostgREST/Storage rehearsal passes rider signup, passenger-role boundary, pending application creation, private document upload, self-approval denial and cross-user read denial. All synthetic users and objects were removed and verified at zero. Container health remains a managed-environment false negative because internal localhost probes inherit the HTTP proxy and receive proxy 403; direct loopback Auth/REST/Storage endpoints each returned HTTP 200.
+
+Fixed Android's 10 MB document acceptance mismatch with the configured 5 MB private Storage bucket. The regression failed before the fix and passes afterward. Current Android result: **70 tests**, both development builds and both lint tasks pass. Updated APKs are recorded in [LAUNCH_READINESS_REPORT.md](LAUNCH_READINESS_REPORT.md) and the [current verification receipt](evidence/launch-readiness-20261104/verification.json).
+
+The consolidated eight-area tracker is [LAUNCH_READINESS_REPORT.md](LAUNCH_READINESS_REPORT.md). The fixed readiness remains **4.00/10 — Not ready** because hosted recovery/deployment, live integrations, established release signing, physical testing, hosting and accountable approvals remain blocked.
+
+---
+
 # Rider self-application evidence — 4 November 2026 (CAT)
 
 Engineering source is `6eb81ba5a714bb5304e1054f378b1c138cb374d9` on `feat/release-operations`; this evidence update follows in a documentation commit. The fixed rubric remains **4.00/10 — Not ready** because hosted recovery/deployment, live integrations, release signing, physical devices, hosting and accountable approvals remain unverified.
