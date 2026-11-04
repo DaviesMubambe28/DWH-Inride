@@ -1,3 +1,13 @@
+# Backend/release continuation — 4 November 2026 (CAT)
+
+Engineering source is `8e9efea5f2c73cd1195bff05bcb93aed07375964` on `feat/release-operations`; documentation follows in a later commit. The hosted backup gate remains BLOCKED by the same-day read-only evidence, so zero migrations or functions were deployed. The managed runtime reports an enforced unrestricted network policy and ready `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_ACCESS_TOKEN`, and `MAPBOX_PUBLIC_TOKEN` bindings without exposing their values. Firebase application files/sender, SMTP, monitoring, worker token and established release-signing inputs remain unavailable.
+
+Completed independent release engineering: the protected candidate workflow now records a UTC build timestamp and generates a human-readable Android release manifest only after both signed/minified APKs pass the existing fail-closed package, version, SDK, integrity, debuggability, mapping and certificate checks. All **20** recovery/preflight/candidate tests pass and official actionlint accepts both workflows. The checked-in [Android release manifest](ANDROID_RELEASE_MANIFEST.md) truthfully remains BLOCKED; no release APK, signer claim, publication or physical result was invented.
+
+Sanitized receipt: [backend/release continuation](evidence/backend-release-continuation-20261104/verification.json). Readiness remains **4.00/10 — Not ready**.
+
+---
+
 # Launch-readiness continuation — 4 November 2026 (CAT)
 
 Engineering source is `f585aefe2cb9b8a92b89d6b8cf137d7a5beaf118` on `feat/release-operations`; documentation follows in a later commit. Read-only hosted inspection confirms zero backups/PITR, one deployed function (`request-trip` v2), **12 hosted records / 28 repository migrations**, localhost Auth origin, no redirect allowlist or custom SMTP, and none of the new pilot/retention/outbox tables. No hosted mutation occurred.

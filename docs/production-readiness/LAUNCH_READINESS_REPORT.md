@@ -1,7 +1,7 @@
 # DHW-inRide launch readiness report
 
 - Current evidence date: **4 November 2026 (CAT)**
-- Engineering source: `f585aefe2cb9b8a92b89d6b8cf137d7a5beaf118` on `feat/release-operations`
+- Engineering source: `8e9efea5f2c73cd1195bff05bcb93aed07375964` on `feat/release-operations`
 - Starting score: **4.0/10**
 - Current evidence-based score: **4.0/10 — Not ready**
 - Ready for a controlled pilot: **No**
@@ -69,11 +69,11 @@ The current score remains fixed because the hosted recovery, migration, live int
 ## 5. Release signing and Android APKs
 
 - **Initial state:** Release guards existed, but real Firebase files and the established signing identity were unavailable.
-- **Changes made:** Rebuilt both no-push development apps after adding rider onboarding and matching the 5 MB Storage limit. Preserved release guards and did not create or replace a release key.
-- **Verification commands:** `:core-ui:testDebugUnitTest`, both `assembleDevelopment`, both `lintDevelopment`, `aapt2 dump badging`, `apksigner verify --print-certs`, SHA-256 and embedded-secret scans.
-- **Actual result:** 70 Android tests pass with zero failures/errors/skips; both lint tasks and builds pass. APKs are version `0.1.0-development-no-push`, code 1, minSdk 26, targetSdk 37, V2 debug-signed and contain no detected management/server/private-key markers.
-- **Evidence:** [current verification receipt](evidence/launch-readiness-20261104/verification.json).
-- **Remaining risks:** Development artifacts have no push and are not public releases. Their local debug signer is not proven upgrade-compatible with earlier development installs. No signed/minified release APK or release manifest exists.
+- **Changes made:** Rebuilt both no-push development apps after adding rider onboarding and matching the 5 MB Storage limit. Added a fail-closed human-readable release-manifest generator after the protected APK verifier; the workflow records a UTC build timestamp and uploads the generated manifest with verified candidates. Preserved release guards and did not create or replace a release key.
+- **Verification commands:** `:core-ui:testDebugUnitTest`, both `assembleDevelopment`, both `lintDevelopment`, `aapt2 dump badging`, `apksigner verify --print-certs`, SHA-256 and embedded-secret scans; `python3 -m unittest discover -s scripts/tests -v`; official `actionlint` for both workflows.
+- **Actual result:** 70 Android tests pass with zero failures/errors/skips; both lint tasks and builds pass. All 20 recovery/preflight/candidate-manifest tests and workflow syntax pass. Development APKs are version `0.1.0-development-no-push`, code 1, minSdk 26, targetSdk 37, V2 debug-signed and contain no detected management/server/private-key markers. The checked-in release manifest remains explicitly BLOCKED.
+- **Evidence:** [current verification receipt](evidence/launch-readiness-20261104/verification.json), [Android release manifest status](ANDROID_RELEASE_MANIFEST.md), [release automation receipt](evidence/backend-release-continuation-20261104/verification.json).
+- **Remaining risks:** Development artifacts have no push and are not public releases. Their local debug signer is not proven upgrade-compatible with earlier development installs. No signed/minified release APK or candidate-specific verified manifest exists.
 - **External dependency:** Existing release keystore/path/password/alias, expected release certificate SHA-256 and both real `google-services.json` files.
 - **Final status:** **BLOCKED**.
 

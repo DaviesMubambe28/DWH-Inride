@@ -1,0 +1,62 @@
+{
+  "date_cat": "2026-11-04",
+  "branch": "feat/release-operations",
+  "source_commit": "8e9efea5f2c73cd1195bff05bcb93aed07375964",
+  "readiness": {
+    "starting_score": 4.0,
+    "current_score": 4.0,
+    "controlled_pilot": false,
+    "public_launch": false
+  },
+  "database": {
+    "backup_and_isolated_restore": "BLOCKED",
+    "hosted_migrations_deployed_this_slice": 0,
+    "hosted_migration_state_from_same_day_read_only_receipt": "12 recorded / 28 repository / 16 pending"
+  },
+  "edge_functions": {
+    "deployed_this_slice": 0,
+    "reason": "schema dependencies and backup gate are not satisfied",
+    "schedules_enabled": 0
+  },
+  "external_integrations": {
+    "network_policy": "unrestricted_enforced",
+    "supabase_runtime_bindings": true,
+    "mapbox_public_runtime_binding": true,
+    "firebase_client_files_present": false,
+    "fcm_sender_ready": false,
+    "smtp_ready": false,
+    "monitoring_destination_ready": false,
+    "runtime_observation_state": "current_ready_for_declared_bindings"
+  },
+  "android_release": {
+    "signed_release_apks_built": false,
+    "established_signing_inputs_present": false,
+    "release_manifest_generator": "PASS",
+    "checked_in_manifest_status": "BLOCKED",
+    "candidate_manifest_requires_verified_receipt": true,
+    "candidate_manifest_requires_non_debuggable_pair": true,
+    "candidate_manifest_requires_minification_mappings": true,
+    "candidate_manifest_requires_expected_certificate": true,
+    "publication_enabled": false
+  },
+  "verification": {
+    "recovery_preflight_candidate_tests": {
+      "tests": 20,
+      "failures": 0,
+      "errors": 0
+    },
+    "release_manifest_tests": {
+      "tests": 3,
+      "failures": 0
+    },
+    "workflow_actionlint": "PASS",
+    "python_compile": "PASS",
+    "staged_secret_scan": "PASS"
+  },
+  "next_action": "Complete the real development database backup and isolated restore using WINDOWS_SUPABASE_BACKUP.md.",
+  "hosted_deployment": false,
+  "production_deployment": false,
+  "merged_to_main": false,
+  "public_bookings_enabled": false,
+  "apk_publication": false
+}
