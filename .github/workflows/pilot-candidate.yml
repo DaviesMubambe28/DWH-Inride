@@ -67,6 +67,8 @@ jobs:
           Path('.pilot/owner.json').write_text(json.dumps(owner))
           PY
       - run: python3 scripts/pilot-preflight.py --owner-config .pilot/owner.json --configuration-only
+      - name: Record candidate build timestamp
+        run: echo "PILOT_BUILD_TIMESTAMP=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
       - name: Build and lint signed release candidates
         run: bash gradlew :passenger-app:assembleRelease :rider-app:assembleRelease :passenger-app:lintRelease :rider-app:lintRelease --no-daemon --max-workers=2
       - name: Verify candidate identity and record artifact evidence
@@ -85,6 +87,10 @@ jobs:
             --expected-version-name 0.1.0 \
             --source-commit "$(git rev-parse HEAD)" \
             --output pilot-candidate/verification.json
+          python3 scripts/write-android-release-manifest.py \
+            --verification pilot-candidate/verification.json \
+            --build-timestamp "$PILOT_BUILD_TIMESTAMP" \
+            --output pilot-candidate/ANDROID_RELEASE_MANIFEST.md
           cp passenger-app/build/outputs/apk/release/passenger-app-release.apk pilot-candidate/
           cp rider-app/build/outputs/apk/release/rider-app-release.apk pilot-candidate/
           sha256sum pilot-candidate/*.apk > pilot-candidate/SHA256SUMS
