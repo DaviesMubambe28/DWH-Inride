@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node --test --test-isolation=none tests/*.test.mjs && node --check dist/script.js && node --check scripts/preview.mjs && node scripts/verify-releases.mjs",
+    "build": "node --test tests/*.test.mjs && node --check dist/script.js && node --check scripts/preview.mjs && node scripts/verify-releases.mjs",
     "test": "node --test --test-isolation=none tests/*.test.mjs",
     "test:browser": "node tests/browser-ui.mjs",
     "preview": "node scripts/preview.mjs"
