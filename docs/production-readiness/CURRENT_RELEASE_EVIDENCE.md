@@ -1,3 +1,29 @@
+# Rider self-application evidence — 4 November 2026 (CAT)
+
+Engineering source is `6eb81ba5a714bb5304e1054f378b1c138cb374d9` on `feat/release-operations`; this evidence update follows in a documentation commit. The fixed rubric remains **4.00/10 — Not ready** because hosted recovery/deployment, live integrations, release signing, physical devices, hosting and accountable approvals remain unverified.
+
+Verified in this slice:
+
+- Added a secure rider self-application flow across Android, Supabase and Admin. Auth metadata creates a passenger profile plus a pending application and never grants rider trip access. Admin review provisions only a pending rider; final activation still requires the existing in-person document, safety and physical-device checks.
+- Closed the booking/provisioning race by taking the same profile-row lock before either active-trip validation or trip creation. Rejection reasons are enforced by the RPC. Applicant document rows and Storage objects remain private, lose applicant access after rejection, and the application is removed when account retention reaches anonymization.
+- Replayed all **28 repository migrations** from an empty isolated local database. The focused application file passes **30 assertions** and the complete suite passes **15 files / 249 assertions**. This was database-only local verification; full local Auth, Storage API and vector service startup initially timed out and no hosted migration was applied.
+- Android `:core-ui:testDebugUnitTest` passes **69 tests** with zero failures, errors or skips. Both explicitly labeled development/no-push APKs assemble and verify with APK Signature Scheme v2. A broad normal-debug test attempt correctly stops because both real Firebase `google-services.json` files are absent.
+- Admin lint, typecheck, three unit tests and the production build pass. The fixture-backed Chromium test passes four responsive/axe viewports and exercises application approval/rejection, verification, failure recovery and access-denied states with no runtime test errors.
+- Final diff review found and drove fixes for the provisioning race, raw upload-error disclosure, RPC audit-note enforcement and direct applicant document/retention policy coverage. The follow-up review found no remaining blocking or material issue. Changed-source and APK scans found no management token, server key, service-role marker or private-key marker.
+
+Current installable development artifacts (not release candidates; no push; no phone install):
+
+| App | Path | SHA-256 | Bytes |
+|---|---|---|---:|
+| Passenger | `passenger-app/build/outputs/apk/development/passenger-app-development.apk` | `9e460f5b30d05678bc07a18d369039970e014e4f9bcb835fe3f956736dc28e01` | 125778931 |
+| Rider | `rider-app/build/outputs/apk/development/rider-app-development.apk` | `73df7500178a57698f93a1a8c858610fa8a8e2e07a0c4fc88c6c9eb88a365064` | 125778927 |
+
+Both are version `0.1.0-development-no-push`, code 1, minimum SDK 26, target SDK 37, debuggable and V2-signed by the current local Android Debug certificate `1b6488a0…fd14f`. That certificate differs from the earlier recorded local development signer, so these APKs are **not proven upgrade-compatible** with earlier development installs. It does not replace or verify the established release signing identity.
+
+No Android target is connected. No hosted mutation/deployment, real email/FCM/monitoring delivery, physical install, public booking enablement, Admin/landing hosting, APK publication, merge to `main`, or production action occurred. Sanitized machine-readable evidence: [`evidence/rider-self-application-20261104/verification.json`](evidence/rider-self-application-20261104/verification.json).
+
+---
+
 # Engineering continuation evidence — 3 November 2026 (CAT)
 
 Current engineering source is `b6de8a0ae71b4319395221d38d57b036f4d5b5e4` on `feat/release-operations`; evidence documentation follows in later commits. The fixed rubric remains **4.00/10 — Not ready** because no local result can close hosted backup/full-service recovery, migration/function deployment, live email/FCM/monitoring, established release signing, physical-device, hosting or accountable approval gates.

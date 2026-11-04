@@ -50,7 +50,7 @@ Pickup and destination addresses may be derived from map or geocoding services a
 
 The controlled pilot accepts **cash only**. The passenger pays the rider directly at the end of a completed trip. DHW-inRide does not collect, hold, escrow or settle the fare. In-app cash acknowledgements record a participant’s report and do not independently prove settlement. External mobile-money bookings are not enabled for this pilot.
 
-The passenger is responsible for the disclosed ZMW 20 fare for a completed eligible trip. The rider must not demand an undisclosed surcharge. Report contradictory acknowledgements or fare disputes to operations at +260 971 793 185, +260 76 174 1656, or garumitech@gmail.com, quoting the trip ID. Never disclose a password, trip PIN outside pickup verification, or payment-provider PIN to support.
+The passenger is responsible for the disclosed ZMW 20 fare for a completed eligible trip. The rider must not demand an undisclosed surcharge. Report contradictory acknowledgements or fare disputes to operations at 0770 001 203, 0975 461 121, or gershmukuka1@gmail.com, quoting the trip ID. Never disclose a password, trip PIN outside pickup verification, or payment-provider PIN to support.
 
 Before enabling in-app collection, wallet balances, payment splitting, refunds or payouts, DHW-inRide must implement the payment flow and obtain any approvals or provider arrangements required by the Bank of Zambia and applicable payment law. These Terms do not authorize DHW-inRide to operate a regulated payment service.
 

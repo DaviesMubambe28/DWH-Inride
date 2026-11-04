@@ -16,7 +16,7 @@ The owner approved ZMW 20 flat cash fare within 4.0 km of latitude -15.3292, lon
 
 Passenger cancellation within two minutes of acceptance is free; later cancellation produces a warning and manual review, with no automatic fee/debt. Riders can report no-show only five minutes after server-recorded arrival. Other rider cancellations require manual review. Operations acknowledges reviews in the dashboard.
 
-Monitored support: primary/WhatsApp +260 971 793 185; secondary +260 76 174 1656; email garumitech@gmail.com. The app provides dial/email actions.
+Monitored support: primary/WhatsApp 0770 001 203; secondary 0975 461 121; email gershmukuka1@gmail.com. The app provides dial/email actions.
 
 Copy `config/pilot-owner.example.json` into ignored `.pilot/owner.json`. Approved operating parameters are populated and configuration-only validation passes. Keep `owner_approved` false until legal entity, published privacy/terms, retention/deletion, operating authorization, insurance, safety ownership and candidate evidence are reviewed. Never put API credentials, keystores, passwords or rider documents in this policy file.
 

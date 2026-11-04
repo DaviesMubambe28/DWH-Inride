@@ -1,0 +1,109 @@
+{
+  "date_cat": "2026-11-04",
+  "branch": "feat/release-operations",
+  "source_commit": "6eb81ba5a714bb5304e1054f378b1c138cb374d9",
+  "readiness": {
+    "score": 4.0,
+    "verdict": "NOT_READY",
+    "rubric_changed": false
+  },
+  "scope": {
+    "hosted_mutations_or_deployments": 0,
+    "production_actions": 0,
+    "public_bookings_enabled": false,
+    "apk_publication": false,
+    "physical_devices_connected": 0
+  },
+  "rider_self_application": {
+    "auth_metadata_grants_role": false,
+    "initial_profile_role": "passenger",
+    "application_status": "pending",
+    "admin_review_required": true,
+    "physical_activation_still_required": true,
+    "applicant_document_rls_verified": true,
+    "storage_object_rls_verified": true,
+    "rejected_applicant_access_denied": true,
+    "retention_cleanup_verified": true,
+    "booking_provisioning_lock_order_verified": true,
+    "rpc_rejection_reason_required": true
+  },
+  "verification": {
+    "database_migration_replay": "PASS: 28 migrations from an empty isolated local database",
+    "database_service_scope": "database-only; full local service startup health timed out before the database-only start",
+    "database_contracts": {
+      "files": 15,
+      "assertions": 249,
+      "focused_rider_application_assertions": 30,
+      "result": "PASS"
+    },
+    "android_unit_tests": {
+      "tests": 69,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "android_development_builds": "PASS",
+    "normal_debug_build": "BLOCKED: real Firebase google-services.json files absent",
+    "admin": {
+      "lint": "PASS",
+      "typecheck": "PASS",
+      "unit_tests": 3,
+      "production_build": "PASS",
+      "browser_fixture_viewports": 4,
+      "axe_violations": 0,
+      "runtime_test_errors": 0
+    },
+    "final_diff_review": "PASS after race, disclosure, audit-boundary and policy-coverage fixes",
+    "changed_source_secret_scan": "PASS",
+    "apk_secret_scan": "PASS"
+  },
+  "development_apks": {
+    "passenger": {
+      "path": "passenger-app/build/outputs/apk/development/passenger-app-development.apk",
+      "sha256": "9e460f5b30d05678bc07a18d369039970e014e4f9bcb835fe3f956736dc28e01",
+      "bytes": 125778931,
+      "package": "zm.co.dhwinride.passenger.development"
+    },
+    "rider": {
+      "path": "rider-app/build/outputs/apk/development/rider-app-development.apk",
+      "sha256": "73df7500178a57698f93a1a8c858610fa8a8e2e07a0c4fc88c6c9eb88a365064",
+      "bytes": 125778927,
+      "package": "zm.co.dhwinride.rider.development"
+    },
+    "version_name": "0.1.0-development-no-push",
+    "version_code": 1,
+    "minimum_sdk": 26,
+    "target_sdk": 37,
+    "signature_scheme_v2": true,
+    "debug_signer_sha256": "1b6488a0186c81ca769a0c47a41135cdf7a950ff856d59d5685ea396eb6fd14f",
+    "upgrade_compatible_with_prior_development_artifacts": false,
+    "release_candidate": false,
+    "physical_install_verified": false,
+    "push_enabled": false
+  },
+  "missing_runtime_inputs": [
+    "SUPABASE_DB_PASSWORD",
+    "FCM_SERVICE_ACCOUNT_JSON",
+    "OPERATIONS_WORKER_TOKEN",
+    "SENTRY_DSN",
+    "DHWINRIDE_RELEASE_KEYSTORE_PATH",
+    "DHWINRIDE_RELEASE_STORE_PASSWORD",
+    "DHWINRIDE_RELEASE_KEY_ALIAS",
+    "DHWINRIDE_RELEASE_KEY_PASSWORD",
+    "PILOT_RELEASE_CERT_SHA256",
+    "passenger-app/google-services.json",
+    "rider-app/google-services.json",
+    ".pilot/owner.json"
+  ],
+  "blocked_gates": [
+    "Verified hosted backup and isolated database plus full-service recovery",
+    "Hosted migration reconciliation, deployment, functions and staging journeys",
+    "Real SMTP confirmation and password-recovery delivery",
+    "Firebase client files, trusted sender and actual FCM delivery",
+    "Monitoring configuration and receipt",
+    "Established release signer and signed/minified release candidates",
+    "Two-phone installation, interruption, trip and upgrade checks",
+    "Admin and landing hosting with approved HTTPS artifact URLs",
+    "Operator, legal, insurance, privacy-retention, support and release approvals"
+  ]
+}

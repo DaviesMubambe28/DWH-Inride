@@ -41,3 +41,10 @@ test("Android requirement is grounded in both app configurations", () => {
     assert.match(gradle,/minSdk = 26/);
   }
 });
+
+test("support actions use the approved monitored contacts", () => {
+  assert.match(html, /href="tel:\+260770001203"/);
+  assert.match(html, /href="tel:\+260975461121"/);
+  assert.match(html, /href="mailto:gershmukuka1@gmail\.com"/);
+  assert.doesNotMatch(html, /(?:260971793185|260761741656|garumitech@gmail\.com)/);
+});

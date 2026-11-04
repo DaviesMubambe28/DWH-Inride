@@ -16,7 +16,7 @@ class PilotPreflightTests(unittest.TestCase):
         return {
             "launch_target": "controlled_pilot", "owner_approved": True,
             "operator_name": "Test Operations", "legal_entity": "Test Entity Limited",
-            "support_phone": "+260971793185", "support_secondary_phone": "+260761741656", "support_email": "garumitech@gmail.com",
+            "support_phone": "+260770001203", "support_secondary_phone": "+260975461121", "support_email": "gershmukuka1@gmail.com",
             "safety_contact": "Test Duty Operator, +260971000002",
             "privacy_url": "https://dhw-inride.com/privacy", "terms_url": "https://dhw-inride.com/terms",
             "service_area": {"center_latitude": -15.3292, "center_longitude": 28.6820, "radius_km": 4.0},

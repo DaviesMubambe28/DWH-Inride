@@ -14,6 +14,7 @@ const passengerId='33333333-3333-4333-8333-333333333333';
 const user={id:userId,aud:'authenticated',role:'authenticated',email:'operations@example.invalid',app_metadata:{provider:'email',providers:['email']},user_metadata:{},created_at:new Date().toISOString()};
 const profiles=[{id:userId,role:'admin',full_name:'Test Operator'}, {id:riderId,role:'rider',full_name:'Test Rider',phone_number:'Fixture phone',approval_status:'pending',is_online:true}, {id:passengerId,role:'passenger',full_name:'Test Passenger'}];
 const trips=['requesting','accepted','arrived','in_progress','completed','cancelled'].map((status,i)=>({id:`fixture-trip-${i}`,passenger_id:passengerId,rider_id:i===0?null:riderId,status,pickup_address:'Chongwe market',dropoff_address:'Chongwe clinic',fare_amount:35,payment_method:'cash',payment_status:'pending',created_at:new Date().toISOString(),completed_at:null}));
+const riderApplications=[{applicant_id:passengerId,status:'pending',motorcycle_make:'Honda',motorcycle_model:'Ace',motorcycle_year:2024,motorcycle_plate:'CHG-001',motorcycle_color:'Blue',driving_licence_number:'DL-001',review_note:null,submitted_at:new Date().toISOString()}];
 let fail=false, delay=1000, allowed=true;
 let cancellationReviews=[{trip_id:'fixture-trip-0',actor_id:passengerId,reason:'passenger_cancelled',late_warning:true,review_required:true,created_at:new Date().toISOString(),reviewed_at:null}];
 const errors=[];
@@ -30,7 +31,7 @@ await context.route('**/*',async route=>{
   const table=url.pathname.split('/').at(-1);
   if (table==='admin_review_pilot_cancellation') { cancellationReviews=[]; return route.fulfill({json:true}); }
   if (table==='pilot_cancellation_reviews') return route.fulfill({json:cancellationReviews});
-  return route.fulfill({json:table==='profiles'?profiles.map(p=>p.id===userId&&!allowed?{...p,role:'passenger'}:p):table==='authorized_trip_details'?trips:table==='rider_documents'?[{id:'fixture-document',rider_id:riderId,document_type:'national_id',storage_url:'fixture/document',verification_status:'pending',submitted_at:new Date().toISOString()}]:[]});
+  return route.fulfill({json:table==='profiles'?profiles.map(p=>p.id===userId&&!allowed?{...p,role:'passenger'}:p):table==='authorized_trip_details'?trips:table==='rider_documents'?[{id:'fixture-document',rider_id:riderId,document_type:'national_id',storage_url:'fixture/document',verification_status:'pending',submitted_at:new Date().toISOString()}]:table==='rider_applications'?riderApplications:[]});
  }
  return route.fulfill({json:{}});
 });
@@ -65,8 +66,14 @@ for(const width of [320,768,1024,1440]) {
 page.once('dialog', dialog=>dialog.accept());
 await page.getByRole('button',{name:'Pause new bookings'}).click();
 await page.getByText('New pilot bookings are paused. Continue supporting active trips.').waitFor();
-await page.getByRole('button',{name:'Pending verification · 1'}).click();
+await page.getByRole('button',{name:'Pending verification · 2'}).click();
 await page.getByRole('heading',{name:'Rider verification',exact:true}).waitFor();
+await page.getByRole('heading',{name:'Self-registered rider applications',exact:true}).waitFor();
+await page.getByRole('button',{name:'Reject',exact:true}).click();
+await page.getByText('Record a concise reason before rejecting an application.').waitFor();
+page.once('dialog', dialog=>dialog.accept());
+await page.getByRole('button',{name:'Approve provisionally',exact:true}).click();
+await page.getByText('Application approved for provisional access. Complete the required in-person activation checks.').waitFor();
 await page.getByRole('button',{name:'Get national id for Test Rider'}).click();
 await page.getByRole('link',{name:'Open national id in a new tab'}).waitFor();
 assert.equal(await page.getByRole('button',{name:'Approve application for Test Rider'}).isDisabled(),true);

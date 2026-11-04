@@ -89,7 +89,7 @@ Historical records mentioning 31 Android tests/debug builds or staging catalog c
 ## Required next inputs and work
 
 1. Final operating policy is implemented: ZMW 20 total cash fare, no distance pricing; cancellations create warnings/manual review only, with a two-minute passenger window and five-minute rider no-show wait. No cancellation fee or debt is collected. The existing internal 15% allocation remains within the ZMW 20 total.
-2. Exact approved boundary: -15.3292, 28.6820, radius 4.0 km. Support: +260 971 793 185, +260 76 174 1656, garumitech@gmail.com. Complete legal/publication/retention and final safety/go approval.
+2. Exact approved boundary: -15.3292, 28.6820, radius 4.0 km. Support: 0770 001 203, 0975 461 121, gershmukuka1@gmail.com. Complete legal/publication/retention and final safety/go approval.
 3. Apply the saved `api.mapbox.com` network allowance. Supply real staging Supabase, Mapbox, Firebase/FCM and signing configuration securely. No secret values belong in chat or Git.
 4. Compile/test/lint both Android apps, build a signed/minified candidate, and execute the staging/device/notification/backup-restore and safety rehearsals. Configure the real trusted FCM sender and monitoring; token registration or documentation alone is not delivery evidence.
 5. Review the redacted evidence and final preflight. Only the responsible operator may then authorize a limited cohort and enable the configured pilot through a trusted administrative interface. Public release is a separate decision.
