@@ -1,3 +1,13 @@
+# Hosted-deployment resume — 4 November 2026 (CAT)
+
+Engineering source is `38f9af7` on `feat/release-operations`; evidence documentation follows in a later commit. The current executor is the managed Linux cloud environment. Its HTTP policy is unrestricted and enforced, but `/etc/codex/network-policy.json` has VPN disabled and no TCP domain or IP grants. The public Session pooler therefore remains ineligible for this runtime's TCP proxy. No unchanged connection probe was repeated, no TLS setting was weakened and no hosted write occurred.
+
+The reviewed Windows helper still matches SHA-256 `bc49a0c35bc0c995c2ebf77ffc706bea9f61bdb34f977bdd60c1c16596c2388e`. The isolated-restore procedure now uses the reviewed Supabase PostgreSQL 17.11 image digest instead of a mutable tag; all five PowerShell blocks parse with PowerShell 7.5.4. The real backup and isolated restore remain **BLOCKED**, so hosted migrations remain **12/28** and Edge Functions remain **1/4**.
+
+**Next operator action:** on the Windows computer, open PowerShell 7 by running `pwsh`, then return only the output of `$PSVersionTable.PSVersion.ToString()` and `docker info --format '{{.OSType}}'`. Do not enter or send a password, certificate, archive or signing material at this step. Sanitized receipt: [hosted deployment resume](evidence/hosted-deployment-resume-20261104/verification.json).
+
+---
+
 # Backend/release continuation — 4 November 2026 (CAT)
 
 Engineering source is `8e9efea5f2c73cd1195bff05bcb93aed07375964` on `feat/release-operations`; documentation follows in a later commit. The hosted backup gate remains BLOCKED by the same-day read-only evidence, so zero migrations or functions were deployed. The managed runtime reports an enforced unrestricted network policy and ready `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_ACCESS_TOKEN`, and `MAPBOX_PUBLIC_TOKEN` bindings without exposing their values. Firebase application files/sender, SMTP, monitoring, worker token and established release-signing inputs remain unavailable.
