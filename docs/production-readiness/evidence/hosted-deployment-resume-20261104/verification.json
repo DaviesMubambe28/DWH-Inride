@@ -1,0 +1,36 @@
+{
+  "date_cat": "2026-11-04",
+  "branch": "feat/release-operations",
+  "engineering_source_commit": "38f9af7",
+  "executor": "managed_linux_cloud",
+  "network": {
+    "http_policy": "unrestricted_enforced",
+    "vpn_configured": false,
+    "tcp_domain_grants": 0,
+    "tcp_ip_range_grants": 0,
+    "public_supabase_pooler_reachable_through_supported_route": false,
+    "unchanged_failure_retried": false
+  },
+  "recovery": {
+    "actual_hosted_backup": "BLOCKED",
+    "actual_isolated_restore": "BLOCKED",
+    "helper_sha256": "bc49a0c35bc0c995c2ebf77ffc706bea9f61bdb34f977bdd60c1c16596c2388e",
+    "helper_checksum_matches_documentation": true,
+    "restore_image_pinned_by_digest": true,
+    "powershell_blocks_parsed": 5,
+    "powershell_parser_version": "7.5.4",
+    "powershell_parse_result": "PASS"
+  },
+  "hosted_state_carried_from_same_day_read_only_evidence": {
+    "migrations_recorded": 12,
+    "repository_migrations": 28,
+    "edge_functions_deployed": 1,
+    "edge_functions_expected": 4
+  },
+  "hosted_writes": false,
+  "production_deployment": false,
+  "public_bookings_enabled": false,
+  "apk_publication": false,
+  "merged_to_main": false,
+  "next_operator_action": "Launch pwsh on Windows and return only the PowerShell version and Docker OSType outputs."
+}

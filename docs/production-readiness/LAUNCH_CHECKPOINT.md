@@ -1,5 +1,21 @@
 # Resume checkpoint — 2 November 2026 (CAT)
 
+## Hosted deployment resume — 4 November 2026 (CAT)
+
+Current source is `38f9af7` on `feat/release-operations`. This is the managed Linux cloud executor: HTTP is unrestricted/enforced, while VPN is disabled and the TCP policy grants no domains or IP ranges. The public development Session pooler cannot be reached through the supported TCP proxy from this runtime. The known proxy failure was not retried. No hosted database, function, schedule, production, booking, publication or merge action occurred.
+
+The Windows Docker PostgreSQL helper checksum remains `bc49a0c35bc0c995c2ebf77ffc706bea9f61bdb34f977bdd60c1c16596c2388e`. The isolated restore now uses its reviewed PostgreSQL 17.11 image digest rather than a mutable tag, and all five PowerShell blocks parse successfully. Database backup/restore remains BLOCKED; hosted state remains 12/28 migrations and 1/4 Edge Functions.
+
+Resume one step at a time on Windows: launch `pwsh`, run `$PSVersionTable.PSVersion.ToString()` and `docker info --format '{{.OSType}}'`, and return only those outputs/errors. No password is needed yet. After review, verify the helper checksum/client versions, then proceed to the dashboard parameter/CA cross-check, masked TLS capture and network-isolated restore in [WINDOWS_SUPABASE_BACKUP.md](WINDOWS_SUPABASE_BACKUP.md).
+
+## Backend and Android release continuation — 4 November 2026 (CAT)
+
+Current engineering source is `8e9efea5f2c73cd1195bff05bcb93aed07375964` on `feat/release-operations`. The managed runtime reports an enforced unrestricted network policy and ready Supabase URL/public-key/management-token plus Mapbox public-token bindings. The same-day hosted read-only receipt still shows zero backups/PITR, 12 of 28 migrations, one of four functions, localhost Auth, no custom SMTP and missing worker/FCM/monitoring configuration. The backup/isolated-restore gate has not passed, so no hosted migration, function or schedule was changed.
+
+Independent release work completed: `scripts/write-android-release-manifest.py` validates the signed-candidate receipt and refuses wrong packages, versions, SDKs, debuggable artifacts, missing minification mappings, malformed hashes, incomplete app pairs and non-UTC timestamps. The protected workflow invokes it only after signature/certificate verification and uploads the manifest with the candidate. Twenty recovery/preflight/candidate tests and official actionlint pass. The source [Android release manifest](ANDROID_RELEASE_MANIFEST.md) remains BLOCKED because real Firebase files, the established keystore bindings and expected certificate fingerprint are absent.
+
+Resume with the hosted backup and isolated restore in [WINDOWS_SUPABASE_BACKUP.md](WINDOWS_SUPABASE_BACKUP.md). After that evidence passes, deploy the 16 reviewed development migrations in order, verify hosted authorization/journeys, then deploy the three schema-dependent workers. Separately supply Firebase, SMTP, Sentry/worker and established signing inputs through the exact destinations in [CONFIGURATION_HANDOFF.md](CONFIGURATION_HANDOFF.md). Production deployment, merge, public bookings and APK publication remain disabled.
+
 ## Engineering continuation — 3 November 2026 (CAT)
 
 Current source is `b6de8a0ae71b4319395221d38d57b036f4d5b5e4` on `feat/release-operations`; evidence documentation follows in later commits. Verdict remains **4.00/10 — Not ready** under the fixed rubric.
