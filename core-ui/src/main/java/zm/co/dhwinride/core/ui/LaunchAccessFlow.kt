@@ -303,6 +303,9 @@ fun LaunchAccessFlow(role: AppUserRole, authRepository: AuthRepository, onReady:
                         isError = phoneError != null,
                         supportingText = { phoneError?.let { Text(it, color = Color(0xFFB42318)) } },
                     )
+                    if (riderSignup) {
+                        Text("Use the rider's own reachable phone and email. These details will be checked during approval.", color = DhwMuted, fontSize = 12.sp)
+                    }
                 }
                 if (riderSignup && riderSignupStep == 1) {
                     OutlinedTextField(value = motorcycleMake, onValueChange = { motorcycleMake = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Motorcycle make") }, singleLine = true)
@@ -311,6 +314,7 @@ fun LaunchAccessFlow(role: AppUserRole, authRepository: AuthRepository, onReady:
                     OutlinedTextField(value = motorcyclePlate, onValueChange = { motorcyclePlate = it.uppercase() }, modifier = Modifier.fillMaxWidth(), label = { Text("Registration number") }, singleLine = true)
                     OutlinedTextField(value = motorcycleColor, onValueChange = { motorcycleColor = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Motorcycle colour") }, singleLine = true)
                     OutlinedTextField(value = drivingLicenceNumber, onValueChange = { drivingLicenceNumber = it.uppercase() }, modifier = Modifier.fillMaxWidth(), label = { Text("Driving licence number") }, singleLine = true)
+                    Text("Enter details exactly as they appear on the motorcycle registration and Class A licence.", color = DhwMuted, fontSize = 12.sp)
                 }
                 if (riderSignup && riderSignupStep == 2) {
                     DhwCard {
