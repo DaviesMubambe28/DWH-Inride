@@ -336,7 +336,7 @@ private fun HomeScreen(
                     }
                 }
                 Surface(
-                    modifier = Modifier.fillMaxWidth().clickable(enabled = pilotAvailable, onClick = onDestination),
+                    modifier = Modifier.fillMaxWidth().clickable(onClick = onDestination),
                     color = DhwSurface,
                     shape = RoundedCornerShape(14.dp),
                 ) {
@@ -351,7 +351,7 @@ private fun HomeScreen(
                 }
             }
             Text(serviceMessage, color = DhwNavy)
-            PrimaryButton("Choose destination", onDestination, enabled = pilotAvailable)
+            PrimaryButton(if (pilotAvailable) "Choose destination" else "View destination map", onDestination)
             if (!pilotAvailable) SecondaryButton("Check availability again", onRefresh)
         }
     }
