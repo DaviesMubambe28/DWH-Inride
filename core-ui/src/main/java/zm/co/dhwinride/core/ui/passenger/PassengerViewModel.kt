@@ -324,6 +324,7 @@ class PassengerViewModel(
     }
 
     fun choosePlace(place: Place) {
+        searchJob?.cancel()
         viewModelScope.launch {
             val current = _uiState.value
             if (current.pickup == null) {
@@ -333,6 +334,8 @@ class PassengerViewModel(
                         mapSelection = null,
                         isResolvingMapSelection = false,
                         searchQuery = "",
+                        nearbyPlaces = emptyList(),
+                        isLoading = false,
                         errorMessage = null,
                     )
                 }
@@ -347,7 +350,7 @@ class PassengerViewModel(
                 val amount = fareCalculator.calculateNgwee(current.pickup, place).also { require(it <= Int.MAX_VALUE) }
                 FareEstimate(fareAmount = amount.toInt(), distanceKm = kilometers)
             }.onSuccess { estimate ->
-                updateState { it.copy(dropoff = place, destination = place.detail, fareEstimate = estimate, screen = PassengerNavScreen.Estimate, searchQuery = "", isLoading = false) }
+                updateState { it.copy(dropoff = place, destination = place.detail, fareEstimate = estimate, screen = PassengerNavScreen.Estimate, searchQuery = "", nearbyPlaces = emptyList(), isLoading = false) }
             }.onFailure { error -> updateState { it.copy(errorMessage = error.message, isLoading = false) } }
         }
     }
@@ -389,15 +392,15 @@ class PassengerViewModel(
     }
 
     fun searchPlaces(query: String) {
-        updateState { it.copy(searchQuery = query) }
         searchJob?.cancel()
         if (query.isBlank()) {
-            updateState { it.copy(nearbyPlaces = emptyList(), isLoading = false) }
+            updateState { it.copy(searchQuery = query, nearbyPlaces = emptyList(), isLoading = false) }
             return
         }
+        updateState { it.copy(searchQuery = query, isLoading = true) }
         searchJob = viewModelScope.launch {
             delay(350)
-            updateState { it.copy(isLoading = true, errorMessage = null) }
+            updateState { it.copy(errorMessage = null) }
             runCatching { tripRepository.searchLocations(query) }
                 .onSuccess { places -> if (_uiState.value.searchQuery == query) updateState { it.copy(nearbyPlaces = places, errorMessage = null, isLoading = false) } }
                 .onFailure { error -> if (_uiState.value.searchQuery == query) updateState { it.copy(nearbyPlaces = emptyList(), errorMessage = error.message ?: "Location search failed.", isLoading = false) } }

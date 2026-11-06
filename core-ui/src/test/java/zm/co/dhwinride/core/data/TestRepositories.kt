@@ -15,6 +15,8 @@ import zm.co.dhwinride.core.model.TripStatus
 
 class TestTripRepository : TripRepository {
     var pilotAvailable = true
+    var locationSearchResults: List<Place> = emptyList()
+    var lastLocationQuery: String? = null
     override suspend fun getPilotServiceStatus() = zm.co.dhwinride.core.model.PilotServiceStatus(pilotAvailable, if (pilotAvailable) "Pilot available" else "Service currently unavailable")
     override suspend fun recordRiderAvailability(latitude: Double, longitude: Double) = Unit
     var failNextComplete = false
@@ -28,7 +30,10 @@ class TestTripRepository : TripRepository {
     override fun getTripHistory(): Flow<List<Trip>> = history.asStateFlow()
     override suspend fun refreshPassengerTrips(passengerId: String) = Unit
     override suspend fun refreshRiderTrips(riderId: String) = Unit
-    override suspend fun searchLocations(query: String) = emptyList<Place>()
+    override suspend fun searchLocations(query: String): List<Place> {
+        lastLocationQuery = query
+        return locationSearchResults
+    }
     override suspend fun reverseGeocodeLocation(latitude: Double, longitude: Double) =
         Place("Pinned location", "Test address", "", latitude, longitude)
     override suspend fun estimateFare(destination: String) = FareEstimate(4000, 3400, 600, 2.0, 8)

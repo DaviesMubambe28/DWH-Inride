@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,6 +29,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
@@ -48,6 +50,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -214,6 +217,9 @@ fun PassengerApp(viewModel: PassengerViewModel, authRepository: AuthRepository) 
                     )
                     PassengerNavScreen.Destination -> DestinationScreen(
                         choosingPickup = uiState.pickup == null,
+                        searchQuery = uiState.searchQuery,
+                        searchResults = uiState.nearbyPlaces,
+                        isSearching = uiState.isLoading && uiState.searchQuery.isNotBlank(),
                         mapSelection = uiState.mapSelection,
                         isResolvingMapSelection = uiState.isResolvingMapSelection,
                         initialLatitude = uiState.pickup?.latitude ?: -15.3292,
@@ -221,6 +227,7 @@ fun PassengerApp(viewModel: PassengerViewModel, authRepository: AuthRepository) 
                         isFetchingLocation = uiState.isFetchingLocation,
                         onMapCenterChanging = { viewModel.onMapCenterChanging() },
                         onMapCenterChanged = { latitude, longitude -> viewModel.resolveMapCenter(latitude, longitude) },
+                        onSearchQueryChanged = viewModel::searchPlaces,
                         onChoose = { viewModel.choosePlace(it) },
                         onBack = { viewModel.navigateTo(PassengerNavScreen.Home) },
                         onUseCurrentLocation = {
@@ -336,11 +343,14 @@ private fun HomeScreen(
                     }
                 }
                 Surface(
-                    modifier = Modifier.fillMaxWidth().clickable(onClick = onDestination),
+                    modifier = Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onDestination),
                     color = DhwSurface,
                     shape = RoundedCornerShape(14.dp),
                 ) {
-                    Text("Where are you going?", color = DhwMuted, fontSize = 16.sp, modifier = Modifier.padding(16.dp))
+                    Column(Modifier.padding(16.dp)) {
+                        Text("Where are you going?", color = DhwInk, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text("Search an address or choose it on the map", color = DhwMuted, fontSize = 12.sp)
+                    }
                 }
                 InfoRow("Payment", "Cash only during the pilot", DhwOrange)
                 if (history.isNotEmpty()) {
@@ -360,6 +370,9 @@ private fun HomeScreen(
 @Composable
 private fun DestinationScreen(
     choosingPickup: Boolean,
+    searchQuery: String,
+    searchResults: List<Place>,
+    isSearching: Boolean,
     mapSelection: Place?,
     isResolvingMapSelection: Boolean,
     initialLatitude: Double,
@@ -367,6 +380,7 @@ private fun DestinationScreen(
     isFetchingLocation: Boolean,
     onMapCenterChanging: () -> Unit,
     onMapCenterChanged: (Double, Double) -> Unit,
+    onSearchQueryChanged: (String) -> Unit,
     onChoose: (Place) -> Unit,
     onBack: () -> Unit,
     onUseCurrentLocation: () -> Unit,
@@ -391,25 +405,27 @@ private fun DestinationScreen(
 
         Surface(
             modifier = Modifier.align(Alignment.TopStart).padding(start = 16.dp, top = 18.dp)
+                .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
                 .semantics { contentDescription = "Back to passenger home" }
-                .clickable(onClick = onBack),
+                .clickable(role = Role.Button, onClick = onBack),
             color = Color.White,
             shape = CircleShape,
             shadowElevation = 4.dp,
         ) {
-            Text("←", color = DhwInk, fontSize = 24.sp, modifier = Modifier.padding(horizontal = 17.dp, vertical = 8.dp))
+            Text("←", color = DhwInk, fontSize = 24.sp, modifier = Modifier.padding(horizontal = 17.dp, vertical = 8.dp).clearAndSetSemantics { })
         }
 
         if (choosingPickup) {
             Surface(
                 modifier = Modifier.align(Alignment.TopEnd).padding(end = 16.dp, top = 18.dp)
+                    .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
                     .semantics { contentDescription = "Use current location" }
-                    .clickable(enabled = !isFetchingLocation, onClick = onUseCurrentLocation),
+                    .clickable(enabled = !isFetchingLocation, role = Role.Button, onClick = onUseCurrentLocation),
                 color = Color.White,
                 shape = CircleShape,
                 shadowElevation = 4.dp,
             ) {
-                Text(if (isFetchingLocation) "…" else "◎", color = DhwBlue, fontSize = 23.sp, modifier = Modifier.padding(horizontal = 15.dp, vertical = 9.dp))
+                Text(if (isFetchingLocation) "…" else "◎", color = DhwBlue, fontSize = 23.sp, modifier = Modifier.padding(horizontal = 15.dp, vertical = 9.dp).clearAndSetSemantics { })
             }
         }
 
@@ -434,8 +450,10 @@ private fun DestinationScreen(
                 shadowElevation = 12.dp,
             ) {
                 Column(
-                    modifier = Modifier.fillMaxWidth().padding(start = 22.dp, end = 22.dp, top = 22.dp, bottom = 18.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.fillMaxWidth().heightIn(max = 480.dp)
+                        .verticalScroll(rememberScrollState())
+                        .padding(start = 22.dp, end = 22.dp, top = 22.dp, bottom = 18.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     Text(
                         if (choosingPickup) "PICKUP ADDRESS" else "DESTINATION ADDRESS",
@@ -443,6 +461,34 @@ private fun DestinationScreen(
                         fontWeight = FontWeight.Black,
                         fontSize = 20.sp,
                     )
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = onSearchQueryChanged,
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text(if (choosingPickup) "Search pickup" else "Search destination") },
+                        placeholder = { Text("Street, landmark or business") },
+                        singleLine = true,
+                        supportingText = {
+                            Text(if (isSearching) "Searching…" else "Or move the map to place the pin")
+                        },
+                    )
+                    searchResults.take(4).forEach { place ->
+                        Surface(
+                            modifier = Modifier.fillMaxWidth()
+                                .clickable(role = Role.Button) { onChoose(place) },
+                            color = DhwSurface,
+                            shape = RoundedCornerShape(14.dp),
+                        ) {
+                            Column(Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
+                                Text(place.name, color = DhwInk, fontWeight = FontWeight.Bold)
+                                Text(place.detail, color = DhwMuted, fontSize = 13.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                                if (place.distance.isNotBlank()) Text(place.distance, color = DhwBlue, fontSize = 12.sp)
+                            }
+                        }
+                    }
+                    if (searchQuery.isNotBlank() && !isSearching && searchResults.isEmpty()) {
+                        Text("No matching locations yet. Refine the search or use the map pin.", color = DhwMuted, fontSize = 13.sp)
+                    }
                     ListDivider()
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.size(38.dp).background(DhwOrange.copy(alpha = .12f), CircleShape), contentAlignment = Alignment.Center) {
@@ -466,7 +512,7 @@ private fun DestinationScreen(
                         }
                     }
                     PrimaryButton(
-                        text = "Done",
+                        text = if (choosingPickup) "Use this pickup" else "Use this destination",
                         onClick = { mapSelection?.let(onChoose) },
                         enabled = mapSelection != null && !isResolvingMapSelection,
                     )
@@ -518,11 +564,11 @@ private fun EstimateScreen(
                                 Modifier.size(22.dp).background(if (selectedPayment == method) DhwOrange else DhwLine, CircleShape),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                if (selectedPayment == method) Text("✓", color = Color.White, fontWeight = FontWeight.Black)
+                                if (selectedPayment == method) Text("✓", color = Color.White, fontWeight = FontWeight.Black, modifier = Modifier.clearAndSetSemantics { })
                             }
                             Column(Modifier.padding(start = 12.dp)) {
                                 Text(method.title, fontWeight = FontWeight.Bold)
-                                Text(method.description, color = DhwMuted, fontSize = 11.sp)
+                                Text(method.description, color = DhwMuted, fontSize = 12.sp)
                             }
                         }
                     }

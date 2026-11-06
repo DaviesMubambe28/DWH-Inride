@@ -6,6 +6,7 @@ import androidx.core.content.ContextCompat
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -34,7 +35,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -74,6 +74,7 @@ import zm.co.dhwinride.core.ui.ListDivider
 import zm.co.dhwinride.core.ui.TripMap
 import zm.co.dhwinride.core.ui.TripStage
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.Role
 import zm.co.dhwinride.core.ui.LiveMap
@@ -340,7 +341,6 @@ private fun IncomingRequest(
     onAccept: () -> Unit,
     onDecline: () -> Unit,
 ) {
-    var countdown by remember { mutableIntStateOf(20) }
     val passenger = trip?.passenger
     val fare = trip?.fare
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
@@ -350,9 +350,7 @@ private fun IncomingRequest(
                     Text("NEW RIDE REQUEST", color = Color.White, fontWeight = FontWeight.Black, fontSize = 20.sp)
                     Text("Incoming request", color = Color.White.copy(alpha = .85f))
                 }
-                Surface(color = Color.White, shape = CircleShape) {
-                    Text("${countdown}s", color = DhwOrange, fontWeight = FontWeight.Black, modifier = Modifier.padding(12.dp))
-                }
+                StatusPill("Review request", Color.White)
             }
         }
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -360,7 +358,16 @@ private fun IncomingRequest(
                 requests.isEmpty() && isLoading -> LoadingState("Loading available ride requests…")
                 requests.isEmpty() -> Text("No ride requests right now. Keep the app online to receive new requests.", color = DhwMuted)
                 requests.size > 1 -> requests.forEach { request ->
-                    DhwCard(modifier = Modifier.clickable { onSelect(request.id) }) {
+                    val selected = request.id == trip?.id
+                    DhwCard(
+                        modifier = Modifier.selectable(
+                            selected = selected,
+                            role = Role.RadioButton,
+                            onClick = { onSelect(request.id) },
+                        ),
+                        containerColor = if (selected) DhwOrange.copy(alpha = .10f) else Color.White,
+                    ) {
+                        Text(if (selected) "SELECTED REQUEST" else "TAP TO REVIEW", color = if (selected) DhwOrange else DhwMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         Text("${request.pickupLocation} → ${request.destination}", fontWeight = FontWeight.Bold, color = DhwNavy)
                         Text("K${formatZmw(request.fare.fareAmount)} • ${request.fare.distanceKm} km", color = DhwMuted)
                     }
@@ -420,7 +427,7 @@ private fun ArrivalScreen(trip: Trip?, onContinue: () -> Unit, cancelling: Boole
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(18.dp)) {
         Spacer(Modifier.height(40.dp))
         Box(Modifier.size(90.dp).background(DhwGreen.copy(alpha = .14f), CircleShape), contentAlignment = Alignment.Center) {
-            Text("✓", color = DhwGreen, fontSize = 46.sp, fontWeight = FontWeight.Black)
+            Text("✓", color = DhwGreen, fontSize = 46.sp, fontWeight = FontWeight.Black, modifier = Modifier.clearAndSetSemantics { })
         }
         ScreenTitle("Arrival confirmed", "Wait at pickup and verify passenger’s trip PIN")
         DhwCard {
@@ -485,7 +492,7 @@ private fun CompleteTrip(trip: Trip?, onContinue: () -> Unit) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(18.dp)) {
         Spacer(Modifier.height(40.dp))
         Box(Modifier.size(96.dp).background(DhwGreen, CircleShape), contentAlignment = Alignment.Center) {
-            Text("✓", color = Color.White, fontSize = 48.sp, fontWeight = FontWeight.Black)
+            Text("✓", color = Color.White, fontSize = 48.sp, fontWeight = FontWeight.Black, modifier = Modifier.clearAndSetSemantics { })
         }
         ScreenTitle("Trip completed", "Collect payment from passenger")
         DhwCard {
@@ -525,7 +532,7 @@ private fun CashConfirmation(
                 }
                 Column(Modifier.padding(start = 12.dp)) {
                     Text("I received K${formatZmw(fare?.fareAmount ?: 0)}", fontWeight = FontWeight.Bold)
-                    Text("Payment confirmed by rider", color = DhwMuted, fontSize = 11.sp)
+                    Text("Payment confirmed by rider", color = DhwMuted, fontSize = 12.sp)
                 }
             }
         }
@@ -684,7 +691,7 @@ private fun DocumentRow(name: String, status: String, color: Color, onUpload: ()
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(name, fontWeight = FontWeight.Bold)
-                Text(if (status == "Submitted") "Tap to replace" else "Tap to select a photo", color = DhwMuted, fontSize = 11.sp)
+                Text(if (status == "Submitted") "Tap to replace" else "Tap to select a photo", color = DhwMuted, fontSize = 12.sp)
             }
             StatusPill(status, color)
         }

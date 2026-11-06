@@ -1,3 +1,22 @@
+# Android interaction remediation — 6 November 2026 (UTC)
+
+Verdict remains **BLOCKED** for public release. The work below improves both Android interfaces and produces development-only APKs for guided rehearsal. It does not provide signed/minified release candidates, live backend journey evidence, or physical-device validation.
+
+Source baseline before this uncommitted remediation: `d47c911e1bd51213dd3a8f543eab310735a93a36` on `feat/release-operations`.
+
+| Gate | Status | Current evidence | Remaining limit |
+|---|---|---|---|
+| Passenger location selection | PASS (automated/local) | Existing debounced repository search is now available in the pickup/destination map sheet; search result selection clears transient state and advances the existing booking flow. Two focused ViewModel regressions pass. | Real Mapbox result quality, keyboard behavior, GPS/map gestures, and the full hosted trip remain device/staging checks. |
+| Rider request presentation | PASS (source/local) | Removed the unchanging 20-second UI countdown because no server expiry exists. Multiple offers now expose an explicit visual and semantic selection before acceptance. | Competing rider acceptance remains a hosted authorization/race gate; visual behavior needs device rehearsal. |
+| Rider onboarding hierarchy | PASS (source/local) | Application is split into account, motorcycle, and review steps; review repeats submitted details and preserves the existing operations-approval restriction. | Email delivery, document upload, admin approval, and physical verification still require configured staging and operator evidence. |
+| Notification permission context | PASS (source/local) | Android 13+ permission is requested only from an explanation screen with an available “Not now” path. Declining does not block use. | Actual FCM delivery/background behavior remains unverified. |
+| Accessibility baseline | PASS (static/local) | Custom map controls have 48 dp minimum targets, bottom navigation/helper copy is at least 12 sp, decorative glyphs are removed from TalkBack semantics, and request selection uses radio-button semantics. Android lint passes for both apps. | TalkBack, large text, contrast under device settings, landscape, and small-screen checks need physical execution. |
+| Android development builds | PASS | `:core-ui:testDebugUnitTest`, `:passenger-app:assembleDevelopment`, `:rider-app:assembleDevelopment`, `:passenger-app:lintDevelopment`, and `:rider-app:lintDevelopment` completed successfully with cached dependencies. Passenger APK SHA-256 `88a91d59210bf631b091c7eecb4667f586b4f846b15cf3f849378c6f6ad93edb`; rider APK SHA-256 `bf2917570fcaed2e41e6423862728b13d47338bf9d64480bd3bdd0d429fb2f2b`. Both are versionCode 1, versionName `0.1.0-development-no-push`, minSdk 26. | These are development artifacts with `.development` application IDs. They are not public distribution or release evidence. |
+
+Design decisions and official reference boundaries are recorded in `ANDROID_UI_DESIGN_CONTRACT.md`. No production deployment, public booking enablement, or APK publication occurred.
+
+---
+
 # Hosted-deployment resume — 4 November 2026 (CAT)
 
 Engineering source is `38f9af7` on `feat/release-operations`; evidence documentation follows in a later commit. The current executor is the managed Linux cloud environment. Its HTTP policy is unrestricted and enforced, but `/etc/codex/network-policy.json` has VPN disabled and no TCP domain or IP grants. The public Session pooler therefore remains ineligible for this runtime's TCP proxy. No unchanged connection probe was repeated, no TLS setting was weakened and no hosted write occurred.

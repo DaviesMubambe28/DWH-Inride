@@ -7,6 +7,7 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.test.advanceTimeBy
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -73,6 +74,39 @@ class PassengerViewModelTest {
         assertEquals("Chongwe Hospital", viewModel.uiState.value.destination)
         assertEquals(PassengerNavScreen.Estimate, viewModel.uiState.value.screen)
         assertTrue(viewModel.uiState.value.fareEstimate.fareAmount > 0)
+    }
+
+    @Test
+    fun `location search is debounced and exposes repository results`() = runTest {
+        val result = Place("Chongwe Market", "Great East Road", "1.2 km", -15.33, 28.68)
+        repository.locationSearchResults = listOf(result)
+
+        viewModel.searchPlaces("Chongwe")
+        advanceTimeBy(349)
+        assertNull(repository.lastLocationQuery)
+        advanceTimeBy(1)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals("Chongwe", repository.lastLocationQuery)
+        assertEquals(listOf(result), viewModel.uiState.value.nearbyPlaces)
+    }
+
+    @Test
+    fun `choosing a search result clears search and advances booking`() = runTest {
+        val pickup = Place("Market", "Chongwe Market", "", -15.3292, 28.6820)
+        val destination = Place("Hospital", "Chongwe Hospital", "", -15.3300, 28.6900)
+
+        viewModel.searchPlaces("Market")
+        viewModel.choosePlace(pickup)
+        viewModel.searchPlaces("Hospital")
+        viewModel.choosePlace(destination)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals("", viewModel.uiState.value.searchQuery)
+        assertTrue(viewModel.uiState.value.nearbyPlaces.isEmpty())
+        assertEquals(false, viewModel.uiState.value.isLoading)
+        assertEquals(destination, viewModel.uiState.value.dropoff)
+        assertEquals(PassengerNavScreen.Estimate, viewModel.uiState.value.screen)
     }
 
     @Test

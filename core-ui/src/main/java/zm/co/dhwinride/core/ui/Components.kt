@@ -175,11 +175,15 @@ fun SecondaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modi
 }
 
 @Composable
-fun DhwCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+fun DhwCard(
+    modifier: Modifier = Modifier,
+    containerColor: Color = Color.White,
+    content: @Composable ColumnScope.() -> Unit,
+) {
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = containerColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -254,7 +258,7 @@ fun BottomNav(items: List<String>, selected: String, onSelected: (String) -> Uni
                     Spacer(Modifier.height(4.dp))
                     Text(
                         item,
-                        fontSize = 11.sp,
+                        fontSize = 12.sp,
                         fontWeight = if (selected == item) FontWeight.Bold else FontWeight.Medium,
                         color = if (selected == item) DhwNavy else DhwMuted,
                     )
