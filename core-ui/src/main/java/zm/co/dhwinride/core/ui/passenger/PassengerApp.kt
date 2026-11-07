@@ -10,7 +10,6 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,7 +17,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -46,8 +44,8 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -85,7 +83,6 @@ import zm.co.dhwinride.core.ui.LoadingState
 import zm.co.dhwinride.core.ui.TripMap
 import zm.co.dhwinride.core.ui.TripStage
 import zm.co.dhwinride.core.ui.LiveMap
-import zm.co.dhwinride.core.ui.MapLocationPicker
 import zm.co.dhwinride.core.ui.PassengerCancellation
 import zm.co.dhwinride.core.ui.PilotSupport
 import zm.co.dhwinride.core.ui.PrimaryButton
@@ -214,6 +211,9 @@ fun PassengerApp(viewModel: PassengerViewModel, authRepository: AuthRepository) 
                     )
                     PassengerNavScreen.Destination -> DestinationScreen(
                         choosingPickup = uiState.pickup == null,
+                        searchQuery = uiState.searchQuery,
+                        searchResults = uiState.nearbyPlaces,
+                        isSearching = uiState.isLoading && uiState.searchQuery.isNotBlank(),
                         mapSelection = uiState.mapSelection,
                         isResolvingMapSelection = uiState.isResolvingMapSelection,
                         initialLatitude = uiState.pickup?.latitude ?: -15.3292,
@@ -221,6 +221,7 @@ fun PassengerApp(viewModel: PassengerViewModel, authRepository: AuthRepository) 
                         isFetchingLocation = uiState.isFetchingLocation,
                         onMapCenterChanging = { viewModel.onMapCenterChanging() },
                         onMapCenterChanged = { latitude, longitude -> viewModel.resolveMapCenter(latitude, longitude) },
+                        onSearchQueryChanged = viewModel::searchPlaces,
                         onChoose = { viewModel.choosePlace(it) },
                         onBack = { viewModel.navigateTo(PassengerNavScreen.Home) },
                         onUseCurrentLocation = {
@@ -307,176 +308,6 @@ fun PassengerApp(viewModel: PassengerViewModel, authRepository: AuthRepository) 
 }
 
 @Composable
-private fun HomeScreen(
-    history: List<Trip>,
-    pilotAvailable: Boolean,
-    serviceMessage: String,
-    onRefresh: () -> Unit,
-    onDestination: () -> Unit,
-) {
-    BoxWithConstraints(Modifier.fillMaxSize()) {
-        LiveMap(modifier = Modifier.fillMaxSize(), showRoute = false, label = "Chongwe • Pickup")
-        Column(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .heightIn(max = maxHeight * .82f)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            DhwCard {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(42.dp).background(DhwBlue.copy(alpha = .12f), CircleShape), contentAlignment = Alignment.Center) {
-                        Text("●", color = DhwBlue)
-                    }
-                    Column(Modifier.padding(start = 12.dp)) {
-                        Text("Pickup", color = DhwMuted, fontSize = 12.sp)
-                        Text("Choose pickup location", fontWeight = FontWeight.Bold)
-                        Text("Pickup is selected in the next step", color = DhwMuted, fontSize = 12.sp)
-                    }
-                }
-                Surface(
-                    modifier = Modifier.fillMaxWidth().clickable(enabled = pilotAvailable, onClick = onDestination),
-                    color = DhwSurface,
-                    shape = RoundedCornerShape(14.dp),
-                ) {
-                    Text("Where are you going?", color = DhwMuted, fontSize = 16.sp, modifier = Modifier.padding(16.dp))
-                }
-                InfoRow("Payment", "Cash only during the pilot", DhwOrange)
-                if (history.isNotEmpty()) {
-                    ListDivider()
-                    val lastTrip = history.first()
-                    Text("Recent ride", color = DhwMuted, fontSize = 12.sp)
-                    InfoRow("${lastTrip.destination} • ${lastTrip.rider?.name ?: "Rider"}", "K${formatZmw(lastTrip.fare.fareAmount)}")
-                }
-            }
-            Text(serviceMessage, color = DhwNavy)
-            PrimaryButton("Choose destination", onDestination, enabled = pilotAvailable)
-            if (!pilotAvailable) SecondaryButton("Check availability again", onRefresh)
-        }
-    }
-}
-
-@Composable
-private fun DestinationScreen(
-    choosingPickup: Boolean,
-    mapSelection: Place?,
-    isResolvingMapSelection: Boolean,
-    initialLatitude: Double,
-    initialLongitude: Double,
-    isFetchingLocation: Boolean,
-    onMapCenterChanging: () -> Unit,
-    onMapCenterChanged: (Double, Double) -> Unit,
-    onChoose: (Place) -> Unit,
-    onBack: () -> Unit,
-    onUseCurrentLocation: () -> Unit,
-) {
-    Box(Modifier.fillMaxSize()) {
-        MapLocationPicker(
-            modifier = Modifier.fillMaxSize(),
-            initialLatitude = initialLatitude,
-            initialLongitude = initialLongitude,
-            onCameraMoving = onMapCenterChanging,
-            onCenterChanged = onMapCenterChanged,
-        )
-
-        Surface(
-            modifier = Modifier.align(Alignment.TopCenter).padding(top = 18.dp),
-            color = Color.White.copy(alpha = .94f),
-            shape = RoundedCornerShape(24.dp),
-            shadowElevation = 3.dp,
-        ) {
-            Text("Swipe to move map", color = DhwInk, fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp))
-        }
-
-        Surface(
-            modifier = Modifier.align(Alignment.TopStart).padding(start = 16.dp, top = 18.dp)
-                .semantics { contentDescription = "Back to passenger home" }
-                .clickable(onClick = onBack),
-            color = Color.White,
-            shape = CircleShape,
-            shadowElevation = 4.dp,
-        ) {
-            Text("←", color = DhwInk, fontSize = 24.sp, modifier = Modifier.padding(horizontal = 17.dp, vertical = 8.dp))
-        }
-
-        if (choosingPickup) {
-            Surface(
-                modifier = Modifier.align(Alignment.TopEnd).padding(end = 16.dp, top = 18.dp)
-                    .semantics { contentDescription = "Use current location" }
-                    .clickable(enabled = !isFetchingLocation, onClick = onUseCurrentLocation),
-                color = Color.White,
-                shape = CircleShape,
-                shadowElevation = 4.dp,
-            ) {
-                Text(if (isFetchingLocation) "…" else "◎", color = DhwBlue, fontSize = 23.sp, modifier = Modifier.padding(horizontal = 15.dp, vertical = 9.dp))
-            }
-        }
-
-        Box(
-            modifier = Modifier.align(Alignment.Center).padding(bottom = 16.dp)
-                .size(25.dp)
-                .shadow(4.dp, CircleShape)
-                .background(DhwOrange, CircleShape)
-                .padding(4.dp)
-                .background(Color.White, CircleShape)
-                .padding(4.dp)
-                .background(DhwOrange, CircleShape),
-        )
-
-        Column(
-            modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth()
-                .navigationBarsPadding(),
-        ) {
-            Surface(
-                color = Color.White,
-                shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-                shadowElevation = 12.dp,
-            ) {
-                Column(
-                    modifier = Modifier.fillMaxWidth().padding(start = 22.dp, end = 22.dp, top = 22.dp, bottom = 18.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                ) {
-                    Text(
-                        if (choosingPickup) "PICKUP ADDRESS" else "DESTINATION ADDRESS",
-                        color = DhwInk,
-                        fontWeight = FontWeight.Black,
-                        fontSize = 20.sp,
-                    )
-                    ListDivider()
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(Modifier.size(38.dp).background(DhwOrange.copy(alpha = .12f), CircleShape), contentAlignment = Alignment.Center) {
-                            Box(Modifier.size(14.dp).background(DhwOrange, CircleShape))
-                        }
-                        Column(Modifier.weight(1f).padding(start = 14.dp)) {
-                            Text(
-                                if (isResolvingMapSelection) "Finding address…" else mapSelection?.name ?: "Move map to choose",
-                                fontWeight = FontWeight.Medium,
-                                fontSize = 18.sp,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                            Text(
-                                mapSelection?.detail ?: "Drag the map until the pin is on your location",
-                                color = DhwMuted,
-                                fontSize = 14.sp,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
-                    }
-                    PrimaryButton(
-                        text = "Done",
-                        onClick = { mapSelection?.let(onChoose) },
-                        enabled = mapSelection != null && !isResolvingMapSelection,
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
 private fun EstimateScreen(
     destination: String,
     pickup: Place?,
@@ -518,11 +349,11 @@ private fun EstimateScreen(
                                 Modifier.size(22.dp).background(if (selectedPayment == method) DhwOrange else DhwLine, CircleShape),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                if (selectedPayment == method) Text("✓", color = Color.White, fontWeight = FontWeight.Black)
+                                if (selectedPayment == method) Text("✓", color = Color.White, fontWeight = FontWeight.Black, modifier = Modifier.clearAndSetSemantics { })
                             }
                             Column(Modifier.padding(start = 12.dp)) {
                                 Text(method.title, fontWeight = FontWeight.Bold)
-                                Text(method.description, color = DhwMuted, fontSize = 11.sp)
+                                Text(method.description, color = DhwMuted, fontSize = 12.sp)
                             }
                         }
                     }

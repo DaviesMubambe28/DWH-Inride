@@ -34,7 +34,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -59,7 +58,6 @@ import zm.co.dhwinride.core.domain.formatZmw
 import zm.co.dhwinride.core.ui.AppUserRole
 import zm.co.dhwinride.core.ui.BottomNav
 import zm.co.dhwinride.core.ui.BrandHeader
-import zm.co.dhwinride.core.ui.DhwBlue
 import zm.co.dhwinride.core.ui.DhwCard
 import zm.co.dhwinride.core.ui.DhwGreen
 import zm.co.dhwinride.core.ui.DhwInk
@@ -74,10 +72,10 @@ import zm.co.dhwinride.core.ui.ListDivider
 import zm.co.dhwinride.core.ui.TripMap
 import zm.co.dhwinride.core.ui.TripStage
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.Role
 import zm.co.dhwinride.core.ui.LiveMap
-import zm.co.dhwinride.core.ui.LoadingState
 import zm.co.dhwinride.core.ui.RiderCancellation
 import zm.co.dhwinride.core.ui.PilotSupport
 import zm.co.dhwinride.core.ui.PrimaryButton
@@ -331,71 +329,6 @@ private fun RiderHome(
 }
 
 @Composable
-private fun IncomingRequest(
-    trip: Trip?,
-    requests: List<Trip>,
-    isLoading: Boolean,
-    accepting: Boolean,
-    onSelect: (String) -> Unit,
-    onAccept: () -> Unit,
-    onDecline: () -> Unit,
-) {
-    var countdown by remember { mutableIntStateOf(20) }
-    val passenger = trip?.passenger
-    val fare = trip?.fare
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        Surface(color = DhwOrange) {
-            Row(Modifier.fillMaxWidth().padding(18.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Column {
-                    Text("NEW RIDE REQUEST", color = Color.White, fontWeight = FontWeight.Black, fontSize = 20.sp)
-                    Text("Incoming request", color = Color.White.copy(alpha = .85f))
-                }
-                Surface(color = Color.White, shape = CircleShape) {
-                    Text("${countdown}s", color = DhwOrange, fontWeight = FontWeight.Black, modifier = Modifier.padding(12.dp))
-                }
-            }
-        }
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            when {
-                requests.isEmpty() && isLoading -> LoadingState("Loading available ride requests…")
-                requests.isEmpty() -> Text("No ride requests right now. Keep the app online to receive new requests.", color = DhwMuted)
-                requests.size > 1 -> requests.forEach { request ->
-                    DhwCard(modifier = Modifier.clickable { onSelect(request.id) }) {
-                        Text("${request.pickupLocation} → ${request.destination}", fontWeight = FontWeight.Bold, color = DhwNavy)
-                        Text("K${formatZmw(request.fare.fareAmount)} • ${request.fare.distanceKm} km", color = DhwMuted)
-                    }
-                }
-            }
-            if (trip == null) return@Column
-            DhwCard {
-                Text("Passenger request", color = DhwNavy, fontWeight = FontWeight.Black)
-                InfoRow("Passenger", passenger?.name?.ifBlank { "Passenger" } ?: "Passenger")
-                InfoRow("Phone", passenger?.phone?.ifBlank { "Available after accept" } ?: "Available after accept")
-            }
-            DhwCard {
-                Text("Pickup", color = DhwOrange, fontWeight = FontWeight.Black)
-                Text(trip?.pickupLocation ?: "Chongwe", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                Text("Distance: ${fare?.distanceKm ?: 0.0} km", color = DhwMuted)
-                ListDivider()
-                InfoRow("Destination area", trip?.destination ?: "Destination")
-            }
-            Surface(color = DhwOrange, shape = RoundedCornerShape(18.dp)) {
-                Column(Modifier.fillMaxWidth().padding(18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("YOUR EARNINGS", color = Color.White.copy(alpha = .8f), fontSize = 12.sp)
-                    Text("K${formatZmw(fare?.driverFare ?: 0)}", color = Color.White, fontWeight = FontWeight.Black, fontSize = 32.sp)
-                    Text("${fare?.distanceKm ?: 0.0} km • ${trip?.paymentMethod?.title ?: "Cash"}", color = Color.White)
-                }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                SecondaryButton("Decline", onDecline, Modifier.weight(1f))
-                PrimaryButton(if (accepting) "Accepting…" else "Accept ride", onAccept, Modifier.weight(1f), enabled = !accepting)
-            }
-            Text("Ride ID: ${trip?.id ?: "#DHW"}", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center, color = DhwMuted, fontSize = 12.sp)
-        }
-    }
-}
-
-@Composable
 private fun PickupNavigation(trip: Trip?, onArrive: () -> Unit, cancelling: Boolean, onCancel: (String) -> Unit) {
     val passenger = trip?.passenger
     Column(Modifier.fillMaxSize()) {
@@ -420,7 +353,7 @@ private fun ArrivalScreen(trip: Trip?, onContinue: () -> Unit, cancelling: Boole
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(18.dp)) {
         Spacer(Modifier.height(40.dp))
         Box(Modifier.size(90.dp).background(DhwGreen.copy(alpha = .14f), CircleShape), contentAlignment = Alignment.Center) {
-            Text("✓", color = DhwGreen, fontSize = 46.sp, fontWeight = FontWeight.Black)
+            Text("✓", color = DhwGreen, fontSize = 46.sp, fontWeight = FontWeight.Black, modifier = Modifier.clearAndSetSemantics { })
         }
         ScreenTitle("Arrival confirmed", "Wait at pickup and verify passenger’s trip PIN")
         DhwCard {
@@ -485,7 +418,7 @@ private fun CompleteTrip(trip: Trip?, onContinue: () -> Unit) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(18.dp)) {
         Spacer(Modifier.height(40.dp))
         Box(Modifier.size(96.dp).background(DhwGreen, CircleShape), contentAlignment = Alignment.Center) {
-            Text("✓", color = Color.White, fontSize = 48.sp, fontWeight = FontWeight.Black)
+            Text("✓", color = Color.White, fontSize = 48.sp, fontWeight = FontWeight.Black, modifier = Modifier.clearAndSetSemantics { })
         }
         ScreenTitle("Trip completed", "Collect payment from passenger")
         DhwCard {
@@ -525,7 +458,7 @@ private fun CashConfirmation(
                 }
                 Column(Modifier.padding(start = 12.dp)) {
                     Text("I received K${formatZmw(fare?.fareAmount ?: 0)}", fontWeight = FontWeight.Bold)
-                    Text("Payment confirmed by rider", color = DhwMuted, fontSize = 11.sp)
+                    Text("Payment confirmed by rider", color = DhwMuted, fontSize = 12.sp)
                 }
             }
         }
@@ -684,7 +617,7 @@ private fun DocumentRow(name: String, status: String, color: Color, onUpload: ()
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(name, fontWeight = FontWeight.Bold)
-                Text(if (status == "Submitted") "Tap to replace" else "Tap to select a photo", color = DhwMuted, fontSize = 11.sp)
+                Text(if (status == "Submitted") "Tap to replace" else "Tap to select a photo", color = DhwMuted, fontSize = 12.sp)
             }
             StatusPill(status, color)
         }

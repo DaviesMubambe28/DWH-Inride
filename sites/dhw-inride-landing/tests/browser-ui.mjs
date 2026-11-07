@@ -9,6 +9,7 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
+import { adminUrl as configuredAdminUrl } from '../dist/release-config.mjs';
 const require=createRequire(path.join(process.env.UI_TEST_TOOLS || '/workspace/ui-test-tools','package.json'));
 const { chromium }=require('playwright-core');
 const AxeBuilder=require('@axe-core/playwright').default;
@@ -44,14 +45,15 @@ try{
   assert.equal(await page.locator('button.download-action:disabled').count(),2);
   assert.equal(await page.locator('a.download-action').count(),0);
   if(width<=1020){await page.locator('.menu-toggle').click();assert.equal(await page.locator('#main-menu').isVisible(),true);await page.keyboard.press('Escape');assert.equal(await page.locator('#main-menu').isVisible(),false);}
-  await page.locator('header .admin-entry').click();await page.locator('#admin-status').waitFor();assert.match(await page.locator('#admin-status').innerText(),/not been hosted/);
+  assert.equal(await page.locator('header .admin-entry').getAttribute('href'),configuredAdminUrl);
+  assert.equal(await page.locator('footer .admin-entry').getAttribute('href'),configuredAdminUrl);
   await page.locator('#installation-guide summary').click();assert.equal(await page.locator('#installation-guide li').count(),5);assert.equal(await page.locator('#installation-guide').getAttribute('open'),'');
   const a11y=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze();
   assert.deepEqual(a11y.violations.map(v=>({id:v.id,impact:v.impact,nodes:v.nodes.length})),[],`${width}: accessibility violations`);
   assert.deepEqual(errors,[],`${width}: console errors/warnings`);
   await page.goto(`http://127.0.0.1:${port}/`);await page.reload();assert.equal(await page.locator('h1').count(),1);
   if([360,1440].includes(width)){await page.screenshot({path:path.join(artifacts,`landing-${width}.jpg`),type:'jpeg',quality:82,fullPage:true});await page.screenshot({path:path.join(artifacts,`landing-${width}-hero.jpg`),type:'jpeg',quality:85});}
-  report.layouts.push({width,overflow:false,axe_violations:0,console_errors:0,keyboard_and_reload:'PASS',downloads:'Both pending',admin:'Visible; actual hosting absent'});await context.close();
+  report.layouts.push({width,overflow:false,axe_violations:0,console_errors:0,keyboard_and_reload:'PASS',downloads:'Both pending',admin:'Visible; configured from release manifest'});await context.close();
  }
  for(const width of [320,1440]){const c=await browser.newContext({javaScriptEnabled:false,viewport:{width,height:900}});const p=await c.newPage();await p.goto(`http://127.0.0.1:${port}/`);assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);assert.equal(await p.locator('button.download-action:disabled').count(),2);assert.equal(await p.locator('header .admin-entry').isVisible(),true);assert.equal(await p.locator('#main-menu').isVisible(),true);report.checks.push(`No-JS ${width}: honest pending states/navigation/no overflow`);await c.close();}
  await browser.close();browser=null;

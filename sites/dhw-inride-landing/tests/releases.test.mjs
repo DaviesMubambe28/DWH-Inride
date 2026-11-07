@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync, existsSync } from "node:fs";
 import { validateRelease, validateAdminUrl } from "../dist/release-validation.mjs";
 import { releases, adminUrl } from "../dist/release-config.mjs";
+const packageJson = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
 const apk = { kind: "apk", url: "https://downloads.example.org/passenger-release.apk", version: "0.1.0", bytes: 1024, android: "8.0", releaseDate: "2026-10-29", packageName: "zm.co.dhwinride.passenger", sha256: "a".repeat(64), certificateSha256: "b".repeat(64) };
 test("direct downloads reject unsafe links, debug APKs, store redirects and missing metadata", () => {
   assert.equal(validateRelease(apk, "passenger"), true);
@@ -22,6 +23,13 @@ test("production configuration fails closed", () => {
   for (const [app,release] of Object.entries(releases)) assert.ok(release === null || validateRelease(release, app));
   assert.ok(adminUrl === null || validateAdminUrl(adminUrl));
 });
+test("package metadata remains valid and exposes the supported commands", () => {
+  assert.equal(packageJson.name, "dhw-inride-landing");
+  assert.equal(packageJson.private, true);
+  for (const command of ["build", "test", "test:browser", "preview"]) {
+    assert.equal(typeof packageJson.scripts[command], "string");
+  }
+});
 const html = readFileSync(new URL("../dist/index.html", import.meta.url), "utf8");
 test("unavailable releases remain honest without JavaScript", () => {
   assert.equal((html.match(/disabled aria-describedby="(?:passenger|rider)-status"/g)||[]).length, 2);
@@ -34,6 +42,7 @@ test("all navigation anchors and local production assets exist", () => {
   for (const match of html.matchAll(/href="#([^"]+)"/g)) assert.ok(ids.includes(match[1]), `Missing anchor ${match[1]}`);
   for (const match of html.matchAll(/(?:src|href)="((?:assets\/|styles\.|script\.)[^"]+)"/g)) assert.ok(existsSync(new URL(`../dist/${match[1]}`,import.meta.url)), `Missing asset ${match[1]}`);
   assert.equal((html.match(/class="admin-entry"/g)||[]).length, 2);
+  assert.doesNotMatch(html, /https:\/\/[^"']+\.workers\.dev\//, "Admin origin must come from release-config.mjs");
 });
 test("Android requirement is grounded in both app configurations", () => {
   for (const app of ["passenger", "rider"]) {
