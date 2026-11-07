@@ -30,11 +30,11 @@ A configured valid release shows exact bytes/MiB, version, Android minimum, date
 
 ## Admin routing and hosting
 
-The owner explicitly confirmed the dashboard **has not been hosted**. Actual sign-in route is `/`, from `sites/dhw-inride-admin/app/page.tsx` → `AdminDashboard`; no `/login` exists. Both Admin entries read the single `adminUrl` manifest setting. Leave it null until the actual HTTPS root is deployed and verified: currently links open the honest availability explanation. No localhost/guessed public hostname is committed.
+The dashboard root is hosted at `https://dwh-inride-admin.devkasaka.workers.dev/` and returned HTTP 200 during the 7 November 2026 verification. Actual sign-in route is `/`, from `sites/dhw-inride-admin/app/page.tsx` → `AdminDashboard`; no `/login` exists. Both Admin entries read this one confirmed origin from `release-config.mjs`; the HTML contains no second hardcoded Workers URL.
 
 A public link grants no role. Existing Auth/profile checks and backend RLS/RPC restrictions remain unchanged. Local browser checks navigated both configured links to the actual existing admin static export's root sign-in and refreshed it. That is **not** hosted admin/Auth/RLS verification.
 
-No landing/admin deployment target was configured or created. GitHub metadata shows a public repository, Pages false and no deployment records. `dist/_headers` works only on supporting hosts; equivalent headers must be configured elsewhere. No production deployment, APK publication, booking enablement or public release approval occurred.
+The landing page still has no verified public deployment URL. `dist/_headers` configures browser and immutable-APK response protections on hosts supporting that format; equivalent headers must be configured elsewhere. Linking the existing dashboard does not verify a real admin session or authorize public operations. No APK publication, booking enablement or public release approval occurred.
 
 ## Browser verification
 
