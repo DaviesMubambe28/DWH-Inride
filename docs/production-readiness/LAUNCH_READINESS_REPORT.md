@@ -1,3 +1,5 @@
+> **Historical report (4 November 2026).** Use [CURRENT_RELEASE_SNAPSHOT.md](CURRENT_RELEASE_SNAPSHOT.md) for the canonical 7 November matrix. This report is retained as a dated receipt and does not override newer evidence.
+
 # DHW-inRide launch readiness report
 
 - Current evidence date: **4 November 2026 (CAT)**
