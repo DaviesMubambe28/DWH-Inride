@@ -1,3 +1,13 @@
+# Android emulator runtime attempt — 7 November 2026 (CAT)
+
+Status: **BLOCKED by the managed executor's lack of hardware virtualization**. This does not replace the two-phone rehearsal.
+
+The installed Android 35 Google APIs x86_64 image was configured as a Pixel 6 AVD and started headlessly with software CPU/GPU emulation (`-accel off`, SwiftShader). ADB connected to `emulator-5554` and reported Android 15. The guest reached `zygote64`, `surfaceflinger`, and `system_server`, but `sys.boot_completed` remained empty through two bounded 45-second waits after the initial boot period. Error-only logcat repeatedly showed the activity AIDL service unavailable. The executor has no `/dev/kvm`, so the emulator was stopped after the bounded attempt; no APK was installed and no Android UI behavior was marked verified.
+
+The next valid runtime evidence remains installation of the recorded development APKs on actual phones, followed by portrait/landscape, large-text, TalkBack, keyboard, map/GPS, backgrounding, and passenger/rider journey checks. Production publication and bookings remain disabled.
+
+---
+
 # Android interaction remediation — 6 November 2026 (UTC)
 
 Verdict remains **BLOCKED** for public release. The work below improves both Android interfaces and produces development-only APKs for guided rehearsal. It does not provide signed/minified release candidates, live backend journey evidence, or physical-device validation.
