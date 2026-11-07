@@ -1,6 +1,6 @@
 ﻿# DHW-inRide Admin Dashboard
 
-Authenticated operations dashboard for DHW-inRide. It reads persisted Supabase profiles, trips, rider documents, and locations. Access requires a signed-in account whose database profile has the `admin` role. Unsupported operations such as incident management are presented as unavailable; the dashboard does not use sample operational records.
+Authenticated operations dashboard for DHW-inRide. It reads persisted Supabase profiles, trips, rider documents, locations, and durable incident records. Access requires a signed-in account whose database profile has the `admin` role. Incident writes use admin-only audited RPCs; before that migration is deployed, the dashboard presents a safe support/runbook fallback. The dashboard does not use sample operational records.
 
 ## Run locally
 

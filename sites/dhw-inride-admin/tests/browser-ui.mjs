@@ -15,6 +15,7 @@ const user={id:userId,aud:'authenticated',role:'authenticated',email:'operations
 const profiles=[{id:userId,role:'admin',full_name:'Test Operator'}, {id:riderId,role:'rider',full_name:'Test Rider',phone_number:'Fixture phone',approval_status:'pending',is_online:true}, {id:passengerId,role:'passenger',full_name:'Test Passenger'}];
 const trips=['requesting','accepted','arrived','in_progress','completed','cancelled'].map((status,i)=>({id:`fixture-trip-${i}`,passenger_id:passengerId,rider_id:i===0?null:riderId,status,pickup_address:'Chongwe market',dropoff_address:'Chongwe clinic',fare_amount:35,payment_method:'cash',payment_status:'pending',created_at:new Date().toISOString(),completed_at:null}));
 const riderApplications=[{applicant_id:passengerId,status:'pending',motorcycle_make:'Honda',motorcycle_model:'Ace',motorcycle_year:2024,motorcycle_plate:'CHG-001',motorcycle_color:'Blue',driving_licence_number:'DL-001',review_note:null,submitted_at:new Date().toISOString()}];
+const incidents=[{id:'44444444-4444-4444-8444-444444444444',trip_id:'fixture-trip-0',reporter_id:passengerId,recorded_by:userId,assigned_admin_id:userId,category:'safety',severity:'high',summary:'Fixture safety report for browser verification',status:'in_review',resolution_note:null,created_at:new Date().toISOString(),updated_at:new Date().toISOString(),resolved_at:null}];
 let fail=false, delay=1000, allowed=true;
 let cancellationReviews=[{trip_id:'fixture-trip-0',actor_id:passengerId,reason:'passenger_cancelled',late_warning:true,review_required:true,created_at:new Date().toISOString(),reviewed_at:null}];
 const errors=[];
@@ -31,7 +32,7 @@ await context.route('**/*',async route=>{
   const table=url.pathname.split('/').at(-1);
   if (table==='admin_review_pilot_cancellation') { cancellationReviews=[]; return route.fulfill({json:true}); }
   if (table==='pilot_cancellation_reviews') return route.fulfill({json:cancellationReviews});
-  return route.fulfill({json:table==='profiles'?profiles.map(p=>p.id===userId&&!allowed?{...p,role:'passenger'}:p):table==='authorized_trip_details'?trips:table==='rider_documents'?[{id:'fixture-document',rider_id:riderId,document_type:'national_id',storage_url:'fixture/document',verification_status:'pending',submitted_at:new Date().toISOString()}]:table==='rider_applications'?riderApplications:[]});
+  return route.fulfill({json:table==='profiles'?profiles.map(p=>p.id===userId&&!allowed?{...p,role:'passenger'}:p):table==='authorized_trip_details'?trips:table==='rider_documents'?[{id:'fixture-document',rider_id:riderId,document_type:'national_id',storage_url:'fixture/document',verification_status:'pending',submitted_at:new Date().toISOString()}]:table==='rider_applications'?riderApplications:table==='incidents'?incidents:[]});
  }
  return route.fulfill({json:{}});
 });
@@ -66,6 +67,11 @@ for(const width of [320,768,1024,1440]) {
 page.once('dialog', dialog=>dialog.accept());
 await page.getByRole('button',{name:'Pause new bookings'}).click();
 await page.getByText('New pilot bookings are paused. Continue supporting active trips.').waitFor();
+await page.getByRole('button',{name:'Incidents',exact:true}).click();
+await page.getByRole('heading',{name:'Record an incident',exact:true}).waitFor();
+await page.getByText('Fixture safety report for browser verification',{exact:true}).waitFor();
+const incidentAxe=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze();
+assert.deepEqual(incidentAxe.violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>n.target)})),[]);
 await page.getByRole('button',{name:'Pending verification · 2'}).click();
 await page.getByRole('heading',{name:'Rider verification',exact:true}).waitFor();
 await page.getByRole('heading',{name:'Self-registered rider applications',exact:true}).waitFor();
@@ -139,5 +145,5 @@ const signInAxe=await new AxeBuilder({page:signInPage}).withTags(['wcag2a','wcag
 assert.deepEqual(signInAxe.violations.map(v=>v.id),[]);
 await signedOut.close();
 assert.deepEqual(errors,[],'no JavaScript runtime errors');
-console.log('PASS: 4 viewport/axe checks, modal keyboard/focus, filters/search/clear, refresh recovery, offline state, initial loading/error recovery, access-denied/sign-in states, sign-in failure recovery, document links, verification feedback, no runtime errors. All operational data is intercepted fixture data.');
+console.log('PASS: 4 viewport/axe checks, incident register, modal keyboard/focus, filters/search/clear, refresh recovery, offline state, initial loading/error recovery, access-denied/sign-in states, sign-in failure recovery, document links, verification feedback, no runtime errors. All operational data is intercepted fixture data.');
 } finally { await browser.close(); }
