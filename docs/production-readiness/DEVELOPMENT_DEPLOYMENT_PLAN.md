@@ -57,7 +57,7 @@ Capture proof in the backup/deployment receipt. Only then is `migration repair 2
 
 ## Migration reconciliation snapshot — 8 November 2026
 
-The existing local `New_DHW_Inride` Supabase stack has 12 ledger entries through `20261024120000`; it has not received the 24/7 migration. All 29 repository migrations replayed in the separate isolated PostgreSQL 17 verification database. The last hosted read-only evidence (4 November) recorded 12 versions and no hosted writes occurred afterward; hosted state was not queried during this continuation. Thus the exact current hosted ledger and effect-by-effect status remain unverified. The 14 migrations below were explicitly identified as unrecorded in the 2 November hosted inventory; the three later files were not in that snapshot and must be reconciled against a fresh hosted read before deployment.
+The existing local `New_DHW_Inride` Supabase stack has 11 ledger entries through `20261024120000`; it has not received the 24/7 migration. All 29 repository migrations replayed in the separate isolated PostgreSQL 17 verification database. The last hosted read-only evidence (4 November) recorded 12 versions and no hosted writes occurred afterward; hosted state was not queried during this continuation. Thus the exact current hosted ledger and effect-by-effect status remain unverified. The 14 migrations below were explicitly identified as unrecorded in the 2 November hosted inventory; the three later files were not in that snapshot and must be reconciled against a fresh hosted read before deployment.
 
 | Order | Migration file | Local status | Last-known hosted status | Dependencies | Data impact and rollback/recovery | Deployment readiness |
 |---:|---|---|---|---|---|---|
@@ -81,7 +81,7 @@ The existing local `New_DHW_Inride` Supabase stack has 12 ledger entries through
 
 This table combines local isolated replay evidence with dated, historical hosted evidence; it is not a current hosted inventory. Every hosted row must be refreshed read-only before any deployment. Never use reset or blanket history repair. A failed migration transaction rolls back atomically; after a committed migration, keep bookings paused and prefer a reviewed forward fix or an actual isolated recovery rehearsal rather than an ad-hoc destructive downgrade.
 
-## Dependency order (17 repository versions beyond the 12-entry baseline)
+## Dependency order (17 repository versions beyond the last-known hosted 12-entry baseline)
 
 | Order | Exact migration | Disposition / focused postcondition |
 |---|---|---|
