@@ -94,4 +94,9 @@ data class RiderEarnings(
 
 
 /** Server-reported pilot service availability; no client clock authority. */
-data class PilotServiceStatus(val available: Boolean, val message: String)
+data class PilotServiceStatus(
+    val available: Boolean,
+    val message: String,
+    val ridersAvailable: Boolean? = null,
+    val service24x7: Boolean = false,
+)

@@ -392,7 +392,13 @@ private fun FindingScreen(onCancel: () -> Unit) {
             }
         }
         Column(Modifier.heightIn(max = 320.dp).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("Notifying nearby riders in Chongwe...", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center, color = DhwNavy, fontWeight = FontWeight.Bold)
+            Text(
+                "Notifying nearby riders in Chongwe. Rides operate 24/7, but rider availability may vary; requests can remain pending until a rider accepts.",
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
+                color = DhwNavy,
+                fontWeight = FontWeight.Bold,
+            )
             SecondaryButton("Cancel request", onCancel)
         }
     }

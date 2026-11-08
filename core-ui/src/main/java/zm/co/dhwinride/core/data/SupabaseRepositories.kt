@@ -152,7 +152,12 @@ private data class DbTrip(
 )
 
 @Serializable
-private data class DbPilotServiceStatus(val available: Boolean, val message: String)
+private data class DbPilotServiceStatus(
+    val available: Boolean,
+    val message: String,
+    @SerialName("riders_available") val ridersAvailable: Boolean? = null,
+    @SerialName("service_24_7") val service24x7: Boolean = false,
+)
 
 @Serializable
 private data class DbTripLocation(
@@ -578,7 +583,7 @@ class SupabaseTripRepository(
 
     override suspend fun getPilotServiceStatus(): PilotServiceStatus {
         val status = client.postgrest.rpc("pilot_service_status").decodeAs<DbPilotServiceStatus>()
-        return PilotServiceStatus(status.available, status.message)
+        return PilotServiceStatus(status.available, status.message, status.ridersAvailable, status.service24x7)
     }
 
     override suspend fun recordRiderAvailability(latitude: Double, longitude: Double) {

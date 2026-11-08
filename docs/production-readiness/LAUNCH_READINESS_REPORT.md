@@ -1,7 +1,7 @@
 # DHW-inRide launch readiness report
 
-- Current evidence date: **4 November 2026 (CAT)**
-- Engineering source: `8e9efea5f2c73cd1195bff05bcb93aed07375964` on `feat/release-operations`
+- Current evidence date: **8 November 2026 (CAT)**
+- Prior hosted evidence/source baseline: `8e9efea5f2c73cd1195bff05bcb93aed07375964` on `feat/release-operations` (4 November 2026)
 - Starting score: **4.0/10**
 - Current evidence-based score: **4.0/10 — Not ready**
 - Ready for a controlled pilot: **No**
@@ -9,13 +9,26 @@
 
 The current score remains fixed because the hosted recovery, migration, live integration, approved release-signing, physical-device, hosting and accountable approval gates are still open. Local engineering progress cannot substitute for those P0 gates.
 
+## 8 November 2026 — local 24/7 availability remediation
+
+Source-only changes on `feat/release-operations` prepare a 24/7 service policy without automatically opening bookings: service status is open whenever the existing owner-controlled `enabled` switch is true, independent of clock/day; the database remains fail-closed when disabled or incompletely configured. The new migration `20261108150000_24_7_service_availability.sql` changes defaults and current stored hours/weekdays, explicitly pauses bookings during migration, updates status messaging, and adds admin-only resume and aggregate rider-availability controls. An authorized admin must resume service after deployment and configuration checks. Existing rider approval, online opt-in, fresh-location, geofence, booking, trip, PIN, and payment controls remain in place.
+
+Passenger status is server-driven again (the prior local always-available bypass has been removed). It distinguishes open service from fresh, eligible rider presence; a no-rider status allows the passenger to request a trip but warns that it may remain pending. A booking error caused by a pause race is shown as a pause, not a success. The dashboard can read service status and aggregate approved-online/dispatch-eligible rider counts; pause and resume actions require admin authorization and verify the resulting status.
+
+Verification rerun on 8 November: all 75 Android unit tests, passenger/rider development builds, and both app development lint tasks passed; all 18 Supabase Edge Function tests passed; Admin typecheck, lint, 4 unit tests, and production build passed. On isolated PostgreSQL 17.11, all 28 pre-existing migrations replayed, the new migration applied cleanly, and the complete 15-file SQL suite passed all 266 assertions. Tests verified the paused-by-default state, 24/7 `Africa/Lusaka` time cases, authorized pause/resume, passenger denial, booking and trip lifecycle behavior, and existing security/payment/PIN regressions. A forced in-transaction failure rolled the migration back and restored the pre-migration schedule and function state; the migration then applied successfully and was reapplied to verify it pauses service again. Synthetic data was preserved.
+
+Docker is available. The dedicated SQL container is healthy and bound only to `127.0.0.1:65322`. The prior temporary Supabase CLI startup stalled during image pulls and left no temporary project database container (`supabase status` reports that the expected container is missing); CLI version is 2.121.0. The existing `New_DHW_Inride` stack was not reset or changed: its database reports ready and localhost port 54322 accepts TCP, while its Vector container is restarting. These SQL assertions ran against the separate PostgreSQL compatibility schema, not a full Supabase Auth/Storage/API stack.
+
+The SQL and automated time scenarios are local database simulations, not hosted integration or two-phone evidence. No hosted status or time-of-day behavior has been verified; the migration has not been applied to a hosted project, no booking service was resumed, and no deployment or push occurred. Hosted backup/restore and migration reconciliation, provider configuration, release signing, physical-device testing, hosting, and operational/legal approval remain open. The readiness score remains **4.0/10 — not ready for a controlled pilot or public launch**. Obtain verified recovery evidence and explicit authorization for the exact development target before any hosted apply. Public/production deployment remains unauthorized.
+
 ## Readiness matrix
 
 | Area | Status | Current evidence |
 |---|---|---|
 | Hosted backup and restore | **BLOCKED** | Current read-only management inspection reports zero backups and PITR disabled. No hosted archive or real isolated restore exists |
-| Hosted migration reconciliation | **BLOCKED** | 28 repository migrations versus 12 hosted records; 16 are unrecorded remotely. All 28 replay locally and 249 SQL assertions pass, but none of the pending migrations were deployed |
-| Edge Functions and journeys | **BLOCKED** | Repository has `request-trip`, `notification-worker`, `operations-worker` and `account-deletion`; hosted project has only `request-trip` v2. Local actual-service rider application and prior local trip rehearsals pass; hosted journeys remain unrun |
+| Hosted migration reconciliation | **BLOCKED** | Last read-only inventory counted 12 hosted records; no hosted query or mutation occurred in this run. All 28 prior migrations and the new 24/7 migration replayed locally; 266 SQL assertions pass |
+| Edge Functions and journeys | **BLOCKED** | All 18 Edge unit tests pass; SQL booking/trip lifecycle simulations pass. Hosted project inventory and end-to-end hosted journeys remain unverified |
+| Isolated database verification | **PASS (local only)** | PostgreSQL 17.11 migration, forced transactional rollback, reapplication, and all 15 SQL test files (266/266 assertions); compatibility schema only, not a full Supabase stack |
 | Firebase, email and monitoring | **BLOCKED** | Firebase client files, trusted sender, worker token and Sentry destination are absent. Auth uses localhost, no redirect allowlist, auto-confirm and no custom SMTP |
 | Release signing and APKs | **BLOCKED** | Installable no-push development APKs pass tests/lint/signature checks. Established release keystore bindings and Firebase files are absent, so signed/minified release APKs do not exist |
 | Two-phone physical testing | **NOT TESTED** | ADB reports no connected targets. No current install, upgrade, GPS, background, notification or full-trip result exists |

@@ -15,9 +15,18 @@ import zm.co.dhwinride.core.model.TripStatus
 
 class TestTripRepository : TripRepository {
     var pilotAvailable = true
+    var ridersAvailable: Boolean? = true
+    var service24x7 = true
     var locationSearchResults: List<Place> = emptyList()
     var lastLocationQuery: String? = null
-    override suspend fun getPilotServiceStatus() = zm.co.dhwinride.core.model.PilotServiceStatus(pilotAvailable, if (pilotAvailable) "Pilot available" else "Service currently unavailable")
+    override suspend fun getPilotServiceStatus() = zm.co.dhwinride.core.model.PilotServiceStatus(
+        pilotAvailable,
+        if (pilotAvailable && ridersAvailable == false) "Service available 24/7. No riders are currently available; requests may remain pending."
+        else if (pilotAvailable) "Service available 24/7. Rider availability may vary."
+        else "Service temporarily paused or not configured. Please try again later.",
+        ridersAvailable,
+        service24x7,
+    )
     override suspend fun recordRiderAvailability(latitude: Double, longitude: Double) = Unit
     var failNextComplete = false
     var requestFailure: Throwable? = null

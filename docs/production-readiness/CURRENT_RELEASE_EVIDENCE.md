@@ -366,3 +366,21 @@ No READY verdict may be inferred from passing local checks. Continue from the re
 ## Retained evidence
 
 Redacted SQL suite, concurrency and Android failure logs are in `evidence/current-cloud/` with SHA-256 inventory. These logs apply to the stated baseline plus working-tree fixes, not an approved signed candidate. No production release commit or APK hash is available.
+
+## 8 November 2026 — isolated 24/7 migration verification
+
+| Check | Result | Scope and limitation |
+|---|---|---|
+| Docker/database availability | PASS (isolated PostgreSQL) | Docker is available. Dedicated PostgreSQL 17.11 container `dhwinride-24x7-verify-20261108-db` is healthy on `127.0.0.1:65322`. Host port 54322 is open and the existing `New_DHW_Inride` database is ready; its Vector container is restarting. That existing stack was not reset or changed. |
+| Temporary Supabase CLI startup | BLOCKED | Supabase CLI 2.121.0 startup stalled while pulling images and left no temporary project database container. `supabase status --workdir` reports the missing `supabase_db_dhwinride24x7verify` container. No repeated startup attempt was made; database checks used the isolated PostgreSQL container instead. |
+| Existing migration replay | PASS (local) | Replayed all 28 pre-existing repository migrations successfully into a fresh isolated database using the test-only compatibility schema. |
+| 24/7 migration and initial state | PASS (local) | Applied `20261108150000_24_7_service_availability.sql`; verified it sets `enabled=false`, 00:00–23:59:59.999999 and all seven weekdays, exposes the 24/7 policy, keeps service unavailable while paused, and preserves a synthetic Auth/profile sentinel. |
+| Pause, resume, authorization and schedule | PASS (SQL simulation) | Confirmed pause blocks new bookings; authorized admin pause/resume succeeds and is audited; passenger resume/status access is denied. `Africa/Lusaka` assertions cover Sunday midnight, 03:00 and 23:59, and Monday 06:00, noon and 18:00. |
+| Rollback and reapplication | PASS (isolated transaction) | On a fresh replay database, injected a failure at the end of the migration inside a single transaction and verified that settings, old Sunday restriction, and function set were restored. The migration then applied successfully. Reapplication also succeeded and paused service again. This verifies failed-transaction rollback, not a post-commit downgrade; after a committed failure, follow the deployment checklist's pause-and-forward-fix/recovery procedure. |
+| Complete SQL suite | PASS | All 15 `supabase/tests/database/*.test.sql` files passed: **266/266 assertions**, 0 failures. Includes booking/status controls, authorized pause/resume, rider dispatch eligibility, trip acceptance/arrival/PIN/start/completion, cash acknowledgement, rider approval/revocation, and security/RLS regressions. |
+| Android | PASS (development only) | Reran `:core-ui:testDebugUnitTest`, passenger/rider development builds, and both development lint tasks; Gradle build successful. The unit suite contains 75 tests. No physical-device test was performed. |
+| Edge Functions | PASS (unit only) | `node --test --test-isolation=none supabase/functions/tests/*.test.mjs`: 18 passed, 0 failed. Hosted Edge execution remains unverified. |
+| Admin | PASS (static/unit only) | `npm run typecheck`, `npm test` (4 passed), `npm run lint`, and `npm run build` all passed in `sites/dhw-inride-admin`. The changed browser fixture passed `node --check` only; Playwright/Chromium prerequisites are unavailable here. Hosted authorization remains unverified. |
+| Git/scope | PASS (pre-commit) | `git diff --check` passes. No migration was applied to the existing stack or a hosted project; no service resume, deployment, or push occurred. The pre-existing `sites/dhw-inride-admin/.env.example` change is excluded from the local evidence commit. |
+
+The SQL environment uses the repository's test-only local platform compatibility schema. It validates PostgreSQL migration behavior and database functions, but is not a full Supabase Auth/Storage/API deployment, hosted rehearsal, recovery-point test, or real passenger/rider journey. The 24/7 migration is not deployed; production/public bookings remain unauthorized. Evidence does not change the **4.0/10 — not ready** launch score.

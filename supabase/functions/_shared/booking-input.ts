@@ -66,7 +66,7 @@ export function routeMetrics(value: unknown): { distanceMeters: number; duration
 }
 
 export function bookingFailure(error: { message?: string; code?: string }): { status: number; error: string } {
-  if (error.message === "PILOT_UNAVAILABLE") return { status: 503, error: "Service currently unavailable. Pilot hours are 06:00–20:00 CAT, Monday–Saturday." };
+  if (error.message === "PILOT_UNAVAILABLE") return { status: 503, error: "New bookings are temporarily paused or unavailable. Please try again later." };
   if (error.message === "PILOT_OUTSIDE_SERVICE_AREA") return { status: 422, error: "Choose pickup and destination points inside the pilot service area." };
   if (error.message === "PILOT_CASH_ONLY") return { status: 400, error: "The pilot accepts cash only." };
   if (error.code === "23505") return { status: 409, error: "You already have an active trip." };

@@ -16,7 +16,7 @@ fun PilotSupport() {
             .onFailure { Toast.makeText(context, "No compatible app is installed. Use the contact details shown here.", Toast.LENGTH_LONG).show() }
     }
     DhwCard {
-        ScreenTitle("Pilot support", "Mon–Sat, 06:00–20:00 CAT")
+        ScreenTitle("Pilot support", "Service schedule: 24/7 when open; rider and support availability may vary.")
         Text("Primary / WhatsApp: ${PilotPolicy.SUPPORT_PRIMARY}")
         Text("Secondary: ${PilotPolicy.SUPPORT_SECONDARY}")
         Text(PilotPolicy.SUPPORT_EMAIL)

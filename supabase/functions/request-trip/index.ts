@@ -30,7 +30,7 @@ export default {
 
     const { data: service, error: serviceError } = await ctx.supabase.rpc("pilot_service_status");
     if (serviceError || service?.available !== true) {
-      return json({ error: "Service currently unavailable. Pilot hours are 06:00–20:00 CAT, Monday–Saturday." }, 503);
+      return json({ error: "New bookings are temporarily paused or unavailable. Please try again later." }, 503);
     }
     const mapboxToken = Deno.env.get("MAPBOX_SERVER_TOKEN")?.trim();
     if (!mapboxToken) return json({ error: "Routing service is temporarily unavailable." }, 503);
