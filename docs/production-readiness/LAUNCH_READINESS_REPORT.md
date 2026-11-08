@@ -25,15 +25,17 @@ The SQL and automated time scenarios are local database simulations, not hosted 
 
 | Area | Status | Current evidence |
 |---|---|---|
-| Hosted backup and restore | **BLOCKED** | Current read-only management inspection reports zero backups and PITR disabled. No hosted archive or real isolated restore exists |
-| Hosted migration reconciliation | **BLOCKED** | Last read-only inventory counted 12 hosted records; no hosted query or mutation occurred in this run. All 28 prior migrations and the new 24/7 migration replayed locally; 266 SQL assertions pass |
+| Hosted backup and restore | **BLOCKED** | Last read-only management inspection (4 Nov) reported zero backups and PITR disabled. No hosted archive or real isolated restore exists; this was not refreshed in the current audit |
+| Hosted migration reconciliation | **BLOCKED** | Last hosted read-only inventory (4 Nov) recorded 12 versions. Repository has 29 files; the unchanged local Supabase ledger has 12 entries through `20261024120000`. All 29 migrations replayed in the separate isolated PostgreSQL 17 database and 266 assertions pass; exact current hosted versions/effects still need a fresh read-only reconciliation |
 | Edge Functions and journeys | **BLOCKED** | All 18 Edge unit tests pass; SQL booking/trip lifecycle simulations pass. Hosted project inventory and end-to-end hosted journeys remain unverified |
 | Isolated database verification | **PASS (local only)** | PostgreSQL 17.11 migration, forced transactional rollback, reapplication, and all 15 SQL test files (266/266 assertions); compatibility schema only, not a full Supabase stack |
-| Firebase, email and monitoring | **BLOCKED** | Firebase client files, trusted sender, worker token and Sentry destination are absent. Auth uses localhost, no redirect allowlist, auto-confirm and no custom SMTP |
+| Firebase, email and monitoring | **BLOCKED** | Firebase client files are absent locally. Last hosted read-only inventory reported no trusted sender, worker token or Sentry destination; Auth used localhost, no redirect allowlist, auto-confirm and no custom SMTP. Not refreshed in the current audit |
 | Release signing and APKs | **BLOCKED** | Installable no-push development APKs pass tests/lint/signature checks. Established release keystore bindings and Firebase files are absent, so signed/minified release APKs do not exist |
 | Two-phone physical testing | **NOT TESTED** | ADB reports no connected targets. No current install, upgrade, GPS, background, notification or full-trip result exists |
 | Hosting and HTTPS downloads | **BLOCKED** | Admin and landing production builds are locally verified, but no authorized hosted URLs or signed release download URLs exist; downloads remain fail-closed |
 | Operational and legal approvals | **BLOCKED** | Insurance, transport/legal eligibility, rider and motorcycle checks, retention approval, support/on-call drill and accountable release approval remain external evidence requirements |
+
+Latest independent checks on 8 November: 20 Python preflight/recovery/candidate-tool tests, 12 landing tests and syntax/release-link checks passed. Root and Admin `npm audit --audit-level=high` each reported zero vulnerabilities. The Python check exposed and fixed a Windows test-runner portability defect. These results do not close hosted recovery, runtime, signing or device gates.
 
 ## 1. Hosted backup and restore
 

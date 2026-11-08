@@ -33,8 +33,9 @@ def normalized_fingerprint(value: str) -> str:
 
 
 def run_tool(arguments: list[str], label: str) -> str:
+    command = [sys.executable, *arguments] if Path(arguments[0]).suffix.lower() == ".py" else arguments
     try:
-        result = subprocess.run(arguments, capture_output=True, text=True, check=False, timeout=60)
+        result = subprocess.run(command, capture_output=True, text=True, check=False, timeout=60)
     except (OSError, subprocess.TimeoutExpired):
         fail(f"{label} could not be executed")
     if result.returncode != 0:
