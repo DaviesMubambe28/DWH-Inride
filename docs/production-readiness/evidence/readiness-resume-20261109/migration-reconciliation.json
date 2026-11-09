@@ -1,0 +1,577 @@
+{
+  "project_ref": "vhckkmzyabbsbgjuhjmq",
+  "mode": "READ_ONLY",
+  "source_commit": "95453aa805cb5b14995add8595d88dd1da9f7ca6",
+  "migrations": [
+    {
+      "file": "20261107100000_incident_tracking.sql",
+      "sha256": "2f2dc1100f45448dd8235fdaa1284e759874f1b168a7436e1ddcbc0b8bc8d600",
+      "tables": {
+        "public.incidents": false,
+        "private.incident_audit": false
+      },
+      "functions": [
+        {
+          "name": "public.admin_record_incident",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        },
+        {
+          "name": "public.admin_update_incident",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        }
+      ],
+      "triggers": {}
+    },
+    {
+      "file": "20261108100000_rider_service_fee_ledger.sql",
+      "sha256": "36cd9432d09713817bc90a064d2340a607c8acceb99bf1f3f3a6363e032b7b3a",
+      "tables": {
+        "public.rider_service_fee_payments": false,
+        "public.rider_service_fee_ledger": false,
+        "private.service_fee_payment_settings": false,
+        "private.service_fee_payment_audit": false
+      },
+      "functions": [
+        {
+          "name": "private.service_fee_outstanding",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        },
+        {
+          "name": "private.guard_service_fee_history",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        },
+        {
+          "name": "public.get_my_service_fee_account",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        },
+        {
+          "name": "public.submit_service_fee_payment",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        },
+        {
+          "name": "public.admin_review_service_fee_payment",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        },
+        {
+          "name": "public.admin_update_service_fee_payment_config",
+          "exists": false,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        },
+        {
+          "name": "public.complete_trip",
+          "exists": true,
+          "normalized_body_match": false,
+          "security_definer_match": false,
+          "empty_search_path_match": false
+        }
+      ],
+      "triggers": {
+        "guard_service_fee_ledger": false,
+        "guard_service_fee_payments": false
+      }
+    }
+  ],
+  "existing_replacements": [
+    {
+      "name": "public.complete_trip",
+      "last_recorded_source": "20261016013132_production_trip_workflow.sql",
+      "matches_recorded_body": true
+    }
+  ],
+  "hardening_grants": [
+    {
+      "relname": "profiles",
+      "attname": "approval_status",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "profiles",
+      "attname": "auth_user_id",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "profiles",
+      "attname": "created_at",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "profiles",
+      "attname": "full_name",
+      "authenticated_insert": false,
+      "authenticated_update": true
+    },
+    {
+      "relname": "profiles",
+      "attname": "id",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "profiles",
+      "attname": "is_approved",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "profiles",
+      "attname": "is_approved_rider",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "profiles",
+      "attname": "is_online",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "profiles",
+      "attname": "phone_number",
+      "authenticated_insert": false,
+      "authenticated_update": true
+    },
+    {
+      "relname": "profiles",
+      "attname": "rating",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "profiles",
+      "attname": "role",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "profiles",
+      "attname": "total_trips",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "profiles",
+      "attname": "updated_at",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "accepted_at",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "accepted_fare_snapshot",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "arrived_at",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "completed_at",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "created_at",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "driver_fare",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "dropoff_address",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "dropoff_lat",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "dropoff_lng",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "fare_amount",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "fare_quote_id",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "id",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "passenger_id",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "passenger_marked_paid_at",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "payment_method",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "payment_status",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "pickup_address",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "pickup_lat",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "pickup_lng",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "pin_failed_attempts",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "pin_locked_until",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "retention_ended_at",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "rider_confirmed_paid_at",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "rider_id",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "route_distance_meters",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "route_duration_seconds",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "service_fee",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "started_at",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "status",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "trip_pin_hash",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    },
+    {
+      "relname": "trips",
+      "attname": "updated_at",
+      "authenticated_insert": false,
+      "authenticated_update": false
+    }
+  ],
+  "hardening_table_grants": [
+    {
+      "t": "public.profiles",
+      "can_insert": false,
+      "can_update": false,
+      "can_delete": false
+    },
+    {
+      "t": "public.trips",
+      "can_insert": false,
+      "can_update": false,
+      "can_delete": false
+    }
+  ],
+  "apply_execution": [
+    {
+      "proname": "apply_as_driver",
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "public_execute": false
+    }
+  ],
+  "alter_preconditions": [
+    {
+      "original_profile_auth_fk_exists": false,
+      "all_profile_ids_have_auth_user": false,
+      "auth_link_column_absent": false,
+      "new_trip_columns_absent": false
+    }
+  ],
+  "constraints": [
+    {
+      "relation": "private.account_closures",
+      "conname": "account_closures_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES profiles(id)"
+    },
+    {
+      "relation": "private.client_error_limits",
+      "conname": "client_error_limits_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE"
+    },
+    {
+      "relation": "private.data_holds",
+      "conname": "data_holds_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES profiles(id)"
+    },
+    {
+      "relation": "private.fare_quotes",
+      "conname": "fare_quotes_accepted_trip_id_fkey",
+      "definition": "FOREIGN KEY (accepted_trip_id) REFERENCES trips(id)"
+    },
+    {
+      "relation": "private.fare_quotes",
+      "conname": "fare_quotes_passenger_id_fkey",
+      "definition": "FOREIGN KEY (passenger_id) REFERENCES profiles(id) ON DELETE CASCADE"
+    },
+    {
+      "relation": "private.fare_quotes",
+      "conname": "fare_quotes_pricing_version_fkey",
+      "definition": "FOREIGN KEY (pricing_version) REFERENCES private.pilot_pricing_versions(version)"
+    },
+    {
+      "relation": "private.pilot_operations_audit",
+      "conname": "pilot_operations_audit_actor_id_fkey",
+      "definition": "FOREIGN KEY (actor_id) REFERENCES profiles(id)"
+    },
+    {
+      "relation": "private.pilot_operations_audit",
+      "conname": "pilot_operations_audit_subject_id_fkey",
+      "definition": "FOREIGN KEY (subject_id) REFERENCES profiles(id)"
+    },
+    {
+      "relation": "private.pilot_pricing_audit",
+      "conname": "pilot_pricing_audit_actor_id_fkey",
+      "definition": "FOREIGN KEY (actor_id) REFERENCES profiles(id)"
+    },
+    {
+      "relation": "private.pilot_pricing_versions",
+      "conname": "pilot_pricing_versions_changed_by_fkey",
+      "definition": "FOREIGN KEY (changed_by) REFERENCES profiles(id)"
+    },
+    {
+      "relation": "private.pilot_rider_checks",
+      "conname": "pilot_rider_checks_reviewed_by_fkey",
+      "definition": "FOREIGN KEY (reviewed_by) REFERENCES profiles(id)"
+    },
+    {
+      "relation": "private.pilot_rider_checks",
+      "conname": "pilot_rider_checks_rider_id_fkey",
+      "definition": "FOREIGN KEY (rider_id) REFERENCES profiles(id)"
+    },
+    {
+      "relation": "private.pilot_rider_presence",
+      "conname": "pilot_rider_presence_rider_id_fkey",
+      "definition": "FOREIGN KEY (rider_id) REFERENCES profiles(id) ON DELETE CASCADE"
+    },
+    {
+      "relation": "private.push_outbox",
+      "conname": "push_outbox_recipient_id_fkey",
+      "definition": "FOREIGN KEY (recipient_id) REFERENCES profiles(id) ON DELETE CASCADE"
+    },
+    {
+      "relation": "private.push_outbox",
+      "conname": "push_outbox_trip_id_fkey",
+      "definition": "FOREIGN KEY (trip_id) REFERENCES trips(id) ON DELETE CASCADE"
+    },
+    {
+      "relation": "private.trip_pickup_pins",
+      "conname": "trip_pickup_pins_passenger_id_fkey",
+      "definition": "FOREIGN KEY (passenger_id) REFERENCES profiles(id) ON DELETE CASCADE"
+    },
+    {
+      "relation": "private.trip_pickup_pins",
+      "conname": "trip_pickup_pins_trip_id_fkey",
+      "definition": "FOREIGN KEY (trip_id) REFERENCES trips(id) ON DELETE CASCADE"
+    },
+    {
+      "relation": "public.device_push_tokens",
+      "conname": "device_push_tokens_user_id_fkey",
+      "definition": "FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE"
+    },
+    {
+      "relation": "public.motorcycles",
+      "conname": "motorcycles_rider_id_fkey",
+      "definition": "FOREIGN KEY (rider_id) REFERENCES profiles(id) ON DELETE CASCADE"
+    },
+    {
+      "relation": "public.pilot_cancellation_reviews",
+      "conname": "pilot_cancellation_reviews_actor_id_fkey",
+      "definition": "FOREIGN KEY (actor_id) REFERENCES profiles(id)"
+    },
+    {
+      "relation": "public.pilot_cancellation_reviews",
+      "conname": "pilot_cancellation_reviews_reviewed_by_fkey",
+      "definition": "FOREIGN KEY (reviewed_by) REFERENCES profiles(id)"
+    },
+    {
+      "relation": "public.pilot_cancellation_reviews",
+      "conname": "pilot_cancellation_reviews_trip_id_fkey",
+      "definition": "FOREIGN KEY (trip_id) REFERENCES trips(id)"
+    },
+    {
+      "relation": "public.profiles",
+      "conname": "profiles_auth_user_id_fkey",
+      "definition": "FOREIGN KEY (auth_user_id) REFERENCES auth.users(id) ON DELETE SET NULL"
+    },
+    {
+      "relation": "public.rider_applications",
+      "conname": "rider_applications_applicant_id_fkey",
+      "definition": "FOREIGN KEY (applicant_id) REFERENCES profiles(id) ON DELETE CASCADE"
+    },
+    {
+      "relation": "public.rider_applications",
+      "conname": "rider_applications_reviewed_by_fkey",
+      "definition": "FOREIGN KEY (reviewed_by) REFERENCES profiles(id)"
+    },
+    {
+      "relation": "public.rider_documents",
+      "conname": "rider_documents_rider_id_fkey",
+      "definition": "FOREIGN KEY (rider_id) REFERENCES profiles(id) ON DELETE CASCADE"
+    },
+    {
+      "relation": "public.trip_locations",
+      "conname": "trip_locations_rider_id_fkey",
+      "definition": "FOREIGN KEY (rider_id) REFERENCES profiles(id) ON DELETE RESTRICT"
+    },
+    {
+      "relation": "public.trip_locations",
+      "conname": "trip_locations_trip_rider_fkey",
+      "definition": "FOREIGN KEY (trip_id, rider_id) REFERENCES trips(id, rider_id) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    {
+      "relation": "public.trip_ratings",
+      "conname": "trip_ratings_rated_user_id_fkey",
+      "definition": "FOREIGN KEY (rated_user_id) REFERENCES profiles(id) ON DELETE CASCADE"
+    },
+    {
+      "relation": "public.trip_ratings",
+      "conname": "trip_ratings_rater_id_fkey",
+      "definition": "FOREIGN KEY (rater_id) REFERENCES profiles(id) ON DELETE CASCADE"
+    },
+    {
+      "relation": "public.trip_ratings",
+      "conname": "trip_ratings_trip_id_fkey",
+      "definition": "FOREIGN KEY (trip_id) REFERENCES trips(id) ON DELETE CASCADE"
+    },
+    {
+      "relation": "public.trips",
+      "conname": "trips_fare_quote_id_fkey",
+      "definition": "FOREIGN KEY (fare_quote_id) REFERENCES private.fare_quotes(id)"
+    },
+    {
+      "relation": "public.trips",
+      "conname": "trips_passenger_id_fkey",
+      "definition": "FOREIGN KEY (passenger_id) REFERENCES profiles(id) ON DELETE CASCADE"
+    },
+    {
+      "relation": "public.trips",
+      "conname": "trips_rider_id_fkey",
+      "definition": "FOREIGN KEY (rider_id) REFERENCES profiles(id) ON DELETE SET NULL"
+    }
+  ],
+  "schedule_inventory": [
+    {
+      "cron_job_table_exists": false
+    }
+  ]
+}

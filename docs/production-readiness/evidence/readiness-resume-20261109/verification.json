@@ -1,0 +1,21 @@
+{
+  "source_commit": "95453aa805cb5b14995add8595d88dd1da9f7ca6",
+  "captured_at_cat": "2026-11-09T18:07:00+02:00",
+  "readiness_score": 5.0,
+  "verdict": "NOT READY",
+  "hosted_project": "vhckkmzyabbsbgjuhjmq",
+  "hosted_migrations": 28,
+  "repository_migrations": 30,
+  "pending_migrations": [
+    "20261107100000_incident_tracking.sql",
+    "20261108100000_rider_service_fee_ledger.sql"
+  ],
+  "hosted_backups": 0,
+  "pitr_enabled": false,
+  "deployed_functions": [
+    "request-trip"
+  ],
+  "backup_restore_gate": "BLOCKED",
+  "hosted_mutations": 0,
+  "production_actions": 0
+}
