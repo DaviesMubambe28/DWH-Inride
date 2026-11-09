@@ -1,11 +1,11 @@
 # Current blockers
 
-Verified 9 November 2026, 18:07 CAT. These blockers are ordered by dependency and launch impact.
+Verified 10 November 2026, 00:19 CAT. These blockers are ordered by dependency and launch impact.
 
 | Priority | Gate | Status | Exact closing evidence |
 |---|---|---|---|
 | 1 | Source backup and isolated restore | **BLOCKED** | Whole-database archive, role export, before/after inventory match, SHA-256 manifest, PostgreSQL 17/Supabase-compatible isolated restore, and schema/data/ACL/RLS/RPC comparison |
-| 2 | Hosted migrations | **BLOCKED by 1** | Apply incident then service-fee migration to development; verify history, objects, RLS, grants, RPC denial paths and ledger integrity |
+| 2 | Hosted migrations | **BLOCKED by 1** | Reconcile and apply incident tracking, service-fee ledger, then fare-quote retention cleanup to development; verify history, objects, RLS, grants, RPC denial paths, ledger integrity and `ON DELETE SET NULL` constraints |
 | 3 | Edge Functions | **BLOCKED by 1/2 and secrets** | Deploy reviewed sources to development; test missing/invalid/correct authorization and idempotent retries; keep schedules disabled |
 | 4 | Firebase/FCM | **BLOCKED by configuration and devices** | Correct ignored client files, `FCM_SERVICE_ACCOUNT_JSON`, real foreground/background/terminated receipts and invalid-token cleanup |
 | 5 | Auth/email | **BLOCKED by approved URLs and SMTP** | Non-localhost Site/redirect URLs, working sender, real confirmation/recovery/expiry/logout and role isolation |

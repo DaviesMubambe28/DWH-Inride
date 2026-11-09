@@ -1,4 +1,21 @@
-> **Historical evidence log.** The canonical current matrix is [CURRENT_RELEASE_SNAPSHOT.md](CURRENT_RELEASE_SNAPSHOT.md), dated 7 November 2026 and tied to the current engineering commit. Entries below remain immutable receipts and may describe older migration counts, URLs, hashes, or blockers.
+> **Historical evidence log.** The canonical current matrix is [CURRENT_RELEASE_SNAPSHOT.md](CURRENT_RELEASE_SNAPSHOT.md), dated 10 November 2026 and tied to the current engineering commit. Entries below remain immutable receipts and may describe older migration counts, URLs, hashes, or blockers.
+
+# Fare-quote recovery and complete local trip rehearsal — 10 November 2026 (CAT)
+
+Verdict remains **5.0/10 — NOT READY**. Engineering source is `8211642` on `feat/release-operations`; this evidence update follows in a documentation commit.
+
+| Check | Result | Scope and limitation |
+|---|---|---|
+| Hosted migration reconciliation | **PASS read-only** | Fresh management inspection found 31 hosted history records and the remote-only `20261109100000_fare_quote_lifecycle` entry. Its exact 45 recorded SQL statements were recovered into source and validated locally. No hosted write or history rewrite occurred. |
+| Migration replay and database contracts | **PASS local** | All 34 repository migrations reset cleanly. `supabase db test --local supabase/tests/database` passed 18 files / **339 assertions**. The pending hosted delta is incident tracking, service-fee ledger, and fare-quote retention cleanup. |
+| Fare retention cleanup | **PASS local** | A regression first reproduced the cyclic quote/trip deletion failure. The follow-up migration changes both cycle edges to `ON DELETE SET NULL`; the accepted quote retains its immutable pricing record after trip deletion. |
+| Complete trip rehearsal | **PASS local HTTP only** | Real local Auth/PostgREST plus the current request handler and live Mapbox routing passed approval, booking, competing acceptance, arrival, PIN/start/completion, cash, duplicate actions, authorization denials, nine concurrent outcome races and PIN lockout. The paused settings were restored and generated Auth/profile fixtures were verified absent. |
+| Hosted and physical journey | **BLOCKED** | Local evidence does not prove deployed development behavior, Firebase delivery, email, admin hosting, Android UI or two-phone operation. |
+| Hosted backup/recovery | **BLOCKED** | Management metadata still reports zero backups and PITR disabled. No complete source archive and isolated restore exists, so no pending migration or Function was deployed. |
+
+PR #10 was merged to `main` at `49ee408`. The two newest engineering commits and this evidence update remain local because a feature-branch push can trigger connected Cloudflare public builds. No production backend deployment, booking enablement or APK publication occurred.
+
+---
 
 # Android emulator runtime attempt — 7 November 2026 (CAT)
 

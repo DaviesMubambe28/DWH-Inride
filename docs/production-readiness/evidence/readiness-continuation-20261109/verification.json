@@ -1,0 +1,45 @@
+{
+  "source_commit": "8211642cac3fa1071f82a39f970a383f15a5823d",
+  "captured_at_utc": "2026-11-09T22:19:42Z",
+  "readiness_score": 5.0,
+  "verdict": "NOT READY",
+  "hosted_project": "vhckkmzyabbsbgjuhjmq",
+  "hosted_mode": "READ_ONLY",
+  "hosted_migrations": 31,
+  "repository_migrations": 34,
+  "remote_only_migrations_after_recovery": [],
+  "pending_hosted_migrations": [
+    "20261107100000_incident_tracking.sql",
+    "20261108100000_rider_service_fee_ledger.sql",
+    "20261109110000_fare_quote_retention_cleanup.sql"
+  ],
+  "local_database_tests": {
+    "files": 18,
+    "assertions": 339,
+    "result": "PASS"
+  },
+  "local_http_trip_rehearsal": {
+    "result": "PASS",
+    "scope": [
+      "local Auth",
+      "local PostgREST",
+      "current request-trip handler",
+      "live Mapbox routing",
+      "authorization denials",
+      "trip lifecycle",
+      "cash recording",
+      "concurrency races",
+      "PIN lockout",
+      "verified fixture cleanup"
+    ],
+    "hosted_or_device_evidence": false
+  },
+  "hosted_backups": 0,
+  "pitr_enabled": false,
+  "deployed_functions": [
+    "request-trip"
+  ],
+  "hosted_mutations": 0,
+  "production_actions": 0,
+  "backup_restore_gate": "BLOCKED"
+}
