@@ -18,6 +18,7 @@ import zm.co.dhwinride.core.data.TripRepository
 import zm.co.dhwinride.core.model.FareEstimate
 import zm.co.dhwinride.core.model.PassengerProfile
 import zm.co.dhwinride.core.model.Place
+import zm.co.dhwinride.core.model.PricingMode
 import zm.co.dhwinride.core.model.RidePaymentMethod
 import zm.co.dhwinride.core.model.Trip
 import zm.co.dhwinride.core.model.TripStatus
@@ -212,8 +213,12 @@ class PassengerViewModel(
     private suspend fun refreshPilotAvailability() {
         try {
             val status = tripRepository.getPilotServiceStatus()
+            val supportedPricing = status.pricingMode == PricingMode.FLAT_PILOT
+            val bookingAvailable = status.available && supportedPricing
             val message = when {
                 !status.available -> status.message
+                !supportedPricing ->
+                    "This fare mode is not available in the current app. Update the app or contact support."
                 !status.service24x7 ->
                     "Service is currently open. Operating hours are controlled by operations; rider availability may vary."
                 status.ridersAvailable == false ->
@@ -222,12 +227,12 @@ class PassengerViewModel(
             }
             updateState { current ->
                 current.copy(
-                    pilotAvailable = status.available,
+                    pilotAvailable = bookingAvailable,
                     pilotServiceMessage = message,
                     ridersAvailable = status.ridersAvailable,
                     service24x7 = status.service24x7,
-                    fareEstimate = if (status.available) current.fareEstimate else FareEstimate(),
-                    errorMessage = if (status.available) current.errorMessage else null,
+                    fareEstimate = if (bookingAvailable) current.fareEstimate else FareEstimate(),
+                    errorMessage = if (bookingAvailable) current.errorMessage else null,
                 )
             }
         } catch (cancelled: CancellationException) {

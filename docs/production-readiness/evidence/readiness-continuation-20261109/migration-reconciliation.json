@@ -1,0 +1,31 @@
+{
+  "project_ref": "vhckkmzyabbsbgjuhjmq",
+  "mode": "READ_ONLY",
+  "captured_at_utc": "2026-11-09T22:19:42Z",
+  "repository_count": 34,
+  "hosted_count": 31,
+  "recovered_hosted_source": {
+    "version": "20261109100000",
+    "file": "supabase/migrations/20261109100000_fare_quote_lifecycle.sql",
+    "recorded_statements": 45,
+    "exact_statement_match": true,
+    "sha256": "5b843dcd48183b0c98dc79726491181d41a475b8df00d78528e5161c1c2449a8"
+  },
+  "pending": [
+    {
+      "version": "20261107100000",
+      "sha256": "2f2dc1100f45448dd8235fdaa1284e759874f1b168a7436e1ddcbc0b8bc8d600"
+    },
+    {
+      "version": "20261108100000",
+      "sha256": "36cd9432d09713817bc90a064d2340a607c8acceb99bf1f3f3a6363e032b7b3a"
+    },
+    {
+      "version": "20261109110000",
+      "sha256": "a7c4f39fc7aecd5a17525cadffdd8790c7f31f9e1e4715beaaabe592551b486e"
+    }
+  ],
+  "remote_only": [],
+  "deployment_performed": false,
+  "deployment_blocker": "Complete source backup and isolated restore are not verified."
+}
