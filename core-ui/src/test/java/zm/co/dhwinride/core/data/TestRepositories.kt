@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.map
 import zm.co.dhwinride.core.model.FareEstimate
 import zm.co.dhwinride.core.model.PassengerProfile
 import zm.co.dhwinride.core.model.Place
+import zm.co.dhwinride.core.model.PricingMode
 import zm.co.dhwinride.core.model.RidePaymentMethod
 import zm.co.dhwinride.core.model.RiderEarnings
 import zm.co.dhwinride.core.model.RiderProfile
@@ -18,6 +19,7 @@ class TestTripRepository : TripRepository {
     var pilotAvailable = true
     var ridersAvailable: Boolean? = true
     var service24x7 = true
+    var pricingMode = PricingMode.FLAT_PILOT
     var locationSearchResults: List<Place> = emptyList()
     var lastLocationQuery: String? = null
     override suspend fun getPilotServiceStatus() = zm.co.dhwinride.core.model.PilotServiceStatus(
@@ -27,6 +29,7 @@ class TestTripRepository : TripRepository {
         else "Service temporarily paused or not configured. Please try again later.",
         ridersAvailable,
         service24x7,
+        pricingMode,
     )
     override suspend fun recordRiderAvailability(latitude: Double, longitude: Double) = Unit
     var failNextComplete = false

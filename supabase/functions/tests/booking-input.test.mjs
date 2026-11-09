@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readBookingInput, routeMetrics, bookingFailure } from '../_shared/booking-input.ts';
+import { readBookingInput, routeMetrics, bookingAvailability, bookingFailure } from '../_shared/booking-input.ts';
 
 const valid={pickup:{latitude:-15.3292,longitude:28.6821,address:' Market '},dropoff:{latitude:-15.33,longitude:28.69,address:' Clinic '},paymentMethod:'cash'};
 const request=value=>new Request('http://localhost/request-trip',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(value)});
@@ -24,6 +24,14 @@ test('malformed JSON and non-JSON content types are recoverable client errors',a
 test('routing data must contain finite positive numeric metrics',()=>{
   assert.deepEqual(routeMetrics({code:'Ok',routes:[{distance:1234.5,duration:321.4}]}),{distanceMeters:1235,durationSeconds:321});
   for(const data of [null,{}, {code:'NoRoute'}, {code:'Ok',routes:[{distance:'4000',duration:300}]}, {code:'Ok',routes:[{distance:Infinity,duration:300}]}]) assert.equal(routeMetrics(data),null);
+});
+test('booking stays closed when the client cannot present the active pricing mode',()=>{
+  assert.deepEqual(bookingAvailability({available:true,pricing_mode:'FLAT_PILOT'}),{allowed:true});
+  assert.deepEqual(bookingAvailability({available:true,pricing_mode:'DISTANCE_TIME'}),{
+    allowed:false,error:'This fare mode is not available in the current app. Update the app or contact support.',
+  });
+  assert.equal(bookingAvailability({available:false,pricing_mode:'FLAT_PILOT'}).allowed,false);
+  assert.equal(bookingAvailability(null).allowed,false);
 });
 test('pilot denials become useful errors without leaking database details',()=>{
   assert.deepEqual(bookingFailure({message:'PILOT_UNAVAILABLE'}),{

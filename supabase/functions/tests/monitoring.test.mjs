@@ -13,3 +13,9 @@ test('unconfigured and failed reporting are explicit, not a false delivery pass'
  assert.equal((await reportError('monitoring_probe','operations','https://key@monitor.example/1',async()=>new Response('',{status:503}),()=>{})).delivered,false);
  assert.equal((await reportError('monitoring_probe','operations','http://key@monitor.example/1',async()=>{throw Error('not called')},()=>{})).delivered,false);
 });
+test('unsupported pricing mode is a sanitized operational event',async()=>{
+ const records=[];
+ const result=await reportError('unsupported_pricing_mode','request-trip','',fetch,record=>records.push(record));
+ assert.equal(result.delivered,false);
+ assert.equal(records[0].event,'unsupported_pricing_mode');
+});

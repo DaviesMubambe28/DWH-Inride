@@ -1,5 +1,5 @@
 import { withSupabase } from "@supabase/server";
-import { readBookingInput, routeMetrics, bookingFailure, BookingInputError } from "../_shared/booking-input.ts";
+import { readBookingInput, routeMetrics, bookingAvailability, bookingFailure, BookingInputError } from "../_shared/booking-input.ts";
 
 import { reportError } from "../_shared/monitoring.ts";
 const report = (code: string) => reportError(code, "request-trip", Deno.env.get("SENTRY_DSN") ?? "");
@@ -29,7 +29,10 @@ export default {
     }
 
     const { data: service, error: serviceError } = await ctx.supabase.rpc("pilot_service_status");
-    if (serviceError || service?.available !== true) {
+    const availability = bookingAvailability(serviceError ? null : service);
+    if (!availability.allowed) {
+      if (service?.available === true) await report("unsupported_pricing_mode");
+      if (service?.available === true) return json({ error: availability.error }, 409);
       return json({ error: "New bookings are temporarily paused or unavailable. Please try again later." }, 503);
     }
     const mapboxToken = Deno.env.get("MAPBOX_SERVER_TOKEN")?.trim();

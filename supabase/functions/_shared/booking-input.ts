@@ -65,6 +65,16 @@ export function routeMetrics(value: unknown): { distanceMeters: number; duration
   return distanceMeters > 0 && distanceMeters <= 2147483647 && durationSeconds > 0 && durationSeconds <= 2147483647 ? { distanceMeters, durationSeconds } : null;
 }
 
+export function bookingAvailability(value: unknown): { allowed: boolean; error?: string } {
+  if (!object(value) || value.available !== true) {
+    return { allowed: false, error: "New bookings are temporarily paused or unavailable. Please try again later." };
+  }
+  if (value.pricing_mode !== "FLAT_PILOT") {
+    return { allowed: false, error: "This fare mode is not available in the current app. Update the app or contact support." };
+  }
+  return { allowed: true };
+}
+
 export function bookingFailure(error: { message?: string; code?: string }): { status: number; error: string } {
   if (error.message === "PILOT_UNAVAILABLE") return { status: 503, error: "New bookings are temporarily paused or unavailable. Please try again later." };
   if (error.message === "PILOT_OUTSIDE_SERVICE_AREA") return { status: 422, error: "Choose pickup and destination points inside the pilot service area." };

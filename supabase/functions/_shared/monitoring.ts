@@ -1,4 +1,4 @@
-const EVENTS = new Set(['app_crashed','monitoring_probe','routing_unavailable','booking_write_failed','push_delivery_failed','push_configuration_failed','worker_failed','deletion_failed','retention_failed']);
+const EVENTS = new Set(['app_crashed','monitoring_probe','routing_unavailable','booking_write_failed','unsupported_pricing_mode','push_delivery_failed','push_configuration_failed','worker_failed','deletion_failed','retention_failed']);
 const COMPONENTS = new Set(['passenger','rider','request-trip','operations','notifications','data-lifecycle']);
 // Deliberately no caller-provided message, exception, URL, user ID or stack.
 export async function reportError(code:string,component:string,dsn:string,

@@ -19,6 +19,7 @@ import zm.co.dhwinride.core.data.TestAuthRepository
 import zm.co.dhwinride.core.data.TestTripRepository
 import zm.co.dhwinride.core.model.RidePaymentMethod
 import zm.co.dhwinride.core.model.Place
+import zm.co.dhwinride.core.model.PricingMode
 import zm.co.dhwinride.core.ui.passenger.PassengerNavScreen
 import zm.co.dhwinride.core.ui.passenger.PassengerViewModel
 
@@ -172,6 +173,22 @@ class PassengerViewModelTest {
 
         assertNull(viewModel.uiState.value.activeTrip)
         assertEquals("Service temporarily paused or not configured. Please try again later.", viewModel.uiState.value.errorMessage)
+    }
+
+    @Test
+    fun `unsupported dynamic pricing blocks booking instead of showing a flat fare`() = runTest {
+        chooseBookingLocations()
+        repository.pricingMode = PricingMode.DISTANCE_TIME
+        viewModel.refreshOnForeground()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(false, viewModel.uiState.value.pilotAvailable)
+        assertEquals(0, viewModel.uiState.value.fareEstimate.fareAmount)
+        assertTrue(viewModel.uiState.value.pilotServiceMessage.contains("fare mode"))
+
+        viewModel.requestRide()
+        testDispatcher.scheduler.advanceUntilIdle()
+        assertNull(viewModel.uiState.value.activeTrip)
     }
 
     @Test
