@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.first
 import zm.co.dhwinride.core.data.TestRiderRepository
 import zm.co.dhwinride.core.data.TestTripRepository
 import zm.co.dhwinride.core.model.RidePaymentMethod
+import zm.co.dhwinride.core.model.RiderServiceFeeAccount
 import zm.co.dhwinride.core.ui.rider.RiderNavScreen
 import zm.co.dhwinride.core.ui.rider.RiderViewModel
 
@@ -173,5 +174,34 @@ class RiderViewModelTest {
         assertFalse(viewModel.uiState.value.paymentReceived)
         assertEquals(RiderNavScreen.Earnings, viewModel.uiState.value.screen)
         assertTrue(viewModel.uiState.value.earnings.todayAmount > 0)
+    }
+
+    @Test
+    fun `service fee account keeps backend outstanding amount`() = runTest {
+        tripRepo.serviceFeeAccount = RiderServiceFeeAccount(totalFees = 1000, totalPaid = 300, outstanding = 700)
+
+        viewModel.refreshServiceFeeAccount()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(700, viewModel.uiState.value.serviceFeeAccount.outstanding)
+        assertFalse(viewModel.uiState.value.serviceFeeLoading)
+    }
+
+    @Test
+    fun `payment submission converts kwacha to exact ngwee and stays pending`() = runTest {
+        viewModel.submitServiceFeePayment("7.25", "MOMO-REFERENCE-1")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(725 to "MOMO-REFERENCE-1", tripRepo.submittedServiceFeePayment)
+        assertTrue(viewModel.uiState.value.serviceFeeMessage.orEmpty().contains("administrator verification"))
+    }
+
+    @Test
+    fun `invalid service fee amount never reaches repository`() = runTest {
+        viewModel.submitServiceFeePayment("7.255", "MOMO-REFERENCE-2")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(null, tripRepo.submittedServiceFeePayment)
+        assertTrue(viewModel.uiState.value.errorMessage.orEmpty().contains("valid ZMW amount"))
     }
 }

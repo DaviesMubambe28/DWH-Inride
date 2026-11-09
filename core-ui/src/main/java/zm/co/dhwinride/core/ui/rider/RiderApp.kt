@@ -1,6 +1,7 @@
 package zm.co.dhwinride.core.ui.rider
 
 import android.Manifest
+import android.content.ClipData
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
 
@@ -50,9 +51,15 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 import zm.co.dhwinride.core.data.AuthRepository
 import zm.co.dhwinride.core.model.RiderEarnings
 import zm.co.dhwinride.core.model.RiderProfile
+import zm.co.dhwinride.core.model.RiderServiceFeeAccount
+import zm.co.dhwinride.core.model.ServiceFeePaymentStatus
 import zm.co.dhwinride.core.model.Trip
 import zm.co.dhwinride.core.domain.formatZmw
 import zm.co.dhwinride.core.ui.AppUserRole
@@ -234,7 +241,15 @@ fun RiderApp(viewModel: RiderViewModel, authRepository: AuthRepository) {
                         onToggleReceived = { viewModel.togglePaymentReceived() },
                         onDone = { viewModel.finishCashConfirmation() },
                     )
-                    RiderNavScreen.Earnings -> EarningsScreen(earnings = uiState.earnings)
+                    RiderNavScreen.Earnings -> EarningsScreen(
+                        earnings = uiState.earnings,
+                        account = uiState.serviceFeeAccount,
+                        loading = uiState.serviceFeeLoading,
+                        submitting = uiState.serviceFeeSubmitting,
+                        message = uiState.serviceFeeMessage,
+                        onRefresh = viewModel::refreshServiceFeeAccount,
+                        onSubmit = viewModel::submitServiceFeePayment,
+                    )
                     RiderNavScreen.History -> RiderHistory(history = uiState.tripHistory)
                     RiderNavScreen.Profile -> RiderProfile(
                         profile = uiState.profile,
@@ -422,10 +437,12 @@ private fun CompleteTrip(trip: Trip?, onContinue: () -> Unit) {
         }
         ScreenTitle("Trip completed", "Collect payment from passenger")
         DhwCard {
-            InfoRow("Ride fare", "K${formatZmw(fare?.driverFare ?: 0)}")
-            InfoRow("Service fee", "K${formatZmw(fare?.serviceFee ?: 0)}")
+            InfoRow("Ride fare to collect", "K${formatZmw(fare?.fareAmount ?: 0)}")
+            InfoRow("Platform fee you owe", "-K${formatZmw(fare?.serviceFee ?: 0)}", DhwOrange)
+            InfoRow("Net after service fee", "K${formatZmw(fare?.driverFare ?: 0)}", DhwGreen)
             ListDivider()
             InfoRow("Passenger pays", "K${formatZmw(fare?.fareAmount ?: 0)}", DhwOrange)
+            Text("The passenger pays the ride fare to you. The service fee is added to your DHW-inRide balance after completion.", color = DhwMuted, fontSize = 12.sp)
         }
         PrimaryButton("Payment confirmation", onContinue)
     }
@@ -444,8 +461,9 @@ private fun CashConfirmation(
         DhwCard {
             Text("Amount due", color = DhwMuted)
             Text("K${formatZmw(fare?.fareAmount ?: 0)}", color = DhwOrange, fontWeight = FontWeight.Black, fontSize = 42.sp)
-            InfoRow("Your ride earnings", "K${formatZmw(fare?.driverFare ?: 0)}", DhwGreen)
-            InfoRow("Service fee", "K${formatZmw(fare?.serviceFee ?: 0)}")
+            InfoRow("Ride fare collected", "K${formatZmw(fare?.fareAmount ?: 0)}")
+            InfoRow("Service fee balance added", "-K${formatZmw(fare?.serviceFee ?: 0)}", DhwOrange)
+            InfoRow("Net after service fee", "K${formatZmw(fare?.driverFare ?: 0)}", DhwGreen)
         }
         Surface(
             modifier = Modifier.fillMaxWidth().clickable { onToggleReceived() },
@@ -467,9 +485,21 @@ private fun CashConfirmation(
 }
 
 @Composable
-private fun EarningsScreen(earnings: RiderEarnings) {
+private fun EarningsScreen(
+    earnings: RiderEarnings,
+    account: RiderServiceFeeAccount,
+    loading: Boolean,
+    submitting: Boolean,
+    message: String?,
+    onRefresh: () -> Unit,
+    onSubmit: (String, String) -> Unit,
+) {
+    val clipboard = LocalClipboard.current
+    val clipboardScope = rememberCoroutineScope()
+    var amount by remember(account.outstanding) { mutableStateOf(if (account.outstanding > 0) formatZmw(account.outstanding) else "") }
+    var reference by remember { mutableStateOf("") }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        ScreenTitle("Earnings", "Rider earnings breakdown")
+        ScreenTitle("Earnings & service fees", "Ride income and platform service-fee account")
         Surface(color = DhwOrange, shape = RoundedCornerShape(22.dp), shadowElevation = 5.dp) {
             Column(Modifier.fillMaxWidth().padding(22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text("TODAY’S EARNINGS", color = Color.White.copy(alpha = .82f))
@@ -486,6 +516,78 @@ private fun EarningsScreen(earnings: RiderEarnings) {
             InfoRow("Today's gross earnings", "K${formatZmw(earnings.todayAmount)}")
             InfoRow("Completed trips", "${earnings.todayTripsCount}")
             InfoRow("Distance covered", "${earnings.todayKm} km")
+        }
+        DhwCard {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text("Service-fee balance", fontWeight = FontWeight.Black, fontSize = 18.sp)
+                SecondaryButton(if (loading) "Refreshing…" else "Refresh", onRefresh, enabled = !loading)
+            }
+            Text(
+                if (account.outstanding > 0) "-K${formatZmw(account.outstanding)}" else "K0.00",
+                color = if (account.outstanding > 0) DhwOrange else DhwGreen,
+                fontWeight = FontWeight.Black,
+                fontSize = 36.sp,
+            )
+            Text(
+                if (account.outstanding > 0) "Negative means you owe this amount to DHW-inRide." else "Your verified service-fee balance is fully paid.",
+                color = DhwMuted,
+                fontSize = 12.sp,
+            )
+            InfoRow("Completed fee trips", account.completedTrips.toString())
+            InfoRow("Ride fares collected", "K${formatZmw(account.totalRideFare)}")
+            InfoRow("Service fees generated", "K${formatZmw(account.totalFees)}")
+            InfoRow("Verified payments", "K${formatZmw(account.totalPaid)}", DhwGreen)
+        }
+        if (account.outstanding > 0) {
+            DhwCard {
+                Text("Pay DHW-inRide", fontWeight = FontWeight.Black, fontSize = 18.sp)
+                if (account.paymentRecipient.isNullOrBlank() || account.paymentMethod.isNullOrBlank() || account.paymentInstructions.isNullOrBlank()) {
+                    Text("The administrator has not configured an official payment destination. Do not send money to an unverified number.", color = DhwOrange)
+                } else {
+                    InfoRow("Payment method", account.paymentMethod)
+                    InfoRow("Official recipient", account.paymentRecipient)
+                    Text(account.paymentInstructions, color = DhwMuted, fontSize = 13.sp)
+                    SecondaryButton("Copy payment number", { clipboardScope.launch { clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("DHW-inRide payment number", account.paymentRecipient))) } })
+                    SecondaryButton("Copy outstanding amount", { clipboardScope.launch { clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("DHW-inRide outstanding amount", formatZmw(account.outstanding)))) } })
+                    OutlinedTextField(
+                        value = amount,
+                        onValueChange = { value -> amount = value.filter { it.isDigit() || it == '.' }.take(12) },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Amount sent (ZMW)") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        singleLine = true,
+                    )
+                    OutlinedTextField(
+                        value = reference,
+                        onValueChange = { reference = it.take(120) },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Transaction reference") },
+                        supportingText = { Text("Submitting does not clear the balance. An administrator must verify receipt.") },
+                        singleLine = true,
+                    )
+                    PrimaryButton(
+                        if (submitting) "Submitting…" else "Submit payment for verification",
+                        { onSubmit(amount, reference) },
+                        enabled = !submitting && amount.isNotBlank() && reference.trim().length >= 4,
+                    )
+                    message?.let { Text(it, color = DhwGreen, fontSize = 13.sp) }
+                }
+            }
+        }
+        DhwCard {
+            Text("Payment history", fontWeight = FontWeight.Black, fontSize = 18.sp)
+            if (account.payments.isEmpty()) Text("No service-fee payments submitted.", color = DhwMuted)
+            account.payments.forEach { payment ->
+                ListDivider()
+                val statusText = when (payment.status) {
+                    ServiceFeePaymentStatus.PendingVerification -> "Pending verification"
+                    ServiceFeePaymentStatus.Verified -> "Verified"
+                    ServiceFeePaymentStatus.Rejected -> "Rejected"
+                }
+                InfoRow("K${formatZmw(payment.amount)} · ${payment.transactionReference}", statusText,
+                    if (payment.status == ServiceFeePaymentStatus.Verified) DhwGreen else DhwOrange)
+                payment.adminNote?.let { Text("Admin note: $it", color = DhwMuted, fontSize = 12.sp) }
+            }
         }
     }
 }
@@ -515,8 +617,10 @@ private fun RiderHistory(history: List<Trip>) {
                     Text("${trip.passenger.name.ifBlank { "Passenger" }} • ${trip.destination}", fontWeight = FontWeight.Bold)
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("${trip.distanceKm} km", color = DhwMuted, fontSize = 12.sp)
-                        Text("+K${formatZmw(trip.fare.driverFare)}", color = DhwGreen, fontWeight = FontWeight.Black)
+                        Text("K${formatZmw(trip.fare.fareAmount)} collected", color = DhwGreen, fontWeight = FontWeight.Black)
                     }
+                    InfoRow("Platform fee owed", "-K${formatZmw(trip.fare.serviceFee)}", DhwOrange)
+                    InfoRow("Net after fee", "K${formatZmw(trip.fare.driverFare)}")
                 }
             }
         }

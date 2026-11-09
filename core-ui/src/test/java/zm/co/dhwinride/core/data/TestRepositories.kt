@@ -10,6 +10,7 @@ import zm.co.dhwinride.core.model.Place
 import zm.co.dhwinride.core.model.RidePaymentMethod
 import zm.co.dhwinride.core.model.RiderEarnings
 import zm.co.dhwinride.core.model.RiderProfile
+import zm.co.dhwinride.core.model.RiderServiceFeeAccount
 import zm.co.dhwinride.core.model.Trip
 import zm.co.dhwinride.core.model.TripStatus
 
@@ -30,6 +31,8 @@ class TestTripRepository : TripRepository {
     override suspend fun recordRiderAvailability(latitude: Double, longitude: Double) = Unit
     var failNextComplete = false
     var requestFailure: Throwable? = null
+    var serviceFeeAccount = RiderServiceFeeAccount()
+    var submittedServiceFeePayment: Pair<Int, String>? = null
     private val active = MutableStateFlow<Trip?>(null)
     private val requests = MutableStateFlow<List<Trip>>(emptyList())
     private val history = MutableStateFlow<List<Trip>>(emptyList())
@@ -83,6 +86,10 @@ class TestTripRepository : TripRepository {
     override suspend fun confirmRiderPayment(tripId: String) { active.value = active.value?.copy(riderConfirmedPayment = true) }
     override suspend fun submitRating(tripId: String, rating: Int, feedback: List<String>) { active.value = active.value?.copy(status = TripStatus.RATING_SUBMITTED) }
     override suspend fun getNearbyPlaces(query: String) = listOf(Place("Result", "Test address", "2 km"))
+    override suspend fun getRiderServiceFeeAccount() = serviceFeeAccount
+    override suspend fun submitRiderServiceFeePayment(amountNgwee: Int, transactionReference: String) {
+        submittedServiceFeePayment = amountNgwee to transactionReference
+    }
 }
 
 class TestRiderRepository(private val trips: TestTripRepository) : RiderRepository {

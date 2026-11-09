@@ -8,12 +8,14 @@ import {
 import type { User } from "@supabase/supabase-js";
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CancellationReviews, type CancellationReview } from "@/components/cancellation-review";
+import { IncidentManagement, type Incident } from "@/components/incident-management";
 import { RiderProvisionForm } from "@/components/rider-provision-form";
 import { RiderApplicationReview, type RiderApplication } from "@/components/rider-application-review";
+import { ServiceFeeManagement, type ServiceFeeConfig, type ServiceFeePayment, type ServiceFeeRider } from "@/components/service-fee-management";
 import { matchesTripFilter, tripPresentation } from "@/lib/trip-presentation";
 import { getSupabaseBrowserClient, getSupabaseConfig } from "@/lib/supabase";
 
-type Section = "overview" | "verification" | "live" | "finance" | "incidents" | "analytics" | "roles";
+type Section = "overview" | "verification" | "live" | "finance" | "fees" | "incidents" | "analytics" | "roles";
 type Tone = "green" | "orange" | "blue" | "red" | "slate";
 type ApprovalStatus = "pending" | "approved" | "rejected";
 type Profile = { id: string; role: "passenger" | "rider" | "admin"; full_name: string; phone_number: string; is_online: boolean; rating: number; total_trips: number; approval_status: ApprovalStatus | null };
@@ -21,9 +23,9 @@ type Trip = { id: string; passenger_id: string; rider_id: string | null; status:
 type RiderDocument = { id: string; rider_id: string; document_type: string; storage_url: string; verification_status: string; submitted_at: string };
 type TripLocation = { id: number; trip_id: string; rider_id: string; lat: number; lng: number; recorded_at: string };
 type PilotServiceStatus = { available: boolean; message: string; onlineRiders: number; availableRiders: number };
-type DashboardData = { profiles: Profile[]; trips: Trip[]; documents: RiderDocument[]; locations: TripLocation[]; cancellations: CancellationReview[]; applications: RiderApplication[] };
+type DashboardData = { profiles: Profile[]; trips: Trip[]; documents: RiderDocument[]; locations: TripLocation[]; cancellations: CancellationReview[]; applications: RiderApplication[]; incidents: Incident[]; incidentsAvailable: boolean; serviceFeeRiders: ServiceFeeRider[]; serviceFeePayments: ServiceFeePayment[]; serviceFeeConfig: ServiceFeeConfig | null; serviceFeesAvailable: boolean };
 
-const emptyData: DashboardData = { profiles: [], trips: [], documents: [], locations: [], cancellations: [], applications: [] };
+const emptyData: DashboardData = { profiles: [], trips: [], documents: [], locations: [], cancellations: [], applications: [], incidents: [], incidentsAvailable: false, serviceFeeRiders: [], serviceFeePayments: [], serviceFeeConfig: null, serviceFeesAvailable: false };
 function parsePilotServiceStatus(value: unknown): PilotServiceStatus | null {
   if (typeof value !== "object" || value === null || !("available" in value) || !("message" in value)
     || !("online_riders" in value) || !("available_riders" in value)
@@ -37,12 +39,12 @@ function parsePilotServiceStatus(value: unknown): PilotServiceStatus | null {
     availableRiders: value.available_riders,
   };
 }
-
 const navItems = [
   { id: "overview" as Section, label: "Overview", icon: LayoutDashboard },
   { id: "verification" as Section, label: "Rider verification", icon: ClipboardCheck },
   { id: "live" as Section, label: "Live operations", icon: MapIcon },
   { id: "finance" as Section, label: "Finance", icon: CircleDollarSign },
+  { id: "fees" as Section, label: "Service fees", icon: CircleDollarSign },
   { id: "incidents" as Section, label: "Incidents", icon: ShieldAlert },
   { id: "analytics" as Section, label: "Reports", icon: BarChart3 },
   { id: "roles" as Section, label: "Roles & access", icon: UserCog },
@@ -52,7 +54,8 @@ const sectionCopy: Record<Section, { eyebrow: string; title: string; description
   verification: { eyebrow: "Trust & safety", title: "Rider verification", description: "Review real rider profiles and submitted documents." },
   live: { eyebrow: "Dispatch control", title: "Live operations", description: "Monitor active trips and current rider availability." },
   finance: { eyebrow: "Finance operations", title: "Trip revenue", description: "Completed fares and participant payment acknowledgements." },
-  incidents: { eyebrow: "Safety desk", title: "Complaints & incidents", description: "This workflow requires the incidents schema before it can be enabled." },
+  fees: { eyebrow: "Rider accounts", title: "Service fee management", description: "Review rider platform-fee balances and verify actual payment receipts." },
+  incidents: { eyebrow: "Safety desk", title: "Complaints & incidents", description: "Record, assign, review, and resolve durable incident reports." },
   analytics: { eyebrow: "Performance", title: "Reports", description: "Operational totals calculated from real trips." },
   roles: { eyebrow: "Access control", title: "Roles & access", description: "Current application roles stored in profiles." },
 };
@@ -182,8 +185,12 @@ function OperationsDashboard({ user }: { user: User }) {
         client.from("trip_locations").select("id,trip_id,rider_id,lat,lng,recorded_at").order("recorded_at", { ascending: false }).limit(500),
         client.from("pilot_cancellation_reviews").select("trip_id,actor_id,reason,late_warning,review_required,created_at,reviewed_at").order("created_at", { ascending: false }).limit(200),
         client.from("rider_applications").select("applicant_id,status,motorcycle_make,motorcycle_model,motorcycle_year,motorcycle_plate,motorcycle_color,driving_licence_number,review_note,submitted_at").order("submitted_at", { ascending: false }).limit(500),
+        client.from("incidents").select("id,trip_id,reporter_id,recorded_by,assigned_admin_id,category,severity,summary,status,resolution_note,created_at,updated_at,resolved_at").order("created_at", { ascending: false }).limit(500),
+        client.from("admin_service_fee_overview").select("rider_id,full_name,phone_number,total_trips,fee_trip_count,total_fees_zmw,total_paid_zmw,outstanding_zmw,pending_payments,last_payment_at").order("outstanding_zmw", { ascending: false }).limit(500),
+        client.from("rider_service_fee_payments").select("id,rider_id,amount_zmw,transaction_reference,proof_storage_path,status,submitted_at,reviewed_at,admin_note").order("submitted_at", { ascending: false }).limit(500),
+        client.from("admin_service_fee_payment_config").select("payment_method,payment_recipient,payment_instructions,updated_at").limit(1).maybeSingle(),
         client.rpc("admin_pilot_operations_status"),
-      ]).then(([profileResult, tripsResult, docsResult, locationsResult, cancellationsResult, applicationsResult, pilotStatusResult]) => {
+      ]).then(([profileResult, tripsResult, docsResult, locationsResult, cancellationsResult, applicationsResult, incidentsResult, feeRidersResult, feePaymentsResult, feeConfigResult, pilotStatusResult]) => {
       if (version !== loadVersion.current) return;
       if (profileResult.error) throw profileResult.error;
       const ownProfile = profileResult.data?.find((profile) => profile.id === user.id);
@@ -194,9 +201,13 @@ function OperationsDashboard({ user }: { user: User }) {
       setPilotStatusError(serviceStatus
         ? ""
         : "Service status could not be verified. Do not rely on new bookings until it is checked.");
-      const firstError = tripsResult.error ?? docsResult.error ?? locationsResult.error ?? cancellationsResult.error ?? applicationsResult.error;
+      const incidentSchemaPending = incidentsResult.error?.code === "42P01" || incidentsResult.error?.code === "PGRST205";
+      const feeResults = [feeRidersResult, feePaymentsResult, feeConfigResult];
+      const feeSchemaPending = feeResults.some((result) => result.error?.code === "42P01" || result.error?.code === "PGRST205");
+      const feeError = feeResults.map((result) => result.error).find((result) => result && result.code !== "42P01" && result.code !== "PGRST205");
+      const firstError = tripsResult.error ?? docsResult.error ?? locationsResult.error ?? cancellationsResult.error ?? applicationsResult.error ?? (incidentSchemaPending ? null : incidentsResult.error) ?? feeError;
       if (firstError) throw firstError;
-      setData({ profiles: (profileResult.data ?? []) as Profile[], trips: (tripsResult.data ?? []) as Trip[], documents: (docsResult.data ?? []) as RiderDocument[], locations: (locationsResult.data ?? []) as TripLocation[], cancellations: (cancellationsResult.data ?? []) as CancellationReview[], applications: (applicationsResult.data ?? []) as RiderApplication[] });
+      setData({ profiles: (profileResult.data ?? []) as Profile[], trips: (tripsResult.data ?? []) as Trip[], documents: (docsResult.data ?? []) as RiderDocument[], locations: (locationsResult.data ?? []) as TripLocation[], cancellations: (cancellationsResult.data ?? []) as CancellationReview[], applications: (applicationsResult.data ?? []) as RiderApplication[], incidents: (incidentsResult.data ?? []) as Incident[], incidentsAvailable: !incidentSchemaPending, serviceFeeRiders: (feeRidersResult.data ?? []) as ServiceFeeRider[], serviceFeePayments: (feePaymentsResult.data ?? []) as ServiceFeePayment[], serviceFeeConfig: (feeConfigResult.data ?? null) as ServiceFeeConfig | null, serviceFeesAvailable: !feeSchemaPending });
       setLastUpdated(new Date()); setError("");
     }).catch(() => {
       if (version === loadVersion.current) setError("We couldn’t refresh operations data. Check your connection and try again.");
@@ -263,7 +274,8 @@ function OperationsDashboard({ user }: { user: User }) {
         {section === "live" ? <div className="dashboard-stack"><section className="panel trip-controls" aria-label="Filter trips"><label>Search trips<input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Trip ID, person, or place" /></label><label>Trip status<select value={filter} onChange={(event) => setFilter(event.target.value)}><option value="active">Active trips</option><option value="all">All trips</option>{["requesting", "accepted", "arrived", "in_progress", "completed", "cancelled"].map((status) => <option key={status} value={status}>{tripPresentation(status).label}</option>)}</select></label><button className="secondary-action" onClick={() => { setSearch(""); setFilter("all"); }}>Clear filters</button><span role="status">{shownTrips.length} matching trips</span></section><TripsPanel trips={shownTrips} profiles={profilesById} title="Trip control" /><CancellationReviews records={data.cancellations} onReviewed={refresh} /></div> : null}
         {section === "verification" ? <div className="dashboard-stack"><RiderApplicationReview applications={data.applications} applicants={profilesById} onReviewed={refresh} /><RiderProvisionForm candidates={data.profiles.filter((p) => p.role === "passenger" && !data.applications.some((a) => a.applicant_id === p.id))} onProvisioned={refresh} /><Verification riders={riders} documents={data.documents} /></div> : null}
         {section === "finance" ? <Finance trips={data.trips} profiles={profilesById} /> : null}
-        {section === "incidents" ? <SupportProcedure /> : null}
+        {section === "fees" ? <ServiceFeeManagement riders={data.serviceFeeRiders} payments={data.serviceFeePayments} config={data.serviceFeeConfig} available={data.serviceFeesAvailable} onChanged={refresh} /> : null}
+        {section === "incidents" ? <IncidentManagement incidents={data.incidents} available={data.incidentsAvailable} onChanged={refresh} trips={data.trips.map((trip) => ({ id: trip.id, label: `${trip.id.slice(0, 8)} · ${trip.pickup_address} to ${trip.dropoff_address}` }))} people={data.profiles.map((profile) => ({ id: profile.id, label: `${profile.full_name} · ${profile.role}` }))} admins={data.profiles.filter((profile) => profile.role === "admin").map((profile) => ({ id: profile.id, label: profile.full_name }))} /> : null}
         {section === "analytics" ? <Analytics trips={data.trips} /> : null}
         {section === "roles" ? <Roles profiles={data.profiles} /> : null}
       </div>
@@ -330,8 +342,4 @@ function Analytics({ trips }: { trips: Trip[] }) {
 function Roles({ profiles }: { profiles: Profile[] }) {
   const roles = ["admin", "rider", "passenger"] as const;
   return <section className="roles-grid">{roles.map((role, index) => <article className="panel role-card" key={role}><span className={`role-badge role-${index}`}><Users size={20} /></span><h2>{role[0].toUpperCase() + role.slice(1)}</h2><p>Role stored and enforced through database policies.</p><div><span>{profiles.filter((p) => p.role === role).length} members</span><Badge tone={role === "admin" ? "red" : "blue"}>{role}</Badge></div></article>)}</section>;
-}
-
-function SupportProcedure() {
-  return <section className="panel"><PanelHeader title="Incident tracking is unavailable" /><EmptyState title="Backend required" detail="Incident records are not connected yet. Use a monitored support channel while following the incident runbook." /><p className="support-actions"><a href="tel:+260770001203">Call 0770 001 203</a> · <a href="tel:+260975461121">Call 0975 461 121</a> · <a href="mailto:gershmukuka1@gmail.com">Email support</a></p></section>;
 }

@@ -1,0 +1,35 @@
+{
+  "captured_at_cat": "2026-11-09T18:07:00+02:00",
+  "network_policy": {
+    "mode": "unrestricted",
+    "state": "enforced"
+  },
+  "observations_current": true,
+  "runtime_variables": {
+    "SUPABASE_URL": "ready",
+    "SUPABASE_PUBLISHABLE_KEY": "ready",
+    "SUPABASE_ACCESS_TOKEN": "ready",
+    "MAPBOX_PUBLIC_TOKEN": "ready"
+  },
+  "missing_required_bindings": [
+    "SUPABASE_DB_PASSWORD",
+    "FCM_SERVICE_ACCOUNT_JSON",
+    "OPERATIONS_WORKER_TOKEN",
+    "SENTRY_DSN",
+    "DHWINRIDE_RELEASE_KEYSTORE_PATH",
+    "DHWINRIDE_RELEASE_STORE_PASSWORD",
+    "DHWINRIDE_RELEASE_KEY_ALIAS",
+    "DHWINRIDE_RELEASE_KEY_PASSWORD",
+    "PILOT_RELEASE_CERT_SHA256"
+  ],
+  "tcp": {
+    "vpn_configured": false,
+    "public_tcp_grants": [],
+    "database_access": "unavailable from managed runtime"
+  },
+  "tools": {
+    "docker": "28.4.0",
+    "native_postgresql_clients": false,
+    "powershell": false
+  }
+}

@@ -1,3 +1,5 @@
+> **Historical evidence log.** The canonical current matrix is [CURRENT_RELEASE_SNAPSHOT.md](CURRENT_RELEASE_SNAPSHOT.md), dated 7 November 2026 and tied to the current engineering commit. Entries below remain immutable receipts and may describe older migration counts, URLs, hashes, or blockers.
+
 # Android emulator runtime attempt — 7 November 2026 (CAT)
 
 Status: **BLOCKED by the managed executor's lack of hardware virtualization**. This does not replace the two-phone rehearsal.

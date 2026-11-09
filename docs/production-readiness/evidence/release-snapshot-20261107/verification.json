@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-11-07T09:10:00Z",
+  "branch": "feat/release-operations",
+  "engineering_commit": "0e5e473",
+  "github_reviewed_commit": "02edf08eb3d7cb5fc60c35161c7beaec28fe621f",
+  "verdict": "NOT_READY",
+  "readiness_score": 5.0,
+  "github_ci": {
+    "run_id": 42357471714,
+    "conclusion": "success",
+    "jobs": ["android-core", "database", "dashboard", "landing"]
+  },
+  "local_incident_slice": {
+    "migrations_replayed": 29,
+    "sql_files": 16,
+    "sql_assertions": 263,
+    "admin_unit_tests": 4,
+    "admin_lint": "pass",
+    "admin_typecheck": "pass",
+    "admin_build": "pass",
+    "browser_viewports": [320, 768, 1024, 1440],
+    "axe_violations": 0
+  },
+  "hosted_development": {
+    "project_ref": "vhckkmzyabbsbgjuhjmq",
+    "migration_records_before_incident_change": 28,
+    "repository_migrations_now": 29,
+    "deployed_functions": ["request-trip"],
+    "repository_functions": ["request-trip", "notification-worker", "operations-worker", "account-deletion"],
+    "managed_backup_count": 0,
+    "pitr_enabled": false,
+    "hosted_changes_this_slice": 0
+  },
+  "public_web": {
+    "admin_url": "https://dwh-inride-admin.devkasaka.workers.dev/",
+    "admin_http_status": 200,
+    "admin_custom_headers_observed": false,
+    "landing_url": "https://dwh-inride-landing.pages.dev/",
+    "landing_http_status": 200,
+    "landing_security_headers_observed": true,
+    "passenger_download_available": false,
+    "rider_download_available": false
+  },
+  "prohibited_actions": {
+    "supabase_mutation": false,
+    "production_booking_enabled": false,
+    "apk_published": false,
+    "main_merged": false
+  }
+}

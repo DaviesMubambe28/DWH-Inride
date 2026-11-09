@@ -105,6 +105,32 @@ data class RiderEarnings(
     val monthAmount: Int = 0,
 )
 
+enum class ServiceFeePaymentStatus { PendingVerification, Verified, Rejected }
+
+data class RiderServiceFeePayment(
+    val id: String,
+    /** Monetary amount in integer ngwee. */
+    val amount: Int,
+    val transactionReference: String,
+    val status: ServiceFeePaymentStatus,
+    val submittedAt: String,
+    val reviewedAt: String? = null,
+    val adminNote: String? = null,
+)
+
+data class RiderServiceFeeAccount(
+    val completedTrips: Int = 0,
+    /** All monetary amounts are integer ngwee. Outstanding is displayed as a negative debt. */
+    val totalRideFare: Int = 0,
+    val totalFees: Int = 0,
+    val totalPaid: Int = 0,
+    val outstanding: Int = 0,
+    val paymentMethod: String? = null,
+    val paymentRecipient: String? = null,
+    val paymentInstructions: String? = null,
+    val payments: List<RiderServiceFeePayment> = emptyList(),
+)
+
 
 /** Server-reported pilot service availability; no client clock authority. */
 data class PilotServiceStatus(
