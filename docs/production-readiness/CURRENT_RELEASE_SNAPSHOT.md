@@ -1,27 +1,29 @@
 # DHW-inRide current release snapshot
 
-- Evidence time: **7 November 2026, 09:10 UTC**
-- Engineering commit: `0e5e473` on `feat/release-operations`
+- Evidence time: **9 November 2026, 15:51 UTC**
+- Engineering commit: `8c8a3b3` on `feat/release-operations`
 - GitHub-reviewed commit: `02edf08eb3d7cb5fc60c35161c7beaec28fe621f` in draft PR #8
 - Authorized Supabase target: development-only project `vhckkmzyabbsbgjuhjmq`
 - Verdict: **5.0/10 — Not ready**
 
 This is the canonical current matrix. Older dated sections in `CURRENT_RELEASE_EVIDENCE.md` and `LAUNCH_READINESS_REPORT.md` are historical receipts. Production bookings, production backend deployment, APK publication, and merging to `main` remain disabled.
 
+The current cross-surface design findings and their evidence limits are recorded in [UI_REVIEW_20261109.md](UI_REVIEW_20261109.md).
+
 ## Release gates
 
 | Gate | Status | Current evidence | Smallest closing action |
 |---|---|---|---|
-| Repository CI | **PASS** | GitHub run `42357471714` passed Android core, database, dashboard, and landing jobs at `02edf08`; all third-party actions are SHA-pinned. | Run the same gates for the local incident commit after it can be pushed without triggering an unintended public deployment. |
+| Repository CI | **PASS at reviewed commit / pending for local commits** | GitHub run `42357471714` passed Android core, database, dashboard, and landing jobs at `02edf08`; all third-party actions are SHA-pinned. Local affected checks pass through `8c8a3b3`. | Run remote CI for the local incident and service-fee commits after they can be pushed without triggering an unintended public deployment. |
 | Landing | **PASS with release links disabled** | Local build and five Chromium widths pass with zero axe/console findings. The public HTTPS site returns CSP, HSTS, nosniff, referrer, and permissions headers. Passenger/rider APK metadata remains null. | Keep downloads disabled until signed candidates pass the protected workflow. |
-| Admin dashboard source | **PASS locally / PARTIAL hosted** | Unit (4), lint, typecheck, static production build, and four-width Chromium/axe checks pass. Durable incident tracking is locally verified. Public Admin returns HTTP 200 but its current response does not yet include the committed custom headers or incident migration. | Promote only after the backend migration is safely deployed and the hosting deployment is explicitly approved. |
-| Database source | **PASS locally / BLOCKED hosted** | All 29 migrations replay in an isolated local Supabase stack; 16 SQL files and 263 pgTAP assertions pass. Fresh hosted inspection found the previous 28 migrations present with no drift before the new incident migration. | Verify a source backup and isolated restore, inspect the incident migration against hosted state, then deploy it to development. |
+| Admin dashboard source | **PASS locally / PARTIAL hosted** | Unit (4), lint, typecheck, static production build, and four-width Chromium/axe checks pass. Durable incident tracking and rider service-fee review are locally verified, including a 320 px no-overflow/axe check. Public Admin does not yet include the two pending backend migrations. | Promote only after the backend migrations are safely deployed and the hosting deployment is explicitly approved. |
+| Database source | **PASS locally / BLOCKED hosted** | All 30 migrations replayed in an isolated local Supabase stack before this checkpoint; 17 SQL files / 289 pgTAP assertions passed, followed by 29 focused service-fee assertions after the final test additions. The last read-only hosted inspection found 28 migrations, so incident tracking and the service-fee ledger remain local-only. | Verify a source backup and isolated restore, inspect both pending migrations against hosted state, then deploy them to development in order. |
 | Hosted backup and isolated restore | **BLOCKED** | Supabase reports zero managed backups and PITR disabled. A complete source backup plus isolated restore has not been demonstrated. | Complete `WINDOWS_SUPABASE_BACKUP.md`, retain the archive/checksum outside Git, and validate schema, representative data, roles, RLS, RPCs, and history in PostgreSQL 17. |
 | Edge Functions | **BLOCKED** | Repository contains four functions; hosted development contains only active `request-trip` v2. Local Edge and authorization tests pass; no hosted function mutation was made. | After backup verification, configure missing secrets, deploy reviewed functions to development, and verify authorized/unauthorized HTTP responses. |
 | Auth and email | **BLOCKED** | Hosted Site URL is localhost, redirects are empty, auto-confirm is enabled, and custom SMTP is absent. Local session and role checks do not prove email delivery. | Supply the approved development web/Android recovery origins and SMTP, then verify real signup, confirmation, recovery, expiry, logout, and role isolation. |
 | Notifications | **BLOCKED** | Retry, deduplication, invalid-token, and delivery-failure logic passes local tests. Firebase app files and the FCM sender credential are unavailable; no real phone receipt exists. | Configure both Firebase client files plus `FCM_SERVICE_ACCOUNT_JSON`, then test foreground/background/terminated delivery on the two phones. |
 | Monitoring | **BLOCKED** | Structured local error paths exist; `SENTRY_DSN` and alert ownership are absent. No remote event or alert receipt was observed. | Configure the development DSN and worker token, send a sanitized probe, and witness the event and operator alert. |
-| Android development artifacts | **PASS as development only** | Both `0.1.0-development-no-push` APKs are installable-format, minSdk 26/target 37, V2 debug signed, and passed the last source-relevant build/lint checks. | Use them only for rehearsal; they are not public candidates. |
+| Android development artifacts | **PASS as development only** | Both `0.1.0-development-no-push` APKs rebuilt after the service-fee UI changes; 75 Android unit tests and both app lint tasks pass. They remain minSdk 26/target 37 development builds. | Use them only for rehearsal; they are not public candidates. |
 | Android release candidates | **BLOCKED** | Real Firebase files, established release signing bindings, expected certificate fingerprint, and protected owner config are missing. | Recover the existing signing identity and Firebase files, then run the protected signed/minified candidate workflow. |
 | Hosted trip journey | **BLOCKED** | Local database/service rehearsals cover the lifecycle and authorization; no current hosted synthetic passenger/rider/admin journey has run. | After backup/deployment, run and clean up the authorized development-only synthetic journey. |
 | Full-service recovery | **BLOCKED** | Database procedures exist, but Auth, Storage objects, Functions, secrets, schedules, Realtime, Firebase, monitoring, and Cloudflare restore have not been rehearsed together. | Restore each service into an isolated target and retain redacted component receipts and recovery time. |
@@ -32,8 +34,8 @@ This is the canonical current matrix. Older dated sections in `CURRENT_RELEASE_E
 
 | App | Type | Package | Version | APK | SHA-256 |
 |---|---|---|---|---|---|
-| Passenger | Development, no push | `zm.co.dhwinride.passenger.development` | `0.1.0-development-no-push` (1) | `passenger-app/build/outputs/apk/development/passenger-app-development.apk` | `95cee8584f3ad9c9a07f6c75975afd9097d18ddeabdc59e8102a7d487257546f` |
-| Rider | Development, no push | `zm.co.dhwinride.rider.development` | `0.1.0-development-no-push` (1) | `rider-app/build/outputs/apk/development/rider-app-development.apk` | `e847c610993834df43913938b3e4f7bcd17907aea78ab25fa7beec64bf106d78` |
+| Passenger | Development, no push | `zm.co.dhwinride.passenger.development` | `0.1.0-development-no-push` (1) | `passenger-app/build/outputs/apk/development/passenger-app-development.apk` | `c06fde74b1bb42c9314acb9597585c7ee7a73cd0d19602d1290af4babfe15104` |
+| Rider | Development, no push | `zm.co.dhwinride.rider.development` | `0.1.0-development-no-push` (1) | `rider-app/build/outputs/apk/development/rider-app-development.apk` | `2a2522990cb8794a99b26a9c1f56a80f498f316c67451b783a4ac27db8887651` |
 
 Both artifacts use the local debug certificate SHA-256 `1b6488a0186c81ca769a0c47a41135cdf7a950ff856d59d5685ea396eb6fd14f`. This does not establish the release identity or upgrade compatibility with a published app.
 
@@ -57,6 +59,6 @@ Existing `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_ACCESS_TOKEN`, an
 
 ## Change and deployment boundary
 
-Pushing `02edf08` to the feature branch caused connected Cloudflare checks/builds, and the public landing now serves the hardened feature content even though no explicit production deployment command was run. It still exposes no APK download and does not enable bookings. To avoid another unintended public change, commit `0e5e473` is retained locally until Cloudflare branch deployment behavior is disabled or explicitly approved. No Supabase mutation, production service deployment, APK publication, booking enablement, or `main` merge occurred.
+Pushing `02edf08` to the feature branch caused connected Cloudflare checks/builds, and the public landing now serves the hardened feature content even though no explicit production deployment command was run. It still exposes no APK download and does not enable bookings. To avoid another unintended public change, commits through `8c8a3b3` are retained locally until Cloudflare branch deployment behavior is disabled or explicitly approved. No Supabase mutation, production service deployment, APK publication, booking enablement, or `main` merge occurred.
 
-The single action that unlocks the most work is the complete database backup and verified isolated restore. It is the safety gate for the pending incident migration, Edge Functions, hosted journey, and later full-service recovery rehearsal.
+The single action that unlocks the most work is the complete database backup and verified isolated restore. It is the safety gate for the pending incident and service-fee migrations, Edge Functions, hosted journey, and later full-service recovery rehearsal.
