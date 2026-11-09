@@ -9,8 +9,8 @@ import zm.co.dhwinride.core.model.Place
 
 class FareCalculatorTest {
     private val origin = Place("Origin", "Origin", "", 0.0, 0.0)
-    private fun config(base: String, perKm: String, minimum: String) = FareConfig(
-        BigDecimal(base), BigDecimal(perKm), BigDecimal(minimum),
+    private fun config(base: String, perKm: String, minimum: String, perMinute: String = "0", adjustment: String = "0") = FareConfig(
+        BigDecimal(base), BigDecimal(perKm), BigDecimal(minimum), BigDecimal(perMinute), BigDecimal(adjustment),
     )
 
     private fun calculator(base: String, perKm: String, minimum: String) = FareCalculator(config(base, perKm, minimum))
@@ -19,6 +19,12 @@ class FareCalculatorTest {
         val km = FareCalculator.haversineKilometers(0.0, 0.0, 0.0, 0.01)
         assertEquals(534L, calculator("2", "3", "1").calculateNgwee(origin, origin.copy(latitude = 0.0, longitude = 0.01)))
         assertTrue(km in 1.1..1.12)
+    }
+
+    @Test fun `distance and duration components are included in the formula`() = kotlinx.coroutines.runBlocking {
+        val calc = FareCalculator(config("10", "2", "5", "0.50", "0.00"))
+        val fare = calc.calculateNgwee(origin, origin.copy(longitude = 0.1), durationMinutes = 8)
+        assertEquals(3624L, fare)
     }
 
     @Test fun `long trip uses kilometre units`() = kotlinx.coroutines.runBlocking {

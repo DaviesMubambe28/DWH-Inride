@@ -26,7 +26,9 @@ test('routing data must contain finite positive numeric metrics',()=>{
   for(const data of [null,{}, {code:'NoRoute'}, {code:'Ok',routes:[{distance:'4000',duration:300}]}, {code:'Ok',routes:[{distance:Infinity,duration:300}]}]) assert.equal(routeMetrics(data),null);
 });
 test('pilot denials become useful errors without leaking database details',()=>{
-  assert.equal(bookingFailure({message:'PILOT_UNAVAILABLE'}).status,503);
+  assert.deepEqual(bookingFailure({message:'PILOT_UNAVAILABLE'}),{
+    status:503,error:'New bookings are temporarily paused or unavailable. Please try again later.',
+  });
   assert.equal(bookingFailure({message:'PILOT_OUTSIDE_SERVICE_AREA'}).status,422);
   assert.equal(bookingFailure({code:'23505'}).status,409);
   assert.equal(bookingFailure({message:'private SQL detail'}).error,'The trip could not be created.');

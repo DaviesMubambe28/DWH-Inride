@@ -18,6 +18,19 @@ enum class RidePaymentMethod(val title: String, val description: String) {
     MobileMoney("Mobile money", "Pay the rider outside DHW-inRide after arrival"),
 }
 
+enum class PricingMode {
+    FLAT_PILOT,
+    DISTANCE_TIME;
+
+    companion object {
+        fun fromServer(value: String?): PricingMode = when (value?.trim()?.uppercase()) {
+            "DISTANCE_TIME" -> DISTANCE_TIME
+            "FLAT_PILOT", null -> FLAT_PILOT
+            else -> FLAT_PILOT
+        }
+    }
+}
+
 data class Place(
     val name: String,
     val detail: String,
@@ -120,4 +133,11 @@ data class RiderServiceFeeAccount(
 
 
 /** Server-reported pilot service availability; no client clock authority. */
-data class PilotServiceStatus(val available: Boolean, val message: String)
+data class PilotServiceStatus(
+    val available: Boolean,
+    val message: String,
+    val ridersAvailable: Boolean? = null,
+    val service24x7: Boolean = false,
+    val pricingMode: PricingMode = PricingMode.FLAT_PILOT,
+    val minimumFareZmw: Int = 2000,
+)

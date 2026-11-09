@@ -253,6 +253,8 @@ fun PassengerApp(viewModel: PassengerViewModel, authRepository: AuthRepository) 
                         selectedPayment = uiState.paymentMethod,
                         isLoading = uiState.isLoading,
                         hasSelectedLocations = uiState.pickup != null && uiState.dropoff != null,
+                        pilotAvailable = uiState.pilotAvailable,
+                        serviceMessage = uiState.pilotServiceMessage,
                         onPaymentSelected = { viewModel.setPaymentMethod(it) },
                         onBook = { viewModel.requestRide() },
                     )
@@ -316,9 +318,13 @@ private fun EstimateScreen(
     selectedPayment: RidePaymentMethod,
     isLoading: Boolean,
     hasSelectedLocations: Boolean,
+    pilotAvailable: Boolean,
+    serviceMessage: String,
     onPaymentSelected: (RidePaymentMethod) -> Unit,
     onBook: () -> Unit,
 ) {
+    val fareText = if (pilotAvailable) "K${formatZmw(zm.co.dhwinride.core.domain.PilotPolicy.FARE_NGWEE)}" else "Unavailable"
+    val isBookEnabled = pilotAvailable && hasSelectedLocations && !isLoading
     Column(Modifier.fillMaxSize()) {
         TripMap(
             trip = Trip(pickupLocation = pickup?.name ?: "Pickup", destination = destination,
@@ -333,17 +339,26 @@ private fun EstimateScreen(
                         Text("Boda ride", fontWeight = FontWeight.Black, fontSize = 18.sp)
                         Text("ZMW 20 flat pilot fare", color = DhwMuted)
                     }
-                    Text("K${formatZmw(zm.co.dhwinride.core.domain.PilotPolicy.FARE_NGWEE)}", color = DhwOrange, fontWeight = FontWeight.Black, fontSize = 25.sp)
+                    Text(fareText, color = if (pilotAvailable) DhwOrange else DhwMuted, fontWeight = FontWeight.Black, fontSize = 25.sp)
                 }
                 ListDivider()
-                InfoRow("Ride fare you pay rider", "K${formatZmw(zm.co.dhwinride.core.domain.PilotPolicy.FARE_NGWEE)}", DhwOrange)
-                InfoRow("Rider's platform fee", "K${formatZmw(zm.co.dhwinride.core.domain.PilotPolicy.SERVICE_FEE_NGWEE)}")
-                InfoRow("Rider net after fee", "K${formatZmw(zm.co.dhwinride.core.domain.PilotPolicy.RIDER_NET_NGWEE)}", DhwGreen)
-                Text("Cash only. The service fee is included in the ZMW 20 fare and is owed by the rider after the trip. It is not added to your payment.", color = DhwMuted, fontSize = 12.sp)
+                if (pilotAvailable) {
+                    InfoRow("Ride fare you pay rider", "K${formatZmw(zm.co.dhwinride.core.domain.PilotPolicy.FARE_NGWEE)}", DhwOrange)
+                    InfoRow("Rider's platform fee", "K${formatZmw(zm.co.dhwinride.core.domain.PilotPolicy.SERVICE_FEE_NGWEE)}")
+                    InfoRow("Rider net after fee", "K${formatZmw(zm.co.dhwinride.core.domain.PilotPolicy.RIDER_NET_NGWEE)}", DhwGreen)
+                    Text("Cash only. The service fee is included in the ZMW 20 fare and is owed by the rider after the trip. It is not added to your payment.", color = DhwMuted, fontSize = 12.sp)
+                } else {
+                    Text(serviceMessage, color = DhwBlue, fontSize = 12.sp)
+                }
                 Text("Payment after arrival", fontWeight = FontWeight.Bold)
                 listOf(RidePaymentMethod.Cash).forEach { method ->
                     Surface(
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).selectable(selected = method == selectedPayment, role = Role.RadioButton, onClick = { onPaymentSelected(method) }),
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).selectable(
+                            selected = method == selectedPayment,
+                            enabled = pilotAvailable,
+                            role = Role.RadioButton,
+                            onClick = { onPaymentSelected(method) },
+                        ),
                         color = if (selectedPayment == method) DhwOrange.copy(alpha = .12f) else DhwSurface,
                         shape = RoundedCornerShape(14.dp),
                     ) {
@@ -361,7 +376,7 @@ private fun EstimateScreen(
                         }
                     }
                 }
-                if (selectedPayment == RidePaymentMethod.MobileMoney) {
+                if (selectedPayment == RidePaymentMethod.MobileMoney && pilotAvailable) {
                     Text(
                         "Send K${formatZmw(zm.co.dhwinride.core.domain.PilotPolicy.FARE_NGWEE)} directly to the rider using your mobile-money app or USSD after arrival.",
                         color = DhwBlue,
@@ -370,9 +385,9 @@ private fun EstimateScreen(
                 }
             }
             PrimaryButton(
-                if (isLoading) "Requesting ride…" else "Request rider • K${formatZmw(zm.co.dhwinride.core.domain.PilotPolicy.FARE_NGWEE)}",
+                if (isLoading) "Requesting ride…" else if (pilotAvailable) "Request rider • K${formatZmw(zm.co.dhwinride.core.domain.PilotPolicy.FARE_NGWEE)}" else "Service unavailable",
                 onBook,
-                enabled = hasSelectedLocations && !isLoading,
+                enabled = isBookEnabled,
             )
         }
     }
@@ -395,7 +410,13 @@ private fun FindingScreen(onCancel: () -> Unit) {
             }
         }
         Column(Modifier.heightIn(max = 320.dp).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("Notifying nearby riders in Chongwe...", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center, color = DhwNavy, fontWeight = FontWeight.Bold)
+            Text(
+                "Notifying nearby riders in Chongwe. Rides operate 24/7, but rider availability may vary; requests can remain pending until a rider accepts.",
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
+                color = DhwNavy,
+                fontWeight = FontWeight.Bold,
+            )
             SecondaryButton("Cancel request", onCancel)
         }
     }

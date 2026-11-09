@@ -3,6 +3,11 @@ create extension if not exists pgtap with schema extensions;
 select no_plan();
 select is(private.pilot_service_open(), false, 'pilot starts paused');
 select is((public.pilot_service_status()->>'available')::boolean, false, 'clients see unavailable until owner configuration is complete');
+select is((public.pilot_service_status()->>'service_24_7')::boolean, true, 'service policy is 24/7 while operational');
+select is((select enabled from private.pilot_service_settings where singleton), false, 'migration leaves new bookings paused');
+select is((select opens from private.pilot_service_settings where singleton), '00:00'::time, 'service opens at midnight CAT');
+select is((select closes from private.pilot_service_settings where singleton), '23:59:59.999999'::time, 'service remains open through end of day');
+select is((select weekdays from private.pilot_service_settings where singleton), array[1,2,3,4,5,6,7], 'every weekday is enabled in the schedule metadata');
 select throws_ok($$update private.pilot_service_settings set enabled = true, center_latitude = null$$, '23514', null, 'incomplete service-area and policy configuration cannot enable traffic');
 select throws_ok($$update private.pilot_service_settings set enabled = true, center_latitude = -15.3292,
   center_longitude = 28.6821, radius_km = 5, support_phone = null, fare_policy_approved = true, cancellation_policy_approved = true$$,
@@ -11,11 +16,15 @@ select throws_ok($$update private.pilot_service_settings set enabled = true, cen
 update private.pilot_service_settings set center_latitude = -15.3292, center_longitude = 28.6821,
   radius_km = 5, support_phone = '+260973000001', support_email = 'fixture@test.invalid',
   fare_policy_approved = true, cancellation_policy_approved = true, enabled = true;
-select ok(private.pilot_service_open('2026-10-26 04:00:00+00'), 'Monday opens at 06:00 CAT');
-select is(private.pilot_service_open('2026-10-26 03:59:59+00'), false, 'Monday before 06:00 CAT is closed');
-select is(private.pilot_service_open('2026-10-26 18:00:00+00'), false, 'new requests stop at 20:00 CAT');
-select is(private.pilot_service_open('2026-11-01 10:00:00+00'), false, 'Sunday is closed');
-select ok(private.pilot_service_open('2026-10-31 04:00:00+00'), 'Saturday is an operating day');
+select is((public.pilot_service_status()->>'riders_available')::boolean, false,
+  'open 24/7 service accurately reports no currently available riders');
+select ok(public.pilot_service_status()->>'message' like '%24/7%', 'service status communicates 24/7 operations');
+select ok(private.pilot_service_open(timestamp '2026-10-25 00:00:00' at time zone 'Africa/Lusaka'), 'Sunday midnight CAT is open');
+select ok(private.pilot_service_open(timestamp '2026-10-25 03:00:00' at time zone 'Africa/Lusaka'), 'Sunday 03:00 CAT is open');
+select ok(private.pilot_service_open(timestamp '2026-10-26 06:00:00' at time zone 'Africa/Lusaka'), 'Monday 06:00 CAT is open');
+select ok(private.pilot_service_open(timestamp '2026-10-26 12:00:00' at time zone 'Africa/Lusaka'), 'Monday noon CAT is open');
+select ok(private.pilot_service_open(timestamp '2026-10-26 18:00:00' at time zone 'Africa/Lusaka'), 'Monday 18:00 CAT is open');
+select ok(private.pilot_service_open(timestamp '2026-10-25 23:59:00' at time zone 'Africa/Lusaka'), 'Sunday 23:59 CAT is open');
 select ok(private.pilot_point_allowed(-15.3292, 28.6821), 'zone centre is allowed');
 select is(private.pilot_point_allowed(0, 0), false, 'locations outside the approved boundary are rejected');
 select is(private.pilot_point_allowed('NaN', 28.6821), false, 'non-finite coordinates cannot pass the geofence');
@@ -53,6 +62,10 @@ select is((select count(*) from public.rider_available_trips), 0::bigint, 'rider
 select public.record_pilot_rider_presence(-15.3292, 28.6821);
 select is((select count(*) from public.rider_available_trips), 1::bigint, 'rider with a fresh in-zone position receives dispatch');
 reset role;
+select is((public.pilot_service_status()->>'riders_available')::boolean, true,
+  'service status reports a fresh approved online rider as available');
+
+reset role;
 update private.pilot_rider_presence set recorded_at = now() - interval '3 minutes';
 set local role authenticated;
 select is((select count(*) from public.rider_available_trips), 0::bigint, 'stale rider positions cannot receive dispatch');
@@ -78,6 +91,8 @@ select set_config('request.jwt.claim.sub', '30000000-0000-0000-0000-000000000001
 select throws_ok($$select public.record_pilot_rider_presence(-15.3292, 28.6821)$$, '42501', null, 'passenger cannot publish a rider position');
 select throws_ok($$select * from private.pilot_rider_presence$$, '42501', null, 'clients cannot read raw rider availability locations');
 select throws_ok($$select public.admin_pause_pilot()$$, '42501', null, 'passenger cannot operate the pilot pause switch');
+select throws_ok($$select public.admin_resume_pilot()$$, '42501', null, 'passenger cannot resume the pilot');
+select throws_ok($$select public.admin_pilot_operations_status()$$, '42501', null, 'passenger cannot read aggregate rider operations status');
 select set_config('request.jwt.claim.sub', '', true);
 reset role;
 insert into auth.users(id, raw_user_meta_data) values ('30000000-0000-0000-0000-000000000003',
@@ -90,5 +105,13 @@ select ok(public.admin_pause_pilot(), 'authorized operator can pause new booking
 reset role;
 select is((select enabled from private.pilot_service_settings), false, 'pause switch disables the service');
 select is((select count(*) from private.pilot_operations_audit where action = 'pilot_paused'), 1::bigint, 'pause action has an accountable audit record');
+set local role authenticated;
+select ok(public.admin_resume_pilot(), 'authorized operator can resume bookings');
+select is((public.admin_pilot_operations_status()->>'available')::boolean, true, 'admin can read current operational status');
+select is((public.admin_pilot_operations_status()->>'online_riders')::integer, 1, 'admin can count approved online riders');
+select is((public.admin_pilot_operations_status()->>'available_riders')::integer, 1, 'admin can count fresh in-zone dispatch-eligible riders');
+reset role;
+select is((select enabled from private.pilot_service_settings), true, 'resume switch reopens new bookings');
+select is((select count(*) from private.pilot_operations_audit where action = 'pilot_resumed'), 1::bigint, 'resume action has an accountable audit record');
 select * from finish();
 rollback;

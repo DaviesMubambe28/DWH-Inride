@@ -34,7 +34,7 @@ class AndroidCandidateVerificationTest(unittest.TestCase):
             mappings.append(path)
         aapt2 = self.make_tool(
             root,
-            "aapt2",
+            "aapt2.py",
             """import pathlib, sys
 apk = pathlib.Path(sys.argv[-1]).name
 package = 'zm.co.dhwinride.passenger' if apk.startswith('passenger') else 'zm.co.dhwinride.rider'
@@ -46,7 +46,7 @@ print(\"application-label:'DHW-inRide'\")
         )
         apksigner = self.make_tool(
             root,
-            "apksigner",
+            "apksigner.py",
             f"""import pathlib, sys
 apk = pathlib.Path(sys.argv[-1]).name
 fingerprint = {'aa' * 32!r} if apk.startswith('passenger') else {rider_fingerprint!r}

@@ -22,9 +22,23 @@ type Profile = { id: string; role: "passenger" | "rider" | "admin"; full_name: s
 type Trip = { id: string; passenger_id: string; rider_id: string | null; status: string; pickup_address: string; dropoff_address: string; fare_amount: number | null; payment_method: string; payment_status: string; created_at: string; completed_at: string | null };
 type RiderDocument = { id: string; rider_id: string; document_type: string; storage_url: string; verification_status: string; submitted_at: string };
 type TripLocation = { id: number; trip_id: string; rider_id: string; lat: number; lng: number; recorded_at: string };
+type PilotServiceStatus = { available: boolean; message: string; onlineRiders: number; availableRiders: number };
 type DashboardData = { profiles: Profile[]; trips: Trip[]; documents: RiderDocument[]; locations: TripLocation[]; cancellations: CancellationReview[]; applications: RiderApplication[]; incidents: Incident[]; incidentsAvailable: boolean; serviceFeeRiders: ServiceFeeRider[]; serviceFeePayments: ServiceFeePayment[]; serviceFeeConfig: ServiceFeeConfig | null; serviceFeesAvailable: boolean };
 
 const emptyData: DashboardData = { profiles: [], trips: [], documents: [], locations: [], cancellations: [], applications: [], incidents: [], incidentsAvailable: false, serviceFeeRiders: [], serviceFeePayments: [], serviceFeeConfig: null, serviceFeesAvailable: false };
+function parsePilotServiceStatus(value: unknown): PilotServiceStatus | null {
+  if (typeof value !== "object" || value === null || !("available" in value) || !("message" in value)
+    || !("online_riders" in value) || !("available_riders" in value)
+    || typeof value.available !== "boolean" || typeof value.message !== "string"
+    || typeof value.online_riders !== "number" || !Number.isInteger(value.online_riders) || value.online_riders < 0
+    || typeof value.available_riders !== "number" || !Number.isInteger(value.available_riders) || value.available_riders < 0) return null;
+  return {
+    available: value.available,
+    message: value.message,
+    onlineRiders: value.online_riders,
+    availableRiders: value.available_riders,
+  };
+}
 const navItems = [
   { id: "overview" as Section, label: "Overview", icon: LayoutDashboard },
   { id: "verification" as Section, label: "Rider verification", icon: ClipboardCheck },
@@ -112,6 +126,8 @@ function OperationsDashboard({ user }: { user: User }) {
   const [online, setOnline] = useState(true);
   const [pauseBusy, setPauseBusy] = useState(false);
   const [pauseMessage, setPauseMessage] = useState("");
+  const [pilotStatus, setPilotStatus] = useState<PilotServiceStatus | null>(null);
+  const [pilotStatusError, setPilotStatusError] = useState("");
   const menuRef = useRef<HTMLDialogElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const loadVersion = useRef(0);
@@ -127,16 +143,30 @@ function OperationsDashboard({ user }: { user: User }) {
     if (drawerOpen) menuRef.current?.showModal();
     else menuRef.current?.close();
   }, [drawerOpen]);
-  async function pausePilot() {
-    if (!window.confirm("Pause all new pilot bookings? Existing active trips can still finish.")) return;
+  async function changePilotAvailability() {
+    const resuming = pilotStatus?.available === false;
+    const confirmation = resuming
+      ? "Resume new bookings? This does not guarantee rider availability."
+      : "Pause all new bookings? Existing active trips can still finish.";
+    if (!window.confirm(confirmation)) return;
     const client = getSupabaseBrowserClient();
     if (!client) return;
     setPauseBusy(true); setPauseMessage("");
     try {
-      const { error } = await client.rpc("admin_pause_pilot");
+      const { error } = await client.rpc(resuming ? "admin_resume_pilot" : "admin_pause_pilot");
       if (error) throw error;
-      setPauseMessage("New pilot bookings are paused. Continue supporting active trips.");
-    } catch { setPauseMessage("Pause could not be confirmed. Contact the responsible operator immediately and retry."); }
+      const statusResult = await client.rpc("admin_pilot_operations_status");
+      if (statusResult.error) throw statusResult.error;
+      const status = parsePilotServiceStatus(statusResult.data);
+      if (!status || status.available !== resuming) throw new Error("Service status did not confirm the requested change.");
+      setPilotStatus(status);
+      setPilotStatusError("");
+      setPauseMessage(resuming
+        ? "New bookings are open 24/7. Rider availability may vary."
+        : "New bookings are paused. Existing active trips can still finish.");
+    } catch {
+      setPauseMessage("The availability change could not be confirmed. Refresh service status before relying on it.");
+    }
     finally { setPauseBusy(false); }
   }
   function navigate(next: Section) {
@@ -159,12 +189,18 @@ function OperationsDashboard({ user }: { user: User }) {
         client.from("admin_service_fee_overview").select("rider_id,full_name,phone_number,total_trips,fee_trip_count,total_fees_zmw,total_paid_zmw,outstanding_zmw,pending_payments,last_payment_at").order("outstanding_zmw", { ascending: false }).limit(500),
         client.from("rider_service_fee_payments").select("id,rider_id,amount_zmw,transaction_reference,proof_storage_path,status,submitted_at,reviewed_at,admin_note").order("submitted_at", { ascending: false }).limit(500),
         client.from("admin_service_fee_payment_config").select("payment_method,payment_recipient,payment_instructions,updated_at").limit(1).maybeSingle(),
-      ]).then(([profileResult, tripsResult, docsResult, locationsResult, cancellationsResult, applicationsResult, incidentsResult, feeRidersResult, feePaymentsResult, feeConfigResult]) => {
+        client.rpc("admin_pilot_operations_status"),
+      ]).then(([profileResult, tripsResult, docsResult, locationsResult, cancellationsResult, applicationsResult, incidentsResult, feeRidersResult, feePaymentsResult, feeConfigResult, pilotStatusResult]) => {
       if (version !== loadVersion.current) return;
       if (profileResult.error) throw profileResult.error;
       const ownProfile = profileResult.data?.find((profile) => profile.id === user.id);
       if (ownProfile?.role !== "admin") { setAuthorized(false); setData(emptyData); setLastUpdated(null); return; }
       setAuthorized(true);
+      const serviceStatus = pilotStatusResult.error ? null : parsePilotServiceStatus(pilotStatusResult.data);
+      setPilotStatus(serviceStatus);
+      setPilotStatusError(serviceStatus
+        ? ""
+        : "Service status could not be verified. Do not rely on new bookings until it is checked.");
       const incidentSchemaPending = incidentsResult.error?.code === "42P01" || incidentsResult.error?.code === "PGRST205";
       const feeResults = [feeRidersResult, feePaymentsResult, feeConfigResult];
       const feeSchemaPending = feeResults.some((result) => result.error?.code === "42P01" || result.error?.code === "PGRST205");
@@ -223,13 +259,15 @@ function OperationsDashboard({ user }: { user: User }) {
         <button className="icon-button menu-button" onClick={() => setDrawerOpen(true)} aria-label="Open navigation" aria-haspopup="dialog" aria-expanded={drawerOpen}><Menu size={21} /></button>
         <strong className="workspace-title">Chongwe operations</strong>
         <span className="system-live" role="status">{!online ? "Offline · updates paused" : loading ? "Refreshing…" : lastUpdated ? `Updated ${lastUpdated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : "Waiting for data"}</span>
-        <button className="secondary-action" disabled={pauseBusy || !online} onClick={() => void pausePilot()}>{pauseBusy ? "Pausing…" : "Pause new bookings"}</button>
+        <button className="secondary-action" disabled={pauseBusy || !online} onClick={() => void changePilotAvailability()}>{pauseBusy ? (pilotStatus?.available === false ? "Resuming…" : "Pausing…") : pilotStatus?.available === false ? "Resume new bookings" : "Pause new bookings"}</button>
         <button className="secondary-action refresh-action" disabled={loading || !online} onClick={() => refresh()}><RefreshCw aria-hidden="true" className={loading ? "spin" : ""} size={18} /><span>{loading ? "Refreshing…" : "Refresh"}</span></button>
       </header>
       <div className="page-content" aria-busy={loading}>
         <section className="page-heading"><div><span className="eyebrow">{copy.eyebrow}</span><h1 ref={titleRef} tabIndex={-1}>{copy.title}</h1><p>{copy.description}</p></div></section>
         {!online ? <div className="error-banner" role="status"><AlertTriangle size={18} />You’re offline. Showing the last loaded records. Reconnect, then refresh.</div> : null}
         {error ? <div className="error-banner" role="alert"><AlertTriangle size={18} /><span>{error} Previously loaded records are shown below.</span><button disabled={loading || !online} onClick={() => refresh()}>Retry</button></div> : null}
+        {pilotStatusError ? <div className="error-banner" role="alert"><AlertTriangle size={18} />{pilotStatusError}</div> : null}
+        {pilotStatus ? <section className="panel" aria-label="Service availability"><PanelHeader title="Service availability" subtitle={pilotStatus.available ? "Open 24/7; rider availability may vary." : "New bookings are paused or service setup is incomplete."} /><p>{pilotStatus.message}</p><Badge tone={pilotStatus.available ? "green" : "orange"}>{pilotStatus.available ? "Open 24/7" : "Unavailable"}</Badge><p>Approved riders online: {pilotStatus.onlineRiders} · Available for dispatch now: {pilotStatus.availableRiders}</p></section> : null}
         {pauseMessage ? <p className="panel" role="status">{pauseMessage}</p> : null}
         <p className="data-scope">Latest {data.trips.length} trips loaded (maximum 500). Totals describe this loaded set.</p>
         {section === "overview" ? <Overview trips={data.trips} riders={riders} pendingApplications={data.applications.filter((application) => application.status === "pending").length} activeTrips={activeTrips} profiles={profilesById} onDispatch={() => { setFilter("requesting"); navigate("live"); }} onVerification={() => navigate("verification")} /> : null}
@@ -247,7 +285,7 @@ function OperationsDashboard({ user }: { user: User }) {
 
 function Overview({ trips, riders, pendingApplications, activeTrips, profiles, onDispatch, onVerification }: { trips: Trip[]; riders: Profile[]; pendingApplications: number; activeTrips: Trip[]; profiles: Map<string, Profile>; onDispatch: () => void; onVerification: () => void }) {
   const today = new Date().toDateString(); const tripsToday = trips.filter((trip) => new Date(trip.created_at).toDateString() === today).length;
-  const cards = [["Trips today", tripsToday, "blue"], ["Riders online", riders.filter((r) => r.is_online).length, "green"], ["Active trips", activeTrips.length, "orange"], ["Awaiting dispatch", activeTrips.filter((t) => t.status === "requesting").length, "red"]] as const;
+  const cards = [["Trips today", tripsToday, "blue"], ["Approved riders online", riders.filter((r) => r.is_online && r.approval_status === "approved").length, "green"], ["Active trips", activeTrips.length, "orange"], ["Awaiting dispatch", activeTrips.filter((t) => t.status === "requesting").length, "red"]] as const;
   return <div className="dashboard-stack"><section className="panel attention-summary"><div><h2>Needs attention</h2><p>Review waiting requests and pending rider applications.</p></div><button className="secondary-action" onClick={onDispatch}>Awaiting rider · {activeTrips.filter((t) => t.status === "requesting").length}</button><button className="secondary-action" onClick={onVerification}>Pending verification · {riders.filter((r) => r.approval_status === "pending").length + pendingApplications}</button></section><section className="kpi-grid">{cards.map(([label, value, tone], index) => <article className="kpi-card" key={label}><div className={`kpi-icon tone-${tone}`}>{[<Activity key="a" />, <Bike key="b" />, <Clock3 key="c" />, <AlertTriangle key="d" />][index]}</div><span>{label}</span><strong>{value}</strong><small>Loaded records</small></article>)}</section><TripsPanel trips={activeTrips.slice(0, 10)} profiles={profiles} title="Active trips" /></div>;
 }
 

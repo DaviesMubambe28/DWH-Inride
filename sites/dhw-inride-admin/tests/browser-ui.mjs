@@ -19,7 +19,7 @@ const incidents=[{id:'44444444-4444-4444-8444-444444444444',trip_id:'fixture-tri
 const serviceFeeRiders=[{rider_id:riderId,full_name:'Test Rider',phone_number:'Fixture phone',total_trips:2,fee_trip_count:2,total_fees_zmw:6,total_paid_zmw:2,outstanding_zmw:4,pending_payments:1,last_payment_at:new Date().toISOString()}];
 const serviceFeePayments=[{id:'55555555-5555-4555-8555-555555555555',rider_id:riderId,amount_zmw:2,transaction_reference:'FIXTURE-PAY-1',proof_storage_path:null,status:'pending_verification',submitted_at:new Date().toISOString(),reviewed_at:null,admin_note:null}];
 const serviceFeeConfig={payment_method:'Fixture mobile money',payment_recipient:'Fixture recipient',payment_instructions:'Verify the provider statement before approving.',updated_at:new Date().toISOString()};
-let fail=false, delay=1000, allowed=true;
+let fail=false, delay=1000, allowed=true, serviceAvailable=true;
 let cancellationReviews=[{trip_id:'fixture-trip-0',actor_id:passengerId,reason:'passenger_cancelled',late_warning:true,review_required:true,created_at:new Date().toISOString(),reviewed_at:null}];
 const errors=[];
 const context=await browser.newContext();
@@ -30,6 +30,9 @@ await context.route('**/*',async route=>{
  if(delay) await new Promise(r=>setTimeout(r,delay));
  if(url.pathname.includes('/auth/v1/user')) return route.fulfill({json:user});
  if(url.pathname.includes('/storage/v1/object/sign/')) return route.fulfill({json:{signedURL:'/object/sign/rider-documents/fixture/document?token=fixture-only'}});
+ if(url.pathname.endsWith('/rpc/admin_pilot_operations_status')) return route.fulfill({json:{available:serviceAvailable,service_24_7:true,message:serviceAvailable?'Service available 24/7. Rider availability may vary.':'Service temporarily paused or not configured. Please try again later.',online_riders:1,available_riders:serviceAvailable?1:0}});
+ if(url.pathname.endsWith('/rpc/admin_pause_pilot')) { serviceAvailable=false; return route.fulfill({json:true}); }
+ if(url.pathname.endsWith('/rpc/admin_resume_pilot')) { serviceAvailable=true; return route.fulfill({json:true}); }
  if(url.pathname.includes('/rest/v1/')) {
   if(fail) return route.fulfill({status:503,json:{message:'Test service unavailable'}});
   const table=url.pathname.split('/').at(-1);
@@ -67,9 +70,13 @@ for(const width of [320,768,1024,1440]) {
  assert.deepEqual(axe.violations.map(v=>({id:v.id,impact:v.impact,nodes:v.nodes.map(n=>n.target)})),[],`axe at ${width}`);
  await page.screenshot({path:`${artifactDir}/dashboard-${width}.png`,fullPage:true});
 }
+await page.getByText('Approved riders online: 1 · Available for dispatch now: 1').waitFor();
 page.once('dialog', dialog=>dialog.accept());
 await page.getByRole('button',{name:'Pause new bookings'}).click();
-await page.getByText('New pilot bookings are paused. Continue supporting active trips.').waitFor();
+await page.getByText('New bookings are paused. Existing active trips can still finish.').waitFor();
+page.once('dialog', dialog=>dialog.accept());
+await page.getByRole('button',{name:'Resume new bookings'}).click();
+await page.getByText('New bookings are open 24/7. Rider availability may vary.').waitFor();
 await page.getByRole('button',{name:'Incidents',exact:true}).click();
 await page.getByRole('heading',{name:'Record an incident',exact:true}).waitFor();
 await page.getByText('Fixture safety report for browser verification',{exact:true}).waitFor();
