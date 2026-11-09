@@ -9,12 +9,14 @@ data class FareConfig(
     val baseFareZmw: BigDecimal,
     val perKilometerZmw: BigDecimal,
     val minimumFareZmw: BigDecimal,
+    val perMinuteZmw: BigDecimal = BigDecimal.ZERO,
+    val approvedAdjustmentsZmw: BigDecimal = BigDecimal.ZERO,
     val currency: String = "ZMW",
     val roundingMode: RoundingMode = RoundingMode.HALF_UP,
 ) {
     init {
         require(currency == "ZMW") { "Only ZMW is supported by this fare service." }
-        require(baseFareZmw >= BigDecimal.ZERO && perKilometerZmw >= BigDecimal.ZERO && minimumFareZmw >= BigDecimal.ZERO) {
+        require(baseFareZmw >= BigDecimal.ZERO && perKilometerZmw >= BigDecimal.ZERO && perMinuteZmw >= BigDecimal.ZERO && minimumFareZmw >= BigDecimal.ZERO && approvedAdjustmentsZmw >= BigDecimal.ZERO) {
             "Fare rates must be non-negative."
         }
     }
@@ -34,14 +36,18 @@ class FareCalculator(
     private val config: FareConfig,
     private val distanceProvider: RouteDistanceProvider = HaversineDistanceProvider(),
 ) {
-    /** fare = max(minimum, base + km * rate), rounded to 2 ZMW decimals (ngwee). */
-    suspend fun calculateNgwee(from: Place, to: Place): Long {
+    /** Fare = max(MinimumFare, BaseFare + DistanceKm × RatePerKm + DurationMinutes × RatePerMinute + ApprovedAdjustments). */
+    suspend fun calculateNgwee(from: Place, to: Place, durationMinutes: Int = 0): Long {
         validateCoordinates(from.latitude, from.longitude)
         validateCoordinates(to.latitude, to.longitude)
         val distanceKm = distanceProvider.distanceKilometers(from, to)
         require(distanceKm.isFinite() && distanceKm >= 0.0) { "Distance must be finite and non-negative." }
         val distance = BigDecimal.valueOf(distanceKm)
-        val fareZmw = config.baseFareZmw.add(config.perKilometerZmw.multiply(distance))
+        val duration = BigDecimal.valueOf(durationMinutes.toLong())
+        val fareZmw = config.baseFareZmw
+            .add(config.perKilometerZmw.multiply(distance))
+            .add(config.perMinuteZmw.multiply(duration))
+            .add(config.approvedAdjustmentsZmw)
             .max(config.minimumFareZmw)
             .setScale(2, config.roundingMode)
         return fareZmw.movePointRight(2).longValueExact()

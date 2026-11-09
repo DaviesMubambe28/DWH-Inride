@@ -1,6 +1,6 @@
 # Future APK uploads and admin configuration
 
-**Current state:** no suitable production APK is available, both manifest release entries are null, and the owner confirms the admin dashboard is unhosted. Nothing was deployed/published. Development APKs under `passenger-app/build/outputs/apk/development/` and `rider-app/build/outputs/apk/development/` are debug-signed `.development` apps with push unavailable: **never upload them as public releases**.
+**Current state:** no suitable production APK is available and both manifest release entries are null. The existing admin dashboard root is configured separately in the manifest; this does not make either Android app downloadable. Development APKs under `passenger-app/build/outputs/apk/development/` and `rider-app/build/outputs/apk/development/` are debug-signed `.development` apps with push unavailable: **never upload them as public releases**.
 
 ## 1. Prepare and verify real release files
 
@@ -64,7 +64,7 @@ Edit `sites/dhw-inride-landing/dist/release-config.mjs`. Each actual release obj
 
 Populate `releases.passenger` and `releases.rider` separately, with independently verified values. This template intentionally fails validation until every placeholder/zero is replaced. Leave an unavailable app `null`; do not invent metadata or substitute a development build. Initial URLs containing temporary token queries, development/debug/unsigned names or unsafe schemes are rejected. A valid configured card shows version, exact bytes/MiB, Android requirement, release date and expandable checksum. JavaScript enables the download only for valid metadata; unavailable/no-JS defaults remain honest.
 
-Set `adminUrl` only after the actual admin static export has a verified HTTPS origin. The actual sign-in route is **`/`**, implemented by `sites/dhw-inride-admin/app/page.tsx` → `AdminDashboard`. There is no `/login` page. Use the actual hosted root (or actual configured base-path root if hosting is later changed), not a guessed URL. Header and footer both read this one setting. Linking does not grant a role; Supabase RLS/RPC and the existing Auth/profile-role checks must remain enforced. Current `adminUrl=null` opens the honest unhosted explanation.
+The confirmed `adminUrl` is the dashboard HTTPS root. The actual sign-in route is **`/`**, implemented by `sites/dhw-inride-admin/app/page.tsx` → `AdminDashboard`; there is no `/login` page. Header and footer both read this one setting. If hosting changes, verify the replacement root before updating it. Linking does not grant a role; Supabase RLS/RPC and the existing Auth/profile-role checks must remain enforced.
 
 ## 4. Configure HTTP headers and caching
 

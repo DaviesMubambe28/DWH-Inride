@@ -40,6 +40,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
@@ -56,7 +59,7 @@ enum class AppUserRole(val label: String) {
     Rider("Rider"),
 }
 
-private enum class AccessStage { RestoringSession, Welcome, SignIn, SignUp, Recovery, VerifyEmail, Profile, RiderReview }
+private enum class AccessStage { RestoringSession, Welcome, SignIn, SignUp, Recovery, VerifyEmail, Profile, Notifications, RiderReview }
 
 internal suspend fun restoreLaunchSession(
     authRepository: AuthRepository,
@@ -100,18 +103,16 @@ internal fun safeRiderDocumentFailureMessage(message: String?): String = when (m
 fun LaunchAccessFlow(role: AppUserRole, authRepository: AuthRepository, onReady: () -> Unit) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    var stage by remember { mutableStateOf(AccessStage.RestoringSession) }
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
-    ) { /* The app remains usable when notifications are declined. */ }
+    ) { onReady() }
 
-    fun requestNotificationPermissionIfNeeded() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+    fun continueToApp() {
+        val needsNotificationPermission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-        ) {
-            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-        }
+        if (needsNotificationPermission) stage = AccessStage.Notifications else onReady()
     }
-    var stage by remember { mutableStateOf(AccessStage.RestoringSession) }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var fullName by remember { mutableStateOf("") }
@@ -123,6 +124,7 @@ fun LaunchAccessFlow(role: AppUserRole, authRepository: AuthRepository, onReady:
     var motorcyclePlate by remember { mutableStateOf("") }
     var motorcycleColor by remember { mutableStateOf("") }
     var drivingLicenceNumber by remember { mutableStateOf("") }
+    var riderSignupStep by remember { mutableStateOf(0) }
     var riderState by remember { mutableStateOf(RiderAccessState.NotSubmitted) }
     var submittedDocuments by remember { mutableStateOf(emptySet<String>()) }
     var pendingDocumentType by remember { mutableStateOf<String?>(null) }
@@ -160,7 +162,8 @@ fun LaunchAccessFlow(role: AppUserRole, authRepository: AuthRepository, onReady:
         restoreLaunchSession(authRepository, role).fold(
             onSuccess = { restored ->
                 if (restored) {
-                    requestNotificationPermissionIfNeeded()
+                    // Do not interrupt every cold start after a previous "Not now" choice.
+                    // The contextual prompt is shown after an interactive sign-in instead.
                     onReady()
                 } else {
                     if (role == AppUserRole.Rider) {
@@ -208,10 +211,11 @@ fun LaunchAccessFlow(role: AppUserRole, authRepository: AuthRepository, onReady:
     ) {
         Spacer(Modifier.height(18.dp))
         Box(
-            modifier = Modifier.background(DhwNavy, CircleShape).padding(22.dp),
+            modifier = Modifier.background(DhwNavy, CircleShape).padding(22.dp)
+                .semantics { contentDescription = "DHW-inRide" },
             contentAlignment = Alignment.Center,
         ) {
-            Text("🏍", fontSize = 36.sp)
+            Text("🏍", fontSize = 36.sp, modifier = Modifier.clearAndSetSemantics { })
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("DHW", color = DhwOrange, fontSize = 30.sp, fontWeight = FontWeight.Black)
@@ -236,39 +240,58 @@ fun LaunchAccessFlow(role: AppUserRole, authRepository: AuthRepository, onReady:
                 }
                 errorMessage?.let { Text(it, color = Color(0xFFB42318), fontSize = 12.sp) }
                 if (role == AppUserRole.Passenger) {
-                    PrimaryButton("Create passenger account", { stage = AccessStage.SignUp })
+                    PrimaryButton("Create passenger account", { riderSignupStep = 0; stage = AccessStage.SignUp })
                     SecondaryButton("I already have an account", { stage = AccessStage.SignIn })
                 } else {
                     Text("Your application does not grant trip access. Bring your NRC, Class A licence, motorcycle registration and insurance to operations for final in-person checks.", color = DhwMuted)
-                    PrimaryButton("Create Rider Account", { stage = AccessStage.SignUp })
+                    PrimaryButton("Create Rider Account", { riderSignupStep = 0; stage = AccessStage.SignUp })
                     SecondaryButton("Sign in to rider account", { stage = AccessStage.SignIn })
                 }
             }
 
             AccessStage.SignIn, AccessStage.SignUp -> {
                 val signingUp = stage == AccessStage.SignUp
+                val riderSignup = signingUp && role == AppUserRole.Rider
+                val accountDetailsComplete = email.contains('@') && password.length >= 8 &&
+                    fullName.trim().length >= 2 && normalizedPhone != null
+                val riderDetailsComplete = motorcycleMake.isNotBlank() && motorcycleModel.isNotBlank() &&
+                    motorcycleYear.toIntOrNull()?.let { it in 1950..2100 } == true &&
+                    motorcyclePlate.trim().length >= 2 && motorcycleColor.isNotBlank() &&
+                    drivingLicenceNumber.trim().length >= 3
                 ScreenTitle(
-                    if (signingUp) "Create your account" else "Welcome back",
-                    if (signingUp) "Use your own email address. If confirmation is required, follow the instructions in your email before signing in." else "Sign in to continue.",
+                    when {
+                        !signingUp -> "Welcome back"
+                        riderSignup && riderSignupStep == 1 -> "Motorcycle details"
+                        riderSignup && riderSignupStep == 2 -> "Review application"
+                        else -> "Create your account"
+                    },
+                    when {
+                        !signingUp -> "Sign in to continue."
+                        riderSignup -> "Complete step ${riderSignupStep + 1} of 3. Operations will verify these details before activation."
+                        else -> "Use your own email address. Follow confirmation instructions if your account requires them."
+                    },
                 )
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Email address") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                    singleLine = true,
-                )
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Password") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    singleLine = true,
-                )
-                if (signingUp) {
+                if (!riderSignup || riderSignupStep == 0) {
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Email address") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        singleLine = true,
+                    )
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Password") },
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        singleLine = true,
+                        supportingText = { if (signingUp) Text("Use at least 8 characters") },
+                    )
+                }
+                if (signingUp && (!riderSignup || riderSignupStep == 0)) {
                     OutlinedTextField(value = fullName, onValueChange = { fullName = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Full name") }, singleLine = true)
                     OutlinedTextField(
                         value = phone,
@@ -280,52 +303,80 @@ fun LaunchAccessFlow(role: AppUserRole, authRepository: AuthRepository, onReady:
                         isError = phoneError != null,
                         supportingText = { phoneError?.let { Text(it, color = Color(0xFFB42318)) } },
                     )
-                    if (role == AppUserRole.Rider) {
-                        OutlinedTextField(value = motorcycleMake, onValueChange = { motorcycleMake = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Motorcycle make") }, singleLine = true)
-                        OutlinedTextField(value = motorcycleModel, onValueChange = { motorcycleModel = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Motorcycle model") }, singleLine = true)
-                        OutlinedTextField(value = motorcycleYear, onValueChange = { motorcycleYear = it.filter(Char::isDigit).take(4) }, modifier = Modifier.fillMaxWidth(), label = { Text("Motorcycle year") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true)
-                        OutlinedTextField(value = motorcyclePlate, onValueChange = { motorcyclePlate = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Registration number") }, singleLine = true)
-                        OutlinedTextField(value = motorcycleColor, onValueChange = { motorcycleColor = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Motorcycle colour") }, singleLine = true)
-                        OutlinedTextField(value = drivingLicenceNumber, onValueChange = { drivingLicenceNumber = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Driving licence number") }, singleLine = true)
-                        Text("After email verification, sign in to submit private NRC, licence and motorcycle-registration files. Operations must review them before activation.", color = DhwMuted, fontSize = 12.sp)
+                    if (riderSignup) {
+                        Text("Use the rider's own reachable phone and email. These details will be checked during approval.", color = DhwMuted, fontSize = 12.sp)
                     }
                 }
-                val riderDetailsComplete = role != AppUserRole.Rider || (
-                    motorcycleMake.isNotBlank() && motorcycleModel.isNotBlank() && motorcycleYear.toIntOrNull()?.let { it in 1950..2100 } == true &&
-                        motorcyclePlate.trim().length >= 2 && motorcycleColor.isNotBlank() && drivingLicenceNumber.trim().length >= 3
-                )
-                PrimaryButton(
-                    text = if (isLoading) "Please wait…" else if (signingUp) "Create account" else "Sign in",
-                    enabled = !isLoading && email.contains('@') && password.length >= 8 && (!signingUp || (fullName.trim().length >= 2 && normalizedPhone != null && riderDetailsComplete)),
-                    onClick = {
-                        if (signingUp) {
-                            val operation: suspend () -> Result<Unit> = if (role == AppUserRole.Rider) ({
-                                authRepository.signUpRider(
-                                    email.trim(), password, fullName.trim(), normalizedPhone.orEmpty(),
-                                    RiderApplicationDetails(motorcycleMake, motorcycleModel, motorcycleYear.toIntOrNull() ?: 0, motorcyclePlate, motorcycleColor, drivingLicenceNumber),
-                                )
-                            }) else ({ authRepository.signUp(email.trim(), password, fullName.trim(), normalizedPhone.orEmpty(), "passenger") })
-                            runAuth(operation = operation, onSuccess = { stage = AccessStage.VerifyEmail })
-                        } else {
-                            runAuth(
-                                operation = { authRepository.signIn(email.trim(), password, role.name.lowercase()) },
-                                onSuccess = {
-                                    if (role == AppUserRole.Rider) scope.launch {
-                                        riderState = authRepository.getRiderAccessState()
-                                        if (riderState == RiderAccessState.Active) {
-                                            requestNotificationPermissionIfNeeded(); onReady()
-                                        } else {
-                                            submittedDocuments = runCatching { authRepository.getSubmittedRiderDocuments() }.getOrDefault(emptySet())
-                                            stage = AccessStage.RiderReview
-                                        }
-                                    } else {
-                                        requestNotificationPermissionIfNeeded(); onReady()
-                                    }
-                                },
-                            )
-                        }
-                    },
-                )
+                if (riderSignup && riderSignupStep == 1) {
+                    OutlinedTextField(value = motorcycleMake, onValueChange = { motorcycleMake = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Motorcycle make") }, singleLine = true)
+                    OutlinedTextField(value = motorcycleModel, onValueChange = { motorcycleModel = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Motorcycle model") }, singleLine = true)
+                    OutlinedTextField(value = motorcycleYear, onValueChange = { motorcycleYear = it.filter(Char::isDigit).take(4) }, modifier = Modifier.fillMaxWidth(), label = { Text("Motorcycle year") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true)
+                    OutlinedTextField(value = motorcyclePlate, onValueChange = { motorcyclePlate = it.uppercase() }, modifier = Modifier.fillMaxWidth(), label = { Text("Registration number") }, singleLine = true)
+                    OutlinedTextField(value = motorcycleColor, onValueChange = { motorcycleColor = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Motorcycle colour") }, singleLine = true)
+                    OutlinedTextField(value = drivingLicenceNumber, onValueChange = { drivingLicenceNumber = it.uppercase() }, modifier = Modifier.fillMaxWidth(), label = { Text("Driving licence number") }, singleLine = true)
+                    Text("Enter details exactly as they appear on the motorcycle registration and Class A licence.", color = DhwMuted, fontSize = 12.sp)
+                }
+                if (riderSignup && riderSignupStep == 2) {
+                    DhwCard {
+                        Text("Account", fontWeight = FontWeight.Black)
+                        InfoRow("Name", fullName.trim())
+                        InfoRow("Phone", normalizedPhone.orEmpty())
+                        InfoRow("Email", email.trim())
+                    }
+                    DhwCard {
+                        Text("Motorcycle", fontWeight = FontWeight.Black)
+                        InfoRow("Vehicle", "$motorcycleMake $motorcycleModel")
+                        InfoRow("Year and colour", "$motorcycleYear • $motorcycleColor")
+                        InfoRow("Registration", motorcyclePlate.trim())
+                        InfoRow("Licence", drivingLicenceNumber.trim())
+                    }
+                    Text("After email verification, sign in to submit private NRC, licence and motorcycle-registration files. Operations must approve the application before trip access.", color = DhwMuted, fontSize = 12.sp)
+                }
+
+                when {
+                    riderSignup && riderSignupStep < 2 -> {
+                        PrimaryButton(
+                            text = if (riderSignupStep == 0) "Continue to motorcycle" else "Review application",
+                            enabled = !isLoading && if (riderSignupStep == 0) accountDetailsComplete else riderDetailsComplete,
+                            onClick = { riderSignupStep += 1 },
+                        )
+                        if (riderSignupStep > 0) SecondaryButton("Back", { riderSignupStep -= 1 }, enabled = !isLoading)
+                    }
+                    else -> {
+                        PrimaryButton(
+                            text = if (isLoading) "Please wait…" else if (signingUp) {
+                                if (riderSignup) "Submit rider application" else "Create account"
+                            } else "Sign in",
+                            enabled = !isLoading && email.contains('@') && password.length >= 8 &&
+                                (!signingUp || (accountDetailsComplete && (!riderSignup || riderDetailsComplete))),
+                            onClick = {
+                                if (signingUp) {
+                                    val operation: suspend () -> Result<Unit> = if (role == AppUserRole.Rider) ({
+                                        authRepository.signUpRider(
+                                            email.trim(), password, fullName.trim(), normalizedPhone.orEmpty(),
+                                            RiderApplicationDetails(motorcycleMake, motorcycleModel, motorcycleYear.toIntOrNull() ?: 0, motorcyclePlate, motorcycleColor, drivingLicenceNumber),
+                                        )
+                                    }) else ({ authRepository.signUp(email.trim(), password, fullName.trim(), normalizedPhone.orEmpty(), "passenger") })
+                                    runAuth(operation = operation, onSuccess = { stage = AccessStage.VerifyEmail })
+                                } else {
+                                    runAuth(
+                                        operation = { authRepository.signIn(email.trim(), password, role.name.lowercase()) },
+                                        onSuccess = {
+                                            if (role == AppUserRole.Rider) scope.launch {
+                                                riderState = authRepository.getRiderAccessState()
+                                                if (riderState == RiderAccessState.Active) continueToApp() else {
+                                                    submittedDocuments = runCatching { authRepository.getSubmittedRiderDocuments() }.getOrDefault(emptySet())
+                                                    stage = AccessStage.RiderReview
+                                                }
+                                            } else continueToApp()
+                                        },
+                                    )
+                                }
+                            },
+                        )
+                        if (riderSignup) SecondaryButton("Edit motorcycle details", { riderSignupStep = 1 }, enabled = !isLoading)
+                    }
+                }
                 if (!signingUp && authRepository.passwordRecovery != null) {
                     SecondaryButton("Forgot password?", { password = ""; stage = AccessStage.Recovery }, enabled = !isLoading)
                 }
@@ -335,6 +386,7 @@ fun LaunchAccessFlow(role: AppUserRole, authRepository: AuthRepository, onReady:
                         color = DhwBlue,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.clickable(enabled = !isLoading) {
+                            riderSignupStep = 0
                             stage = if (signingUp) AccessStage.SignIn else AccessStage.SignUp
                         },
                     )
@@ -365,11 +417,8 @@ fun LaunchAccessFlow(role: AppUserRole, authRepository: AuthRepository, onReady:
                                 if (role == AppUserRole.Rider) scope.launch {
                                     riderState = authRepository.getRiderAccessState()
                                     submittedDocuments = runCatching { authRepository.getSubmittedRiderDocuments() }.getOrDefault(emptySet())
-                                    if (riderState == RiderAccessState.Active) onReady() else stage = AccessStage.RiderReview
-                                } else {
-                                    requestNotificationPermissionIfNeeded()
-                                    onReady()
-                                }
+                                    if (riderState == RiderAccessState.Active) continueToApp() else stage = AccessStage.RiderReview
+                                } else continueToApp()
                             },
                         )
                     },
@@ -420,8 +469,7 @@ fun LaunchAccessFlow(role: AppUserRole, authRepository: AuthRepository, onReady:
                             runCatching { authRepository.updateProfile(fullName.trim(), canonicalPhone) }
                                 .onSuccess {
                                     if (role == AppUserRole.Rider) stage = AccessStage.RiderReview else {
-                                        requestNotificationPermissionIfNeeded()
-                                        onReady()
+                                        continueToApp()
                                     }
                                 }
                                 .onFailure { errorMessage = it.message ?: "Unable to save your profile." }
@@ -430,6 +478,25 @@ fun LaunchAccessFlow(role: AppUserRole, authRepository: AuthRepository, onReady:
                     },
                 )
                 errorMessage?.let { Text(it, color = Color(0xFFB42318), fontSize = 12.sp) }
+            }
+
+            AccessStage.Notifications -> {
+                ScreenTitle(
+                    "Stay updated on your ride",
+                    if (role == AppUserRole.Rider) {
+                        "Notifications alert you to new requests and trip changes while the app is in the background."
+                    } else {
+                        "Notifications alert you when a rider accepts, arrives, or when your trip changes."
+                    },
+                )
+                DhwCard {
+                    Text("You stay in control", fontWeight = FontWeight.Black)
+                    Text("You can continue without notifications and change this later in Android Settings.", color = DhwMuted)
+                }
+                PrimaryButton("Enable notifications", {
+                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                })
+                SecondaryButton("Not now", onReady)
             }
 
             AccessStage.RiderReview -> {

@@ -59,7 +59,9 @@ data class PassengerUiState(
     val locationError: String? = null,
     val errorMessage: String? = null,
     val pilotAvailable: Boolean = false,
-    val pilotServiceMessage: String = "Checking pilot service availability…",
+    val pilotServiceMessage: String = "Checking service availability…",
+    val ridersAvailable: Boolean? = null,
+    val service24x7: Boolean = false,
 )
 
 class PassengerViewModel(
@@ -210,11 +212,35 @@ class PassengerViewModel(
     private suspend fun refreshPilotAvailability() {
         try {
             val status = tripRepository.getPilotServiceStatus()
-            updateState { it.copy(pilotAvailable = status.available, pilotServiceMessage = status.message) }
+            val message = when {
+                !status.available -> status.message
+                !status.service24x7 ->
+                    "Service is currently open. Operating hours are controlled by operations; rider availability may vary."
+                status.ridersAvailable == false ->
+                    "Service available 24/7. No riders are currently available; requests may remain pending."
+                else -> "Service available 24/7. Rider availability may vary."
+            }
+            updateState { current ->
+                current.copy(
+                    pilotAvailable = status.available,
+                    pilotServiceMessage = message,
+                    ridersAvailable = status.ridersAvailable,
+                    service24x7 = status.service24x7,
+                    fareEstimate = if (status.available) current.fareEstimate else FareEstimate(),
+                    errorMessage = if (status.available) current.errorMessage else null,
+                )
+            }
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (_: Exception) {
-            updateState { it.copy(pilotAvailable = false, pilotServiceMessage = "Service availability could not be checked. Reconnect and refresh trip details.") }
+            updateState {
+                it.copy(
+                    pilotAvailable = false,
+                    pilotServiceMessage = "Service availability could not be verified. Reconnect and refresh.",
+                    ridersAvailable = null,
+                    service24x7 = false,
+                )
+            }
         }
     }
 
@@ -324,6 +350,7 @@ class PassengerViewModel(
     }
 
     fun choosePlace(place: Place) {
+        searchJob?.cancel()
         viewModelScope.launch {
             val current = _uiState.value
             if (current.pickup == null) {
@@ -333,6 +360,8 @@ class PassengerViewModel(
                         mapSelection = null,
                         isResolvingMapSelection = false,
                         searchQuery = "",
+                        nearbyPlaces = emptyList(),
+                        isLoading = false,
                         errorMessage = null,
                     )
                 }
@@ -347,7 +376,7 @@ class PassengerViewModel(
                 val amount = fareCalculator.calculateNgwee(current.pickup, place).also { require(it <= Int.MAX_VALUE) }
                 FareEstimate(fareAmount = amount.toInt(), distanceKm = kilometers)
             }.onSuccess { estimate ->
-                updateState { it.copy(dropoff = place, destination = place.detail, fareEstimate = estimate, screen = PassengerNavScreen.Estimate, searchQuery = "", isLoading = false) }
+                updateState { it.copy(dropoff = place, destination = place.detail, fareEstimate = estimate, screen = PassengerNavScreen.Estimate, searchQuery = "", nearbyPlaces = emptyList(), isLoading = false) }
             }.onFailure { error -> updateState { it.copy(errorMessage = error.message, isLoading = false) } }
         }
     }
@@ -389,15 +418,15 @@ class PassengerViewModel(
     }
 
     fun searchPlaces(query: String) {
-        updateState { it.copy(searchQuery = query) }
         searchJob?.cancel()
         if (query.isBlank()) {
-            updateState { it.copy(nearbyPlaces = emptyList(), isLoading = false) }
+            updateState { it.copy(searchQuery = query, nearbyPlaces = emptyList(), isLoading = false) }
             return
         }
+        updateState { it.copy(searchQuery = query, isLoading = true) }
         searchJob = viewModelScope.launch {
             delay(350)
-            updateState { it.copy(isLoading = true, errorMessage = null) }
+            updateState { it.copy(errorMessage = null) }
             runCatching { tripRepository.searchLocations(query) }
                 .onSuccess { places -> if (_uiState.value.searchQuery == query) updateState { it.copy(nearbyPlaces = places, errorMessage = null, isLoading = false) } }
                 .onFailure { error -> if (_uiState.value.searchQuery == query) updateState { it.copy(nearbyPlaces = emptyList(), errorMessage = error.message ?: "Location search failed.", isLoading = false) } }
@@ -448,6 +477,8 @@ class PassengerViewModel(
         val detail = error.message.orEmpty()
         val text = detail.lowercase()
         return when {
+            text.contains("pilot_unavailable") || text.contains("temporarily paused") ->
+                "New bookings are temporarily paused. Please try again later."
             error is SocketTimeoutException || text.contains("timed out") || text.contains("timeout") ->
                 "Booking response timed out. The app could not confirm the result; refresh trips before retrying."
             error is IOException || text.contains("unable to resolve host") || text.contains("network is unreachable") ->

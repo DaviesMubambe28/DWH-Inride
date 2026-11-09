@@ -7,6 +7,7 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.test.advanceTimeBy
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -44,15 +45,17 @@ class PassengerViewModelTest {
     }
 
     @Test
-    fun `closed pilot cannot create a new trip`() = runTest {
+    fun `passenger booking respects the server operational pause`() = runTest {
         chooseBookingLocations()
         repository.pilotAvailable = false
         viewModel.refreshOnForeground()
         testDispatcher.scheduler.advanceUntilIdle()
         viewModel.requestRide()
         testDispatcher.scheduler.advanceUntilIdle()
+        assertEquals(false, viewModel.uiState.value.pilotAvailable)
+        assertEquals("Service temporarily paused or not configured. Please try again later.", viewModel.uiState.value.pilotServiceMessage)
         assertNull(viewModel.uiState.value.activeTrip)
-        assertEquals("Service currently unavailable", viewModel.uiState.value.errorMessage)
+        assertEquals(viewModel.uiState.value.pilotServiceMessage, viewModel.uiState.value.errorMessage)
     }
 
     @Test
@@ -76,6 +79,39 @@ class PassengerViewModelTest {
     }
 
     @Test
+    fun `location search is debounced and exposes repository results`() = runTest {
+        val result = Place("Chongwe Market", "Great East Road", "1.2 km", -15.33, 28.68)
+        repository.locationSearchResults = listOf(result)
+
+        viewModel.searchPlaces("Chongwe")
+        advanceTimeBy(349)
+        assertNull(repository.lastLocationQuery)
+        advanceTimeBy(1)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals("Chongwe", repository.lastLocationQuery)
+        assertEquals(listOf(result), viewModel.uiState.value.nearbyPlaces)
+    }
+
+    @Test
+    fun `choosing a search result clears search and advances booking`() = runTest {
+        val pickup = Place("Market", "Chongwe Market", "", -15.3292, 28.6820)
+        val destination = Place("Hospital", "Chongwe Hospital", "", -15.3300, 28.6900)
+
+        viewModel.searchPlaces("Market")
+        viewModel.choosePlace(pickup)
+        viewModel.searchPlaces("Hospital")
+        viewModel.choosePlace(destination)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals("", viewModel.uiState.value.searchQuery)
+        assertTrue(viewModel.uiState.value.nearbyPlaces.isEmpty())
+        assertEquals(false, viewModel.uiState.value.isLoading)
+        assertEquals(destination, viewModel.uiState.value.dropoff)
+        assertEquals(PassengerNavScreen.Estimate, viewModel.uiState.value.screen)
+    }
+
+    @Test
     fun `requestRide creates active trip and navigates to Finding`() = runTest {
         chooseBookingLocations()
         viewModel.setPaymentMethod(RidePaymentMethod.Cash)
@@ -84,9 +120,58 @@ class PassengerViewModelTest {
 
         val activeTrip = viewModel.uiState.value.activeTrip
         assertNotNull(activeTrip)
+        assertTrue(viewModel.uiState.value.pilotAvailable)
+        assertTrue(viewModel.uiState.value.pilotServiceMessage.contains("24/7"))
         assertEquals(RidePaymentMethod.Cash, viewModel.uiState.value.paymentMethod)
         assertEquals(PassengerNavScreen.Finding, viewModel.uiState.value.screen)
         assertTrue(activeTrip!!.pin.length == 4)
+    }
+
+    @Test
+    fun `booking remains allowed when service is open but no riders are available`() = runTest {
+        chooseBookingLocations()
+        repository.ridersAvailable = false
+        viewModel.refreshOnForeground()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.pilotAvailable)
+        assertEquals(false, viewModel.uiState.value.ridersAvailable)
+        assertTrue(viewModel.uiState.value.pilotServiceMessage.contains("No riders are currently available"))
+        viewModel.requestRide()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertNotNull(viewModel.uiState.value.activeTrip)
+        assertEquals(PassengerNavScreen.Finding, viewModel.uiState.value.screen)
+    }
+
+    @Test
+    fun `passenger app only advertises 24 7 after backend confirms the policy`() = runTest {
+        repository.service24x7 = false
+        viewModel.refreshOnForeground()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.pilotAvailable)
+        assertEquals(false, viewModel.uiState.value.service24x7)
+        assertTrue(viewModel.uiState.value.pilotServiceMessage.contains("Operating hours are controlled by operations"))
+        assertTrue(!viewModel.uiState.value.pilotServiceMessage.contains("24/7"))
+    }
+
+    @Test
+    fun `service pause clears stale fares and blocks booking`() = runTest {
+        chooseBookingLocations()
+        assertTrue(viewModel.uiState.value.fareEstimate.fareAmount > 0)
+
+        repository.pilotAvailable = false
+        viewModel.refreshOnForeground()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(0, viewModel.uiState.value.fareEstimate.fareAmount)
+        assertEquals(false, viewModel.uiState.value.pilotAvailable)
+        viewModel.requestRide()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertNull(viewModel.uiState.value.activeTrip)
+        assertEquals("Service temporarily paused or not configured. Please try again later.", viewModel.uiState.value.errorMessage)
     }
 
     @Test
@@ -112,6 +197,19 @@ class PassengerViewModelTest {
 
         assertEquals(PassengerNavScreen.Estimate, viewModel.uiState.value.screen)
         assertTrue(viewModel.uiState.value.errorMessage.orEmpty().contains("could not confirm the result"))
+        assertNull(viewModel.uiState.value.activeTrip)
+    }
+
+    @Test
+    fun `booking pause race is reported without showing success`() = runTest {
+        chooseBookingLocations()
+        repository.requestFailure = IllegalStateException("New bookings are temporarily paused or unavailable.")
+
+        viewModel.requestRide()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(PassengerNavScreen.Estimate, viewModel.uiState.value.screen)
+        assertEquals("New bookings are temporarily paused. Please try again later.", viewModel.uiState.value.errorMessage)
         assertNull(viewModel.uiState.value.activeTrip)
     }
 

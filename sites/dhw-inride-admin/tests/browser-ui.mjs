@@ -15,7 +15,7 @@ const user={id:userId,aud:'authenticated',role:'authenticated',email:'operations
 const profiles=[{id:userId,role:'admin',full_name:'Test Operator'}, {id:riderId,role:'rider',full_name:'Test Rider',phone_number:'Fixture phone',approval_status:'pending',is_online:true}, {id:passengerId,role:'passenger',full_name:'Test Passenger'}];
 const trips=['requesting','accepted','arrived','in_progress','completed','cancelled'].map((status,i)=>({id:`fixture-trip-${i}`,passenger_id:passengerId,rider_id:i===0?null:riderId,status,pickup_address:'Chongwe market',dropoff_address:'Chongwe clinic',fare_amount:35,payment_method:'cash',payment_status:'pending',created_at:new Date().toISOString(),completed_at:null}));
 const riderApplications=[{applicant_id:passengerId,status:'pending',motorcycle_make:'Honda',motorcycle_model:'Ace',motorcycle_year:2024,motorcycle_plate:'CHG-001',motorcycle_color:'Blue',driving_licence_number:'DL-001',review_note:null,submitted_at:new Date().toISOString()}];
-let fail=false, delay=1000, allowed=true;
+let fail=false, delay=1000, allowed=true, serviceAvailable=true;
 let cancellationReviews=[{trip_id:'fixture-trip-0',actor_id:passengerId,reason:'passenger_cancelled',late_warning:true,review_required:true,created_at:new Date().toISOString(),reviewed_at:null}];
 const errors=[];
 const context=await browser.newContext();
@@ -26,6 +26,9 @@ await context.route('**/*',async route=>{
  if(delay) await new Promise(r=>setTimeout(r,delay));
  if(url.pathname.includes('/auth/v1/user')) return route.fulfill({json:user});
  if(url.pathname.includes('/storage/v1/object/sign/')) return route.fulfill({json:{signedURL:'/object/sign/rider-documents/fixture/document?token=fixture-only'}});
+ if(url.pathname.endsWith('/rpc/admin_pilot_operations_status')) return route.fulfill({json:{available:serviceAvailable,service_24_7:true,message:serviceAvailable?'Service available 24/7. Rider availability may vary.':'Service temporarily paused or not configured. Please try again later.',online_riders:1,available_riders:serviceAvailable?1:0}});
+ if(url.pathname.endsWith('/rpc/admin_pause_pilot')) { serviceAvailable=false; return route.fulfill({json:true}); }
+ if(url.pathname.endsWith('/rpc/admin_resume_pilot')) { serviceAvailable=true; return route.fulfill({json:true}); }
  if(url.pathname.includes('/rest/v1/')) {
   if(fail) return route.fulfill({status:503,json:{message:'Test service unavailable'}});
   const table=url.pathname.split('/').at(-1);
@@ -63,9 +66,13 @@ for(const width of [320,768,1024,1440]) {
  assert.deepEqual(axe.violations.map(v=>({id:v.id,impact:v.impact,nodes:v.nodes.map(n=>n.target)})),[],`axe at ${width}`);
  await page.screenshot({path:`${artifactDir}/dashboard-${width}.png`,fullPage:true});
 }
-page.once('dialog', dialog=>dialog.accept());
-await page.getByRole('button',{name:'Pause new bookings'}).click();
-await page.getByText('New pilot bookings are paused. Continue supporting active trips.').waitFor();
+ await page.getByText('Approved riders online: 1 · Available for dispatch now: 1').waitFor();
+ page.once('dialog', dialog=>dialog.accept());
+ await page.getByRole('button',{name:'Pause new bookings'}).click();
+ await page.getByText('New bookings are paused. Existing active trips can still finish.').waitFor();
+ await page.once('dialog', dialog=>dialog.accept());
+ await page.getByRole('button',{name:'Resume new bookings'}).click();
+ await page.getByText('New bookings are open 24/7. Rider availability may vary.').waitFor();
 await page.getByRole('button',{name:'Pending verification · 2'}).click();
 await page.getByRole('heading',{name:'Rider verification',exact:true}).waitFor();
 await page.getByRole('heading',{name:'Self-registered rider applications',exact:true}).waitFor();

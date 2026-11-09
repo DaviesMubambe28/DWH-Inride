@@ -6,4 +6,4 @@
 export const releases = { passenger: null, rider: null };
 // The admin app root handles sign-in and profile-role checking.
 // Set only to its confirmed live HTTPS address; no guessed /login route.
-export const adminUrl = null;
+export const adminUrl = "https://dwh-inride-admin.devkasaka.workers.dev/";
