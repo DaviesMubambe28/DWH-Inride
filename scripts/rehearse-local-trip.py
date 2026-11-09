@@ -95,8 +95,21 @@ def main():
             return
         quoted = ",".join("'" + str(uuid.UUID(identity)) + "'" for identity in identities)
         # Each condition is restricted to newly generated synthetic IDs.
-        sql("begin; delete from private.push_outbox where trip_id in (select id from public.trips where passenger_id in (" + quoted + "));"
-            "delete from public.pilot_cancellation_reviews where actor_id in (" + quoted + ");"
+        sql("begin; select set_config('app.service_fee_write_authorized', 'true', true);"
+            "delete from private.push_outbox where trip_id in (select id from public.trips where passenger_id in (" + quoted + "));"
+            "delete from private.service_fee_payment_audit where actor_id in (" + quoted + ") or payment_id in "
+            "(select id from public.rider_service_fee_payments where rider_id in (" + quoted + ") or reviewed_by in (" + quoted + "));"
+            "delete from public.rider_service_fee_ledger where rider_id in (" + quoted + ") or trip_id in "
+            "(select id from public.trips where passenger_id in (" + quoted + "));"
+            "delete from public.rider_service_fee_payments where rider_id in (" + quoted + ") or reviewed_by in (" + quoted + ");"
+            "delete from private.incident_audit where actor_id in (" + quoted + ") or incident_id in "
+            "(select id from public.incidents where trip_id in (select id from public.trips where passenger_id in (" + quoted + ")) "
+            "or reporter_id in (" + quoted + ") or recorded_by in (" + quoted + ") or assigned_admin_id in (" + quoted + "));"
+            "delete from public.incidents where trip_id in (select id from public.trips where passenger_id in (" + quoted + ")) "
+            "or reporter_id in (" + quoted + ") or recorded_by in (" + quoted + ") or assigned_admin_id in (" + quoted + ");"
+            "delete from public.pilot_cancellation_reviews where actor_id in (" + quoted + ") or reviewed_by in (" + quoted + ") "
+            "or trip_id in (select id from public.trips where passenger_id in (" + quoted + "));"
+            "delete from private.fare_quotes where passenger_id in (" + quoted + ");"
             "delete from public.trips where passenger_id in (" + quoted + ");"
             "delete from private.pilot_operations_audit where actor_id in (" + quoted + ") or subject_id in (" + quoted + ");"
             "delete from private.pilot_rider_checks where rider_id in (" + quoted + ") or reviewed_by in (" + quoted + ");"
@@ -104,6 +117,12 @@ def main():
             "delete from public.profiles where id in (" + quoted + ");commit;")
         for identity in identities:
             request("/auth/v1/admin/users/" + identity, token=config["SERVICE_ROLE_KEY"], method="DELETE", expected=(200, 204))
+        remaining = sql(
+            "select count(*) from public.profiles where id in (" + quoted + ") "
+            "union all select count(*) from auth.users where id in (" + quoted + ")"
+        ).splitlines()
+        if remaining != ["0", "0"]:
+            raise RuntimeError("Local synthetic fixture cleanup did not remove every generated identity")
 
     if args.cleanup_browser_fixture:
         fixture = json.loads(args.cleanup_browser_fixture.read_text())

@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(28);
+select plan(30);
 
 select has_table('private', 'pilot_pricing_versions', 'versioned pricing configuration exists');
 select has_table('private', 'fare_quotes', 'private fare quote storage exists');
@@ -84,6 +84,18 @@ select throws_ok(
   $$select * from public.accept_fare_quote((select quote_id from quote_record), '74100000-0000-0000-0000-000000000002')$$,
   '23505', 'fare quote has already been accepted', 'a different idempotency key cannot duplicate the trip'
 );
+reset role;
+select lives_ok(
+  $$delete from public.trips where id = (select trip_id from accepted_trip)$$,
+  'retention can remove an accepted trip without a fare-quote foreign-key deadlock'
+);
+select is(
+  (select accepted_trip_id from private.fare_quotes where id = (select quote_id from quote_record)),
+  null::uuid,
+  'deleting a retained trip detaches its quote while preserving the pricing record'
+);
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '74000000-0000-0000-0000-000000000001', true);
 select throws_ok($$select public.admin_get_pilot_pricing()$$,
   '42501', 'admin access required', 'passenger cannot read protected pricing administration');
 select throws_ok($$select public.admin_update_pilot_pricing('DISTANCE_TIME', 10, 2, 1, 15, 0, true)$$,
