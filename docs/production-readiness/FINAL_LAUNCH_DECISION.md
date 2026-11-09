@@ -1,7 +1,7 @@
 # Final launch decision
 
 - Date: 10 November 2026
-- Evidence source: `8211642` plus `evidence/readiness-continuation-20261109/`
+- Evidence source: `6306ca4` plus `evidence/readiness-continuation-20261109/`
 - Score: **5.0/10**
 - Decision: **NOT READY**
 

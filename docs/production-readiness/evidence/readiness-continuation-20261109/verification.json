@@ -1,6 +1,6 @@
 {
-  "source_commit": "8211642cac3fa1071f82a39f970a383f15a5823d",
-  "captured_at_utc": "2026-11-09T22:19:42Z",
+  "source_commit": "6306ca4a0a3c4141cd3ec524088503edc198143b",
+  "captured_at_utc": "2026-11-09T22:29:59Z",
   "readiness_score": 5.0,
   "verdict": "NOT READY",
   "hosted_project": "vhckkmzyabbsbgjuhjmq",
@@ -41,5 +41,21 @@
   ],
   "hosted_mutations": 0,
   "production_actions": 0,
-  "backup_restore_gate": "BLOCKED"
+  "backup_restore_gate": "BLOCKED",
+  "android_core_tests": {
+    "tests": 81,
+    "failures": 0,
+    "result": "PASS"
+  },
+  "edge_function_checks": {
+    "node_test_files": 5,
+    "deno_request_trip_check": "PASS",
+    "result": "PASS"
+  },
+  "unsupported_pricing_mode_guard": {
+    "android_blocks_booking": true,
+    "request_handler_blocks_booking": true,
+    "sanitized_monitoring_event": "unsupported_pricing_mode",
+    "dynamic_pricing_launch_ready": false
+  }
 }
