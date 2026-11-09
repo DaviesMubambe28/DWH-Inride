@@ -2,11 +2,13 @@ package zm.co.dhwinride.core.data
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import zm.co.dhwinride.core.model.FareEstimate
 import zm.co.dhwinride.core.model.PassengerProfile
 import zm.co.dhwinride.core.model.RidePaymentMethod
 import zm.co.dhwinride.core.model.RiderEarnings
 import zm.co.dhwinride.core.model.RiderProfile
+import zm.co.dhwinride.core.model.RiderServiceFeeAccount
 import zm.co.dhwinride.core.model.Trip
 import zm.co.dhwinride.core.model.Place
 import zm.co.dhwinride.core.model.TripLocation
@@ -60,6 +62,13 @@ interface TripRepository {
         throw IntegrationRequiredException("Rider location recording is not configured.")
     }
     suspend fun getLatestRiderLocation(tripId: String): TripLocation? = null
+    suspend fun getRiderServiceFeeAccount(): RiderServiceFeeAccount {
+        throw IntegrationRequiredException("Rider service-fee account is not configured.")
+    }
+    fun observeRiderServiceFeeAccount(): Flow<RiderServiceFeeAccount> = flow { emit(getRiderServiceFeeAccount()) }
+    suspend fun submitRiderServiceFeePayment(amountNgwee: Int, transactionReference: String) {
+        throw IntegrationRequiredException("Rider service-fee payment submission is not configured.")
+    }
 }
 
 private suspend fun <T> Flow<T>.firstOrNullValue(): T = first()

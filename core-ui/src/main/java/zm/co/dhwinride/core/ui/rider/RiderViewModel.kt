@@ -17,9 +17,12 @@ import zm.co.dhwinride.core.data.TripRepository
 import zm.co.dhwinride.core.data.AuthRepository
 import zm.co.dhwinride.core.model.RiderEarnings
 import zm.co.dhwinride.core.model.RiderProfile
+import zm.co.dhwinride.core.model.RiderServiceFeeAccount
 import zm.co.dhwinride.core.model.Trip
 import zm.co.dhwinride.core.model.TripStatus
 import zm.co.dhwinride.core.location.LocationTracker
+import java.math.BigDecimal
+import java.math.RoundingMode
 
 enum class RiderNavScreen {
     Home, Request, Pickup, Arrival, Pin, ActiveTrip, Complete, Cash,
@@ -43,6 +46,10 @@ data class RiderUiState(
     val acceptingTripId: String? = null,
     val cancellingTrip: Boolean = false,
     val verifyingPin: Boolean = false,
+    val serviceFeeAccount: RiderServiceFeeAccount = RiderServiceFeeAccount(),
+    val serviceFeeLoading: Boolean = false,
+    val serviceFeeSubmitting: Boolean = false,
+    val serviceFeeMessage: String? = null,
 )
 
 class RiderViewModel(
@@ -55,6 +62,7 @@ class RiderViewModel(
 
     private var requestFeedJob: Job? = null
     private var locationUpdateJob: Job? = null
+    private var serviceFeeJob: Job? = null
 
     private val _uiState = MutableStateFlow(restoreState())
     val uiState: StateFlow<RiderUiState> = _uiState.asStateFlow()
@@ -69,6 +77,7 @@ class RiderViewModel(
                             val submittedDocuments = riderRepository.refreshRiderDocuments()
                             updateState { it.copy(submittedDocuments = submittedDocuments) }
                             tripRepository.getAvailableTripsForRider().getOrThrow()
+                            startServiceFeeFeed()
                         } catch (error: Throwable) {
                             updateState { it.copy(errorMessage = error.message ?: "Could not restore rider trips.") }
                         }
@@ -166,6 +175,21 @@ class RiderViewModel(
         }
     }
 
+    private fun startServiceFeeFeed() {
+        serviceFeeJob?.cancel()
+        serviceFeeJob = viewModelScope.launch {
+            try {
+                tripRepository.observeRiderServiceFeeAccount().collect { account ->
+                    updateState { it.copy(serviceFeeAccount = account, serviceFeeLoading = false, errorMessage = null) }
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                refreshServiceFeeAccount()
+            }
+        }
+    }
+
     private fun restoreState(): RiderUiState {
         // Scrub legacy saved-state credentials; a pickup PIN must remain memory-only.
         savedStateHandle.remove<String>("rider.pinInput")
@@ -199,7 +223,7 @@ class RiderViewModel(
     fun refreshOnForeground() {
         viewModelScope.launch {
             runCatching { riderRepository.refreshRiderState(); tripRepository.refreshRiderTrips() }
-                .onSuccess { syncRiderLocation(_uiState.value.activeTrip) }
+                .onSuccess { syncRiderLocation(_uiState.value.activeTrip); refreshServiceFeeAccount() }
                 .onFailure { error -> updateState { it.copy(availableRequests = emptyList(), errorMessage = error.message ?: "Could not refresh ride requests.") } }
         }
     }
@@ -317,7 +341,7 @@ class RiderViewModel(
         viewModelScope.launch {
             val tripId = _uiState.value.activeTrip?.id ?: return@launch
             runCatching { tripRepository.completeTrip(tripId) }
-                .onSuccess { updateState { it.copy(screen = RiderNavScreen.Complete, errorMessage = null) } }
+                .onSuccess { updateState { it.copy(screen = RiderNavScreen.Complete, errorMessage = null) }; refreshServiceFeeAccount() }
                 .onFailure { error -> updateState { it.copy(errorMessage = error.message ?: "The server could not complete this trip.") } }
         }
     }
@@ -330,8 +354,42 @@ class RiderViewModel(
         viewModelScope.launch {
             val tripId = _uiState.value.activeTrip?.id ?: return@launch
             runCatching { tripRepository.confirmRiderPayment(tripId) }
-                .onSuccess { updateState { it.copy(screen = RiderNavScreen.Earnings, paymentReceived = false, errorMessage = null) } }
+                .onSuccess { updateState { it.copy(screen = RiderNavScreen.Earnings, paymentReceived = false, errorMessage = null) }; refreshServiceFeeAccount() }
                 .onFailure { error -> updateState { it.copy(errorMessage = error.message ?: "Payment confirmation could not be saved.") } }
+        }
+    }
+
+    fun refreshServiceFeeAccount() {
+        if (_uiState.value.serviceFeeLoading) return
+        updateState { it.copy(serviceFeeLoading = true) }
+        viewModelScope.launch {
+            runCatching { tripRepository.getRiderServiceFeeAccount() }
+                .onSuccess { account -> updateState { it.copy(serviceFeeAccount = account, serviceFeeLoading = false, errorMessage = null) } }
+                .onFailure { error -> updateState { it.copy(serviceFeeLoading = false, errorMessage = error.message ?: "Could not refresh service-fee balance.") } }
+        }
+    }
+
+    fun submitServiceFeePayment(amountText: String, transactionReference: String) {
+        if (_uiState.value.serviceFeeSubmitting) return
+        val amountNgwee = runCatching {
+            BigDecimal(amountText.trim()).setScale(2, RoundingMode.UNNECESSARY).movePointRight(2).intValueExact()
+        }.getOrNull()
+        if (amountNgwee == null || amountNgwee <= 0) {
+            updateState { it.copy(errorMessage = "Enter a valid ZMW amount with no more than two decimal places.") }
+            return
+        }
+        if (transactionReference.trim().length !in 4..120) {
+            updateState { it.copy(errorMessage = "Enter the mobile-money transaction reference.") }
+            return
+        }
+        updateState { it.copy(serviceFeeSubmitting = true, serviceFeeMessage = null, errorMessage = null) }
+        viewModelScope.launch {
+            runCatching { tripRepository.submitRiderServiceFeePayment(amountNgwee, transactionReference) }
+                .onSuccess {
+                    updateState { it.copy(serviceFeeSubmitting = false, serviceFeeMessage = "Payment submitted for administrator verification. Your balance changes only after verification.") }
+                    refreshServiceFeeAccount()
+                }
+                .onFailure { error -> updateState { it.copy(serviceFeeSubmitting = false, errorMessage = error.message ?: "Payment submission could not be saved.") } }
         }
     }
 

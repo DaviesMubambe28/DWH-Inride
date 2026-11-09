@@ -336,7 +336,10 @@ private fun EstimateScreen(
                     Text("K${formatZmw(zm.co.dhwinride.core.domain.PilotPolicy.FARE_NGWEE)}", color = DhwOrange, fontWeight = FontWeight.Black, fontSize = 25.sp)
                 }
                 ListDivider()
-                Text("Cash only. ZMW 20 total for any eligible trip within the approved 4 km zone. Distance and duration do not change the fare.", color = DhwMuted, fontSize = 12.sp)
+                InfoRow("Ride fare you pay rider", "K${formatZmw(zm.co.dhwinride.core.domain.PilotPolicy.FARE_NGWEE)}", DhwOrange)
+                InfoRow("Rider's platform fee", "K${formatZmw(zm.co.dhwinride.core.domain.PilotPolicy.SERVICE_FEE_NGWEE)}")
+                InfoRow("Rider net after fee", "K${formatZmw(zm.co.dhwinride.core.domain.PilotPolicy.RIDER_NET_NGWEE)}", DhwGreen)
+                Text("Cash only. The service fee is included in the ZMW 20 fare and is owed by the rider after the trip. It is not added to your payment.", color = DhwMuted, fontSize = 12.sp)
                 Text("Payment after arrival", fontWeight = FontWeight.Bold)
                 listOf(RidePaymentMethod.Cash).forEach { method ->
                     Surface(
@@ -424,7 +427,9 @@ private fun ConfirmedScreen(activeTrip: Trip?, onTrack: () -> Unit, onCancel: ()
                     }
                     StatusPill("Confirmed")
                 }
-                InfoRow("Total fare", "K${formatZmw(activeTrip?.fare?.fareAmount ?: 0)}")
+                InfoRow("Ride fare you pay rider", "K${formatZmw(activeTrip?.fare?.fareAmount ?: 0)}")
+                InfoRow("Rider's platform fee", "K${formatZmw(activeTrip?.fare?.serviceFee ?: 0)}")
+                Text("The platform fee is owed by the rider and is already included in the fare. It is not an extra passenger charge.", color = DhwMuted, fontSize = 12.sp)
                 Text("Check rider and motorcycle details before boarding.", color = DhwMuted, fontSize = 12.sp)
             }
             PrimaryButton("Live tracking", onTrack)
@@ -527,8 +532,9 @@ private fun ReceiptScreen(
             InfoRow("To", activeTrip?.destination ?: "Destination")
             InfoRow("Distance", "${fare.distanceKm} km")
             ListDivider()
-            InfoRow("Driver fare", "K${formatZmw(fare.driverFare)}")
-            InfoRow("Service fee", "K${formatZmw(fare.serviceFee)}")
+            InfoRow("Ride fare paid to rider", "K${formatZmw(fare.fareAmount)}")
+            InfoRow("Platform fee rider owes", "K${formatZmw(fare.serviceFee)}")
+            InfoRow("Rider net after fee", "K${formatZmw(fare.driverFare)}")
             InfoRow("Payment method", paymentMethod.title)
             InfoRow(if (markedPaid) "Payment sent" else "Amount to pay", "K${formatZmw(fare.fareAmount)}", if (markedPaid) DhwGreen else DhwOrange)
         }

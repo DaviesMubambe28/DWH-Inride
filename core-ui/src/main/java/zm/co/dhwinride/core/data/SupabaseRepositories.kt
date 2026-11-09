@@ -29,6 +29,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -153,6 +154,30 @@ private data class DbTrip(
 
 @Serializable
 private data class DbPilotServiceStatus(val available: Boolean, val message: String)
+
+@Serializable
+private data class DbServiceFeePayment(
+    val id: String,
+    @SerialName("amount_zmw") val amountZmw: Double,
+    @SerialName("transaction_reference") val transactionReference: String,
+    val status: String,
+    @SerialName("submitted_at") val submittedAt: String,
+    @SerialName("reviewed_at") val reviewedAt: String? = null,
+    @SerialName("admin_note") val adminNote: String? = null,
+)
+
+@Serializable
+private data class DbServiceFeeAccount(
+    @SerialName("completed_trips") val completedTrips: Int,
+    @SerialName("total_ride_fare_zmw") val totalRideFareZmw: Double,
+    @SerialName("total_fees_zmw") val totalFeesZmw: Double,
+    @SerialName("total_paid_zmw") val totalPaidZmw: Double,
+    @SerialName("outstanding_zmw") val outstandingZmw: Double,
+    @SerialName("payment_method") val paymentMethod: String? = null,
+    @SerialName("payment_recipient") val paymentRecipient: String? = null,
+    @SerialName("payment_instructions") val paymentInstructions: String? = null,
+    val payments: List<DbServiceFeePayment> = emptyList(),
+)
 
 @Serializable
 private data class DbTripLocation(
@@ -610,6 +635,59 @@ class SupabaseTripRepository(
         }.decodeList<DbTripLocation>().firstOrNull()?.let { row ->
             TripLocation(row.tripId, row.riderId, row.lat, row.lng, row.recordedAt)
         }
+    }
+
+    override suspend fun getRiderServiceFeeAccount(): zm.co.dhwinride.core.model.RiderServiceFeeAccount {
+        val account = client.postgrest.rpc("get_my_service_fee_account").decodeAs<DbServiceFeeAccount>()
+        return zm.co.dhwinride.core.model.RiderServiceFeeAccount(
+            completedTrips = account.completedTrips,
+            totalRideFare = toNgwee(account.totalRideFareZmw),
+            totalFees = toNgwee(account.totalFeesZmw),
+            totalPaid = toNgwee(account.totalPaidZmw),
+            outstanding = toNgwee(account.outstandingZmw),
+            paymentMethod = account.paymentMethod,
+            paymentRecipient = account.paymentRecipient,
+            paymentInstructions = account.paymentInstructions,
+            payments = account.payments.map { payment ->
+                zm.co.dhwinride.core.model.RiderServiceFeePayment(
+                    id = payment.id,
+                    amount = toNgwee(payment.amountZmw),
+                    transactionReference = payment.transactionReference,
+                    status = when (payment.status) {
+                        "pending_verification" -> zm.co.dhwinride.core.model.ServiceFeePaymentStatus.PendingVerification
+                        "verified" -> zm.co.dhwinride.core.model.ServiceFeePaymentStatus.Verified
+                        "rejected" -> zm.co.dhwinride.core.model.ServiceFeePaymentStatus.Rejected
+                        else -> error("Unknown service-fee payment status: ${payment.status}")
+                    },
+                    submittedAt = payment.submittedAt,
+                    reviewedAt = payment.reviewedAt,
+                    adminNote = payment.adminNote,
+                )
+            },
+        )
+    }
+
+    override fun observeRiderServiceFeeAccount(): Flow<zm.co.dhwinride.core.model.RiderServiceFeeAccount> = flow {
+        val channel = client.channel("rider-service-fees")
+        val ledgerChanges = channel.postgresChangeFlow<PostgresAction>(schema = "public") { table = "rider_service_fee_ledger" }
+        val paymentChanges = channel.postgresChangeFlow<PostgresAction>(schema = "public") { table = "rider_service_fee_payments" }
+        try {
+            channel.subscribe(blockUntilSubscribed = true)
+            emit(getRiderServiceFeeAccount())
+            merge(ledgerChanges, paymentChanges).collect { emit(getRiderServiceFeeAccount()) }
+        } finally {
+            client.realtime.removeChannel(channel)
+        }
+    }
+
+    override suspend fun submitRiderServiceFeePayment(amountNgwee: Int, transactionReference: String) {
+        require(amountNgwee > 0) { "Enter a payment amount greater than zero." }
+        require(transactionReference.trim().length in 4..120) { "Enter the mobile-money transaction reference." }
+        client.postgrest.rpc("submit_service_fee_payment", buildJsonObject {
+            put("p_amount_zmw", amountNgwee / 100.0)
+            put("p_transaction_reference", transactionReference.trim())
+            put("p_proof_storage_path", "")
+        }).decodeAs<String>()
     }
 
     private fun Place.isValidLocation() = latitude.isFinite() && longitude.isFinite() &&
