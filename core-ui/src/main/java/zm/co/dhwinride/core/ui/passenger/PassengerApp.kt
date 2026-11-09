@@ -253,6 +253,8 @@ fun PassengerApp(viewModel: PassengerViewModel, authRepository: AuthRepository) 
                         selectedPayment = uiState.paymentMethod,
                         isLoading = uiState.isLoading,
                         hasSelectedLocations = uiState.pickup != null && uiState.dropoff != null,
+                        pilotAvailable = uiState.pilotAvailable,
+                        serviceMessage = uiState.pilotServiceMessage,
                         onPaymentSelected = { viewModel.setPaymentMethod(it) },
                         onBook = { viewModel.requestRide() },
                     )
@@ -316,9 +318,13 @@ private fun EstimateScreen(
     selectedPayment: RidePaymentMethod,
     isLoading: Boolean,
     hasSelectedLocations: Boolean,
+    pilotAvailable: Boolean,
+    serviceMessage: String,
     onPaymentSelected: (RidePaymentMethod) -> Unit,
     onBook: () -> Unit,
 ) {
+    val fareText = if (pilotAvailable) "K${formatZmw(zm.co.dhwinride.core.domain.PilotPolicy.FARE_NGWEE)}" else "Unavailable"
+    val isBookEnabled = pilotAvailable && hasSelectedLocations && !isLoading
     Column(Modifier.fillMaxSize()) {
         TripMap(
             trip = Trip(pickupLocation = pickup?.name ?: "Pickup", destination = destination,
@@ -333,14 +339,23 @@ private fun EstimateScreen(
                         Text("Boda ride", fontWeight = FontWeight.Black, fontSize = 18.sp)
                         Text("ZMW 20 flat pilot fare", color = DhwMuted)
                     }
-                    Text("K${formatZmw(zm.co.dhwinride.core.domain.PilotPolicy.FARE_NGWEE)}", color = DhwOrange, fontWeight = FontWeight.Black, fontSize = 25.sp)
+                    Text(fareText, color = if (pilotAvailable) DhwOrange else DhwMuted, fontWeight = FontWeight.Black, fontSize = 25.sp)
                 }
                 ListDivider()
-                Text("Cash only. ZMW 20 total for any eligible trip within the approved 4 km zone. Distance and duration do not change the fare.", color = DhwMuted, fontSize = 12.sp)
+                Text(
+                    if (pilotAvailable) "Cash only. ZMW 20 total for any eligible trip within the approved 4 km zone. Distance and duration do not change the fare." else serviceMessage,
+                    color = if (pilotAvailable) DhwMuted else DhwBlue,
+                    fontSize = 12.sp,
+                )
                 Text("Payment after arrival", fontWeight = FontWeight.Bold)
                 listOf(RidePaymentMethod.Cash).forEach { method ->
                     Surface(
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).selectable(selected = method == selectedPayment, role = Role.RadioButton, onClick = { onPaymentSelected(method) }),
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).selectable(
+                            selected = method == selectedPayment,
+                            enabled = pilotAvailable,
+                            role = Role.RadioButton,
+                            onClick = { onPaymentSelected(method) },
+                        ),
                         color = if (selectedPayment == method) DhwOrange.copy(alpha = .12f) else DhwSurface,
                         shape = RoundedCornerShape(14.dp),
                     ) {
@@ -358,7 +373,7 @@ private fun EstimateScreen(
                         }
                     }
                 }
-                if (selectedPayment == RidePaymentMethod.MobileMoney) {
+                if (selectedPayment == RidePaymentMethod.MobileMoney && pilotAvailable) {
                     Text(
                         "Send K${formatZmw(zm.co.dhwinride.core.domain.PilotPolicy.FARE_NGWEE)} directly to the rider using your mobile-money app or USSD after arrival.",
                         color = DhwBlue,
@@ -367,9 +382,9 @@ private fun EstimateScreen(
                 }
             }
             PrimaryButton(
-                if (isLoading) "Requesting ride…" else "Request rider • K${formatZmw(zm.co.dhwinride.core.domain.PilotPolicy.FARE_NGWEE)}",
+                if (isLoading) "Requesting ride…" else if (pilotAvailable) "Request rider • K${formatZmw(zm.co.dhwinride.core.domain.PilotPolicy.FARE_NGWEE)}" else "Service unavailable",
                 onBook,
-                enabled = hasSelectedLocations && !isLoading,
+                enabled = isBookEnabled,
             )
         }
     }

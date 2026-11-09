@@ -220,12 +220,14 @@ class PassengerViewModel(
                     "Service available 24/7. No riders are currently available; requests may remain pending."
                 else -> "Service available 24/7. Rider availability may vary."
             }
-            updateState {
-                it.copy(
+            updateState { current ->
+                current.copy(
                     pilotAvailable = status.available,
                     pilotServiceMessage = message,
                     ridersAvailable = status.ridersAvailable,
                     service24x7 = status.service24x7,
+                    fareEstimate = if (status.available) current.fareEstimate else FareEstimate(),
+                    errorMessage = if (status.available) current.errorMessage else null,
                 )
             }
         } catch (cancelled: CancellationException) {

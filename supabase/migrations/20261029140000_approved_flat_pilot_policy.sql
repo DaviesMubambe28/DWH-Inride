@@ -4,8 +4,8 @@ begin;
 alter table private.pilot_service_settings add column support_secondary_phone text;
 update private.pilot_service_settings set enabled = false,
   center_latitude = -15.3292, center_longitude = 28.6820, radius_km = 4.0,
-  support_phone = '+260971793185', support_secondary_phone = '+260761741656',
-  support_email = 'garumitech@gmail.com', fare_policy_approved = true,
+  support_phone = '+260770001203', support_secondary_phone = '+260975461121',
+  support_email = 'gershmukuka1@gmail.com', fare_policy_approved = true,
   cancellation_policy_approved = true where singleton;
 
 create or replace function private.calculate_trip_financials(p_distance_meters integer, p_duration_seconds integer)
@@ -22,7 +22,7 @@ returns jsonb language sql stable security definer set search_path = '' as $$
       else 'Service currently unavailable. Pilot hours are 06:00–20:00 CAT, Monday–Saturday.' end,
     'cash_only', true, 'fare_zmw', 20,
     'center_latitude', -15.3292, 'center_longitude', 28.6820, 'radius_km', 4.0,
-    'support_phone', '+260971793185', 'support_secondary_phone', '+260761741656',
-    'support_email', 'garumitech@gmail.com')
+    'support_phone', '+260770001203', 'support_secondary_phone', '+260975461121',
+    'support_email', 'gershmukuka1@gmail.com')
 $$;
 commit;

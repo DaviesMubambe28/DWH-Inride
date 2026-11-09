@@ -60,6 +60,7 @@ import zm.co.dhwinride.core.model.Trip
 import zm.co.dhwinride.core.model.TripStatus
 import zm.co.dhwinride.core.model.TripLocation
 import zm.co.dhwinride.core.model.PilotServiceStatus
+import zm.co.dhwinride.core.model.PricingMode
 import zm.co.dhwinride.core.domain.FareCalculator
 import zm.co.dhwinride.core.push.FcmTokenRegistrar
 
@@ -157,6 +158,8 @@ private data class DbPilotServiceStatus(
     val message: String,
     @SerialName("riders_available") val ridersAvailable: Boolean? = null,
     @SerialName("service_24_7") val service24x7: Boolean = false,
+    @SerialName("pricing_mode") val pricingMode: String? = null,
+    @SerialName("minimum_fare_zmw") val minimumFareZmw: Int? = null,
 )
 
 @Serializable
@@ -583,7 +586,14 @@ class SupabaseTripRepository(
 
     override suspend fun getPilotServiceStatus(): PilotServiceStatus {
         val status = client.postgrest.rpc("pilot_service_status").decodeAs<DbPilotServiceStatus>()
-        return PilotServiceStatus(status.available, status.message, status.ridersAvailable, status.service24x7)
+        return PilotServiceStatus(
+            available = status.available,
+            message = status.message,
+            ridersAvailable = status.ridersAvailable,
+            service24x7 = status.service24x7,
+            pricingMode = PricingMode.fromServer(status.pricingMode),
+            minimumFareZmw = status.minimumFareZmw ?: 2000,
+        )
     }
 
     override suspend fun recordRiderAvailability(latitude: Double, longitude: Double) {

@@ -157,6 +157,24 @@ class PassengerViewModelTest {
     }
 
     @Test
+    fun `service pause clears stale fares and blocks booking`() = runTest {
+        chooseBookingLocations()
+        assertTrue(viewModel.uiState.value.fareEstimate.fareAmount > 0)
+
+        repository.pilotAvailable = false
+        viewModel.refreshOnForeground()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(0, viewModel.uiState.value.fareEstimate.fareAmount)
+        assertEquals(false, viewModel.uiState.value.pilotAvailable)
+        viewModel.requestRide()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertNull(viewModel.uiState.value.activeTrip)
+        assertEquals("Service temporarily paused or not configured. Please try again later.", viewModel.uiState.value.errorMessage)
+    }
+
+    @Test
     fun `outside pilot area cannot create a trip`() = runTest {
         chooseBookingLocations()
         viewModel.choosePlace(Place("Outside destination", "Outside address", "", -15.2, 28.7))
