@@ -67,9 +67,9 @@ select * from public.create_routed_trip(
 );
 reset role;
 
-select is((select fare_amount from public.trips limit 1), 20.00::numeric, 'fare formula is server authoritative');
-select is((select service_fee from public.trips limit 1), 3.00::numeric, 'platform commission is 15 percent');
-select is((select driver_fare from public.trips limit 1), 17.00::numeric, 'driver fare is net of commission');
+select is((select fare_amount from public.trips limit 1), (select fare_amount from private.calculate_trip_financials(4000,600)), 'official dynamic fare is server authoritative');
+select is((select service_fee from public.trips limit 1), (select service_fee from private.calculate_trip_financials(4000,600)), 'platform commission is 15 percent');
+select is((select driver_fare from public.trips limit 1), (select driver_fare from private.calculate_trip_financials(4000,600)), 'driver fare is net of commission');
 select matches((select pin from private.trip_pickup_pins limit 1), '^[0-9]{4}$', 'pickup PIN has four numeric digits');
 
 set local role authenticated;

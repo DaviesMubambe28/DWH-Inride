@@ -30,23 +30,25 @@ insert into public.trips(id, passenger_id, rider_id, status, pickup_lat, pickup_
 values
   ('73100000-0000-0000-0000-000000000001', '73000000-0000-0000-0000-000000000001', '73000000-0000-0000-0000-000000000002', 'in_progress', -15.3, 28.6, 'A', -15.4, 28.7, 'B', 4000, 600, 'cash', now()),
   ('73100000-0000-0000-0000-000000000002', '73000000-0000-0000-0000-000000000004', '73000000-0000-0000-0000-000000000002', 'in_progress', -15.3, 28.6, 'A', -15.4, 28.7, 'B', 4000, 600, 'cash', now());
+create temporary table expected_service_fee as select service_fee from private.calculate_trip_financials(4000,600);
+grant select on expected_service_fee to authenticated;
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '73000000-0000-0000-0000-000000000002', true);
 select ok(public.complete_trip('73100000-0000-0000-0000-000000000001'), 'first completion succeeds');
 select is((select count(*) from public.rider_service_fee_ledger), 1::bigint, 'completion creates exactly one charge');
-select is((select amount_zmw from public.rider_service_fee_ledger), 3.00::numeric, 'charge uses server-calculated trip service fee');
+select is((select amount_zmw from public.rider_service_fee_ledger), (select service_fee from expected_service_fee), 'charge uses server-calculated trip service fee');
 select is(public.complete_trip('73100000-0000-0000-0000-000000000001'), false, 'repeated completion is idempotently rejected');
 select is((select count(*) from public.rider_service_fee_ledger), 1::bigint, 'repeated completion cannot duplicate charge');
 select ok(public.complete_trip('73100000-0000-0000-0000-000000000002'), 'second completion succeeds');
-select is((public.get_my_service_fee_account()->>'outstanding_zmw')::numeric, 6.00::numeric, 'multiple trip fees accumulate');
+select is((public.get_my_service_fee_account()->>'outstanding_zmw')::numeric, (select service_fee * 2 from expected_service_fee), 'multiple trip fees accumulate');
 
 create temporary table partial_payment as select public.submit_service_fee_payment(2.00, 'FEE-PARTIAL-001', null) as id;
 grant select on partial_payment to authenticated;
 select throws_ok($$select public.submit_service_fee_payment(1.00, 'FEE-PARTIAL-001', null)$$,
   '23505', null, 'duplicate rider transaction reference is rejected');
 select is((select status from public.rider_service_fee_payments where id = (select id from partial_payment)), 'pending_verification', 'submission remains pending and does not clear balance');
-select is((public.get_my_service_fee_account()->>'outstanding_zmw')::numeric, 6.00::numeric, 'unverified submission leaves balance unchanged');
+select is((public.get_my_service_fee_account()->>'outstanding_zmw')::numeric, (select service_fee * 2 from expected_service_fee), 'unverified submission leaves balance unchanged');
 select throws_ok($$select public.admin_review_service_fee_payment((select id from partial_payment), 'verified', 'rider self approval')$$,
   '42501', null, 'rider cannot verify own payment');
 select throws_ok($$select public.admin_update_service_fee_payment_config('Fake', '0000', 'Rider supplied destination')$$,
@@ -54,7 +56,7 @@ select throws_ok($$select public.admin_update_service_fee_payment_config('Fake',
 
 select set_config('request.jwt.claim.sub', '73000000-0000-0000-0000-000000000003', true);
 select ok(public.admin_update_service_fee_payment_config('MTN MoMo', '+260000000000', 'Send the exact amount and use the displayed reference.'), 'admin configures payment destination');
-select is((public.admin_review_service_fee_payment((select id from partial_payment), 'verified', 'Matched operator statement')->>'remaining_outstanding_zmw')::numeric, 4.00::numeric, 'partial verified payment only reduces its amount');
+select is((public.admin_review_service_fee_payment((select id from partial_payment), 'verified', 'Matched operator statement')->>'remaining_outstanding_zmw')::numeric, (select service_fee * 2 - 2 from expected_service_fee), 'partial verified payment only reduces its amount');
 select throws_ok($$select public.admin_review_service_fee_payment((select id from partial_payment), 'verified', 'review twice')$$,
   '22023', null, 'verified payment cannot be processed twice');
 
@@ -62,10 +64,10 @@ select set_config('request.jwt.claim.sub', '73000000-0000-0000-0000-000000000002
 create temporary table rejected_payment as select public.submit_service_fee_payment(1.00, 'FEE-REJECT-001', null) as id;
 grant select on rejected_payment to authenticated;
 select set_config('request.jwt.claim.sub', '73000000-0000-0000-0000-000000000003', true);
-select is((public.admin_review_service_fee_payment((select id from rejected_payment), 'rejected', 'Reference not found')->>'remaining_outstanding_zmw')::numeric, 4.00::numeric, 'rejected payment leaves balance unchanged');
+select is((public.admin_review_service_fee_payment((select id from rejected_payment), 'rejected', 'Reference not found')->>'remaining_outstanding_zmw')::numeric, (select service_fee * 2 - 2 from expected_service_fee), 'rejected payment leaves balance unchanged');
 
 select set_config('request.jwt.claim.sub', '73000000-0000-0000-0000-000000000002', true);
-create temporary table final_payment as select public.submit_service_fee_payment(4.00, 'FEE-FINAL-001', null) as id;
+create temporary table final_payment as select public.submit_service_fee_payment((select (service_fee * 2 - 2)::numeric(12,2) from expected_service_fee), 'FEE-FINAL-001', null) as id;
 grant select on final_payment to authenticated;
 select set_config('request.jwt.claim.sub', '73000000-0000-0000-0000-000000000003', true);
 select is((public.admin_review_service_fee_payment((select id from final_payment), 'verified', 'Full remainder received')->>'remaining_outstanding_zmw')::numeric, 0.00::numeric, 'full verified remainder clears balance to zero');

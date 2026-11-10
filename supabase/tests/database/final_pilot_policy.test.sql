@@ -1,9 +1,9 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 select no_plan();
-select is((select fare_amount from private.calculate_trip_financials(500, 120)), 20::numeric, 'short pilot trip costs exactly ZMW 20');
-select is((select fare_amount from private.calculate_trip_financials(12000, 3600)), 20::numeric, 'distance and duration never change the flat pilot fare');
-select is((select service_fee + driver_fare from private.calculate_trip_financials(4000, 600)), 20::numeric, 'internal split does not add a passenger charge');
+select is((select fare_amount from private.calculate_official_fare(500,120,0,'2026-11-10 12:00 Africa/Lusaka',false)), 25.50::numeric, 'short trip uses the official base, distance and time rates');
+select is((select fare_amount from private.calculate_official_fare(12000,3600,0,'2026-11-10 12:00 Africa/Lusaka',false)), 141.00::numeric, 'distance and duration determine the official fare');
+select is((select service_fee + driver_fare from private.calculate_official_fare(4000,600,0,'2026-11-10 12:00 Africa/Lusaka',false)), 51.00::numeric, '85/15 split does not add a passenger charge');
 select is((select center_latitude from private.pilot_service_settings), -15.3292::double precision, 'approved centre latitude is installed');
 select is((select center_longitude from private.pilot_service_settings), 28.6820::double precision, 'approved centre longitude is installed');
 select is((select radius_km from private.pilot_service_settings), 4::double precision, 'approved radius is exactly four kilometres');

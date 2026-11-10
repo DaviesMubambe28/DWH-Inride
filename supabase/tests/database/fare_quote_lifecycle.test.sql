@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(30);
+select plan(31);
 
 select has_table('private', 'pilot_pricing_versions', 'versioned pricing configuration exists');
 select has_table('private', 'fare_quotes', 'private fare quote storage exists');
@@ -36,10 +36,10 @@ reset role;
 select set_config('request.jwt.claim.role', '', true);
 grant select on quote_record to authenticated;
 
-select is((select fare_amount from quote_record), 20.00::numeric, 'flat quote preserves the approved ZMW 20 fare');
-select is((select service_fee from quote_record), 3.00::numeric, 'quote records the 15 percent platform fee');
-select is((select driver_fare from quote_record), 17.00::numeric, 'quote records rider earnings after the fee');
-select is((select pricing_mode from quote_record), 'FLAT_PILOT', 'quote records the effective pricing mode');
+select is((select fare_amount from quote_record), (select 51.00 + surge_charge from private.fare_quotes where id = (select quote_id from quote_record)), 'quote uses the official fare plus the time-eligible fixed surge');
+select is((select service_fee from quote_record), (select round(fare_amount * .15, 2) from quote_record), 'quote records the 15 percent platform fee');
+select is((select driver_fare from quote_record), (select fare_amount - service_fee from quote_record), 'quote records rider earnings after the fee');
+select is((select pricing_mode from quote_record), 'DISTANCE_TIME', 'quote records the official pricing mode');
 select ok((select expires_at > clock_timestamp() from quote_record), 'new quote has a future expiry');
 
 set local role authenticated;
@@ -66,10 +66,14 @@ select ok(
   (select accepted_fare_snapshot is not null from public.trips where id = (select trip_id from accepted_trip)),
   'trip stores an immutable accepted fare snapshot'
 );
+select ok(
+  (select accepted_fare_snapshot ? 'fare_breakdown' from public.trips where id = (select trip_id from accepted_trip)),
+  'accepted snapshot includes the server-authored fare breakdown'
+);
 select set_config('app.trip_transition_authorized', 'true', true);
 select throws_ok(
   $$update public.trips set fare_amount = 99 where id = (select trip_id from accepted_trip)$$,
-  '42501', 'accepted fare snapshot is immutable', 'accepted fare fields cannot be changed afterward'
+  '42501', 'accepted fare snapshot is immutable outside trusted finalization', 'accepted fare fields cannot be changed afterward'
 );
 select set_config('app.trip_transition_authorized', '', true);
 
@@ -110,12 +114,12 @@ select throws_ok(
 );
 select is(
   public.admin_update_pilot_pricing('DISTANCE_TIME', 10, 2, 1, 15, 0, true),
-  2::bigint,
+  3::bigint,
   'admin approval creates the next immutable pricing version'
 );
-select is((public.admin_simulate_pilot_fare(4000, 600)->>'fare_zmw')::numeric, 28.00::numeric,
-  'approved distance/time simulation uses server pricing');
-select is((select count(*) from public.admin_pilot_pricing_history()), 2::bigint,
+select ok((public.admin_simulate_pilot_fare(4000, 600)->>'fare_zmw')::numeric between 28.00 and 43.00,
+  'approved distance/time simulation uses server pricing and at most the K15 surge');
+select is((select count(*) from public.admin_pilot_pricing_history()), 3::bigint,
   'admin sees initial and updated pricing history');
 reset role;
 

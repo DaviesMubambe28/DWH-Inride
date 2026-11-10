@@ -425,6 +425,12 @@ entrypoint = "./functions/request-trip/index.ts"
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/request-trip/*.html" ]
 
+[functions.fare-quote]
+enabled = true
+verify_jwt = true
+import_map = "./functions/fare-quote/deno.json"
+entrypoint = "./functions/fare-quote/index.ts"
+
 [functions.notification-worker]
 verify_jwt = false
 

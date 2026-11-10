@@ -47,7 +47,7 @@ select is((select count(*) from public.pilot_cancellation_reviews),0::bigint,'pa
 select throws_ok($$select public.admin_review_pilot_cancellation((select id from offers where passenger_id='40000000-0000-0000-0000-000000000005'))$$,'42501',null,'passenger cannot acknowledge their own warning');
 reset role;
 select is((select late_warning from public.pilot_cancellation_reviews where actor_id='40000000-0000-0000-0000-000000000005'),true,'late cancellation is flagged');
-select is((select fare_amount from public.trips where passenger_id='40000000-0000-0000-0000-000000000005'),20::numeric,'warning never adds a cancellation charge to the trip');
+select is((select fare_amount from public.trips where passenger_id='40000000-0000-0000-0000-000000000005'),(select fare_amount from private.calculate_trip_financials(4000,600)),'warning never adds a cancellation charge to the trip');
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub','40000000-0000-0000-0000-000000000002',true);

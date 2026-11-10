@@ -11,6 +11,8 @@ insert into auth.users(id,raw_user_meta_data) values
 update public.profiles set role='rider',approval_status='approved' where id in ('68000000-0000-0000-0000-000000000002','68000000-0000-0000-0000-000000000003');
 select * from public.create_routed_trip('68000000-0000-0000-0000-000000000001',
  -15.3292,28.6820,'Synthetic pickup',-15.3300,28.6900,'Synthetic destination',1000,300,'cash') \gset cash_
+create temporary table expected_cash_fare as select fare_amount from private.calculate_trip_financials(1000,300);
+grant select on expected_cash_fare to authenticated;
 set local role authenticated;
 select set_config('request.jwt.claim.sub','68000000-0000-0000-0000-000000000001',true);
 select is(public.mark_passenger_paid(:'cash_trip_id'),false,'payment cannot be marked before completion');
@@ -35,7 +37,7 @@ select set_config('request.jwt.claim.sub','68000000-0000-0000-0000-000000000002'
 select ok(public.confirm_rider_payment(:'cash_trip_id'),'assigned rider confirms acknowledged cash');
 select is((select payment_status from public.trips where id=:'cash_trip_id'),'rider_confirmed','final cash status persisted');
 select is(public.confirm_rider_payment(:'cash_trip_id'),false,'duplicate rider confirmation is harmless');
-select is((select fare_amount from public.trips where id=:'cash_trip_id'),20.00::numeric,'cash acknowledgement cannot change fare');
+select is((select fare_amount from public.trips where id=:'cash_trip_id'),(select fare_amount from expected_cash_fare),'cash acknowledgement cannot change the official fare');
 reset role;
 select * from finish();
 rollback;
