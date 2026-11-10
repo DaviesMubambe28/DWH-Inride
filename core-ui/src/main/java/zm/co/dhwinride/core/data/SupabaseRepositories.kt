@@ -33,6 +33,7 @@ import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -65,8 +66,8 @@ import zm.co.dhwinride.core.model.PricingMode
 import zm.co.dhwinride.core.domain.FareCalculator
 import zm.co.dhwinride.core.push.FcmTokenRegistrar
 
-private const val TRIP_DETAIL_COLUMNS = "id,passenger_id,rider_id,status,pickup_lat,pickup_lng,pickup_address,dropoff_lat,dropoff_lng,dropoff_address,fare_amount,driver_fare,service_fee,route_distance_meters,route_duration_seconds,payment_method,payment_status,started_at,completed_at,created_at,passenger_name,passenger_phone,rider_name,rider_phone"
-private const val RIDER_REQUEST_COLUMNS = "id,status,pickup_lat,pickup_lng,dropoff_lat,dropoff_lng,created_at"
+private const val TRIP_DETAIL_COLUMNS = "id,passenger_id,rider_id,status,pickup_lat,pickup_lng,pickup_address,dropoff_lat,dropoff_lng,dropoff_address,fare_amount,driver_fare,service_fee,route_distance_meters,route_duration_seconds,payment_method,payment_status,started_at,completed_at,created_at,passenger_name,passenger_phone,rider_name,rider_phone,accepted_fare_snapshot,final_fare_breakdown,waiting_duration_seconds,commission_settlement_status"
+private const val RIDER_REQUEST_COLUMNS = "id,status,pickup_lat,pickup_lng,pickup_address,dropoff_lat,dropoff_lng,dropoff_address,fare_amount,driver_fare,service_fee,route_distance_meters,route_duration_seconds,created_at,accepted_fare_snapshot"
 
 object SupabaseClientProvider {
     fun isConfigured(supabaseUrl: String, supabaseKey: String): Boolean {
@@ -151,6 +152,10 @@ private data class DbTrip(
     @SerialName("passenger_phone") val passengerPhone: String? = null,
     @SerialName("rider_name") val riderName: String? = null,
     @SerialName("rider_phone") val riderPhone: String? = null,
+    @SerialName("accepted_fare_snapshot") val acceptedFareSnapshot: JsonObject? = null,
+    @SerialName("final_fare_breakdown") val finalFareBreakdown: JsonObject? = null,
+    @SerialName("waiting_duration_seconds") val waitingDurationSeconds: Int? = null,
+    @SerialName("commission_settlement_status") val commissionSettlementStatus: String = "outstanding",
 )
 
 @Serializable
@@ -220,6 +225,34 @@ private data class RequestTripResult(
     @SerialName("route_distance_meters") val distanceMeters: Int,
     @SerialName("route_duration_seconds") val durationSeconds: Int,
 )
+
+@Serializable
+private data class DbFareBreakdown(
+    @SerialName("base_fare_zmw") val baseFare: Double,
+    @SerialName("distance_charge_zmw") val distanceCharge: Double,
+    @SerialName("time_charge_zmw") val timeCharge: Double,
+    @SerialName("waiting_charge_zmw") val waitingCharge: Double,
+    @SerialName("surge_charge_zmw") val surgeCharge: Double,
+    @SerialName("night_applied") val nightApplied: Boolean = false,
+    @SerialName("busy_applied") val busyApplied: Boolean = false,
+    @SerialName("rain_applied") val rainApplied: Boolean = false,
+)
+
+@Serializable
+private data class DbOfficialFareQuote(
+    @SerialName("quote_id") val quoteId: String,
+    @SerialName("fare_amount") val fareAmount: Double,
+    @SerialName("driver_fare") val driverFare: Double,
+    @SerialName("service_fee") val serviceFee: Double,
+    @SerialName("route_distance_meters") val distanceMeters: Int,
+    @SerialName("route_duration_seconds") val durationSeconds: Int,
+    @SerialName("pricing_version") val pricingVersion: Long,
+    @SerialName("expires_at") val expiresAt: String,
+    @SerialName("fare_breakdown") val breakdown: DbFareBreakdown,
+)
+
+@Serializable
+private data class DbOfficialFareQuoteResponse(val quote: DbOfficialFareQuote)
 
 class SupabaseTripRepository(
     private val client: SupabaseClient,
@@ -417,6 +450,77 @@ class SupabaseTripRepository(
         throw IntegrationRequiredException(
             "Fare estimates require a configured routing provider and server-side fare rules.",
         )
+    }
+
+    override suspend fun createFareQuote(
+        pickup: Place,
+        dropoff: Place,
+        passenger: PassengerProfile,
+    ): FareEstimate {
+        val user = requireNotNull(client.auth.currentUserOrNull()) { "Sign in before requesting a fare." }
+        require(user.id == passenger.id) { "The signed-in passenger profile does not match." }
+        val session = requireNotNull(client.auth.currentSessionOrNull()) { "Sign in before requesting a fare." }
+        val body = RequestTripBody(
+            pickup = RequestCoordinate(pickup.latitude, pickup.longitude, pickup.detail),
+            dropoff = RequestCoordinate(dropoff.latitude, dropoff.longitude, dropoff.detail),
+        )
+        val quote = withContext(Dispatchers.IO) {
+            require(supabaseUrl.startsWith("https://") && supabaseAnonKey.isNotBlank()) { "Supabase configuration is incomplete." }
+            val connection = URL("${supabaseUrl.trimEnd('/')}/functions/v1/fare-quote").openConnection() as HttpURLConnection
+            connection.connectTimeout = 12_000
+            connection.readTimeout = 12_000
+            connection.requestMethod = "POST"
+            connection.doOutput = true
+            connection.setRequestProperty("Content-Type", "application/json")
+            connection.setRequestProperty("apikey", supabaseAnonKey)
+            connection.setRequestProperty("Authorization", "Bearer ${session.accessToken}")
+            try {
+                connection.outputStream.use { it.write(Json.encodeToString(RequestTripBody.serializer(), body).toByteArray(Charsets.UTF_8)) }
+                val status = connection.responseCode
+                val stream = if (status in 200..299) connection.inputStream else connection.errorStream
+                val text = stream.bufferedReader().use { it.readText() }
+                if (status !in 200..299) {
+                    val error = runCatching { Json.parseToJsonElement(text).jsonObject["error"]?.jsonPrimitive?.content }.getOrNull()
+                    throw IllegalStateException(error ?: "Fare quote failed ($status).")
+                }
+                Json.decodeFromString(DbOfficialFareQuoteResponse.serializer(), text).quote
+            } finally { connection.disconnect() }
+        }
+        return FareEstimate(
+            fareAmount = toNgwee(quote.fareAmount), driverFare = toNgwee(quote.driverFare),
+            serviceFee = toNgwee(quote.serviceFee), distanceKm = quote.distanceMeters / 1000.0,
+            durationMinutes = kotlin.math.ceil(quote.durationSeconds / 60.0).toInt(),
+            quoteId = quote.quoteId, expiresAt = quote.expiresAt, pricingVersion = quote.pricingVersion,
+            baseFare = toNgwee(quote.breakdown.baseFare), distanceCharge = toNgwee(quote.breakdown.distanceCharge),
+            timeCharge = toNgwee(quote.breakdown.timeCharge), waitingCharge = toNgwee(quote.breakdown.waitingCharge),
+            surgeCharge = toNgwee(quote.breakdown.surgeCharge), nightPricing = quote.breakdown.nightApplied,
+            busyPricing = quote.breakdown.busyApplied, rainPricing = quote.breakdown.rainApplied,
+        )
+    }
+
+    override suspend fun acceptFareQuote(
+        quote: FareEstimate,
+        pickup: Place,
+        dropoff: Place,
+        passenger: PassengerProfile,
+    ): Result<Trip> = runCatching {
+        val quoteId = requireNotNull(quote.quoteId) { "Request a current fare quote before booking." }
+        val response = client.postgrest.rpc("accept_fare_quote", buildJsonObject {
+            put("p_quote_id", quoteId)
+            put("p_idempotency_key", quoteId)
+        }).decodeAs<List<RequestTripResult>>().single()
+        Trip(
+            id = response.tripId, pickupLocation = pickup.detail, destination = dropoff.detail,
+            distanceKm = response.distanceMeters / 1000.0,
+            fare = quote.copy(
+                fareAmount = toNgwee(response.fareAmount), driverFare = toNgwee(response.driverFare),
+                serviceFee = toNgwee(response.serviceFee), distanceKm = response.distanceMeters / 1000.0,
+            ),
+            paymentMethod = RidePaymentMethod.Cash, passenger = passenger,
+            status = TripStatus.FINDING_RIDER, pin = response.pickupPin,
+            pickupLatitude = pickup.latitude, pickupLongitude = pickup.longitude,
+            dropoffLatitude = dropoff.latitude, dropoffLongitude = dropoff.longitude,
+        ).also { _activeTrip.value = it }
     }
 
     override suspend fun requestTrip(
@@ -723,6 +827,8 @@ class SupabaseTripRepository(
         }
         val fareAmount = row.fareAmount?.let(::toNgwee) ?: 0
         val distanceKm = (row.distanceMeters ?: 0) / 1000.0
+        val quoteBreakdown = row.acceptedFareSnapshot?.get("fare_breakdown") as? JsonObject
+        val breakdown = row.finalFareBreakdown ?: quoteBreakdown
         return Trip(
             id = row.id,
             pickupLocation = row.pickupAddress.ifBlank { coordinateLabel(row.pickupLat, row.pickupLng) },
@@ -734,6 +840,15 @@ class SupabaseTripRepository(
                 serviceFee = row.serviceFee?.let(::toNgwee) ?: 0,
                 distanceKm = distanceKm,
                 durationMinutes = ((row.durationSeconds ?: 0) / 60.0).toInt(),
+                baseFare = breakdown.moneyNgwee("base_fare_zmw"),
+                distanceCharge = breakdown.moneyNgwee("distance_charge_zmw"),
+                timeCharge = breakdown.moneyNgwee("time_charge_zmw"),
+                waitingCharge = breakdown.moneyNgwee("waiting_charge_zmw"),
+                surgeCharge = breakdown.moneyNgwee("surge_charge_zmw"),
+                nightPricing = breakdown.flag("night_applied"),
+                busyPricing = breakdown.flag("busy_applied"),
+                rainPricing = breakdown.flag("rain_applied"),
+                commissionSettlementStatus = row.commissionSettlementStatus,
             ),
             paymentMethod = if (row.paymentMethod == "mobile_money_external") RidePaymentMethod.MobileMoney else RidePaymentMethod.Cash,
             passenger = PassengerProfile(
@@ -751,6 +866,12 @@ class SupabaseTripRepository(
             dropoffLongitude = row.dropoffLng,
         )
     }
+
+    private fun JsonObject?.moneyNgwee(key: String): Int = this?.get(key)?.jsonPrimitive?.content
+        ?.toDoubleOrNull()?.let(::toNgwee) ?: 0
+
+    private fun JsonObject?.flag(key: String): Boolean = this?.get(key)?.jsonPrimitive?.content
+        ?.toBooleanStrictOrNull() ?: false
 
     private suspend fun loadAuthorizedTrip(tripId: String): Trip =
         client.from("authorized_trip_details")

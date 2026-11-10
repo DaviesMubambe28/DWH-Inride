@@ -323,8 +323,8 @@ private fun EstimateScreen(
     onPaymentSelected: (RidePaymentMethod) -> Unit,
     onBook: () -> Unit,
 ) {
-    val fareText = if (pilotAvailable) "K${formatZmw(zm.co.dhwinride.core.domain.PilotPolicy.FARE_NGWEE)}" else "Unavailable"
-    val isBookEnabled = pilotAvailable && hasSelectedLocations && !isLoading
+    val fareText = if (pilotAvailable && estimate.quoteId != null) "K${formatZmw(estimate.fareAmount)}" else "Unavailable"
+    val isBookEnabled = pilotAvailable && hasSelectedLocations && estimate.quoteId != null && !isLoading
     Column(Modifier.fillMaxSize()) {
         TripMap(
             trip = Trip(pickupLocation = pickup?.name ?: "Pickup", destination = destination,
@@ -337,16 +337,20 @@ private fun EstimateScreen(
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Column {
                         Text("Boda ride", fontWeight = FontWeight.Black, fontSize = 18.sp)
-                        Text("ZMW 20 flat pilot fare", color = DhwMuted)
+                        Text("Server fare quote • ${"%.1f".format(estimate.distanceKm)} km • ${estimate.durationMinutes} min", color = DhwMuted)
                     }
                     Text(fareText, color = if (pilotAvailable) DhwOrange else DhwMuted, fontWeight = FontWeight.Black, fontSize = 25.sp)
                 }
                 ListDivider()
                 if (pilotAvailable) {
-                    InfoRow("Ride fare you pay rider", "K${formatZmw(zm.co.dhwinride.core.domain.PilotPolicy.FARE_NGWEE)}", DhwOrange)
-                    InfoRow("Rider's platform fee", "K${formatZmw(zm.co.dhwinride.core.domain.PilotPolicy.SERVICE_FEE_NGWEE)}")
-                    InfoRow("Rider net after fee", "K${formatZmw(zm.co.dhwinride.core.domain.PilotPolicy.RIDER_NET_NGWEE)}", DhwGreen)
-                    Text("Cash only. The service fee is included in the ZMW 20 fare and is owed by the rider after the trip. It is not added to your payment.", color = DhwMuted, fontSize = 12.sp)
+                    InfoRow("Base fare", "K${formatZmw(estimate.baseFare)}")
+                    InfoRow("Distance charge", "K${formatZmw(estimate.distanceCharge)}")
+                    InfoRow("Journey-time charge", "K${formatZmw(estimate.timeCharge)}")
+                    InfoRow("Surge charge", "K${formatZmw(estimate.surgeCharge)}")
+                    InfoRow("Estimated total", "K${formatZmw(estimate.fareAmount)}", DhwOrange)
+                    InfoRow("Rider earnings (85%)", "K${formatZmw(estimate.driverFare)}", DhwGreen)
+                    InfoRow("DHW-inRide commission (15%)", "K${formatZmw(estimate.serviceFee)}")
+                    Text("The first 3 pickup waiting minutes are free. Each additional started minute costs K1 and is shown in the final receipt. Surge is fixed when this quote is created.", color = DhwMuted, fontSize = 12.sp)
                 } else {
                     Text(serviceMessage, color = DhwBlue, fontSize = 12.sp)
                 }
@@ -378,14 +382,14 @@ private fun EstimateScreen(
                 }
                 if (selectedPayment == RidePaymentMethod.MobileMoney && pilotAvailable) {
                     Text(
-                        "Send K${formatZmw(zm.co.dhwinride.core.domain.PilotPolicy.FARE_NGWEE)} directly to the rider using your mobile-money app or USSD after arrival.",
+                        "Send K${formatZmw(estimate.fareAmount)} directly to the rider using your mobile-money app or USSD after arrival.",
                         color = DhwBlue,
                         fontSize = 12.sp,
                     )
                 }
             }
             PrimaryButton(
-                if (isLoading) "Requesting ride…" else if (pilotAvailable) "Request rider • K${formatZmw(zm.co.dhwinride.core.domain.PilotPolicy.FARE_NGWEE)}" else "Service unavailable",
+                if (isLoading) "Accepting quote…" else if (pilotAvailable) "Accept fare & request rider • K${formatZmw(estimate.fareAmount)}" else "Service unavailable",
                 onBook,
                 enabled = isBookEnabled,
             )
@@ -553,6 +557,11 @@ private fun ReceiptScreen(
             InfoRow("To", activeTrip?.destination ?: "Destination")
             InfoRow("Distance", "${fare.distanceKm} km")
             ListDivider()
+            InfoRow("Base fare", "K${formatZmw(fare.baseFare)}")
+            InfoRow("Distance charge", "K${formatZmw(fare.distanceCharge)}")
+            InfoRow("Journey-time charge", "K${formatZmw(fare.timeCharge)}")
+            InfoRow("Pickup waiting", "K${formatZmw(fare.waitingCharge)}")
+            InfoRow("Surge", "K${formatZmw(fare.surgeCharge)}")
             InfoRow("Ride fare paid to rider", "K${formatZmw(fare.fareAmount)}")
             InfoRow("Platform fee rider owes", "K${formatZmw(fare.serviceFee)}")
             InfoRow("Rider net after fee", "K${formatZmw(fare.driverFare)}")

@@ -52,6 +52,27 @@ class TestTripRepository : TripRepository {
     override suspend fun reverseGeocodeLocation(latitude: Double, longitude: Double) =
         Place("Pinned location", "Test address", "", latitude, longitude)
     override suspend fun estimateFare(destination: String) = FareEstimate(4000, 3400, 600, 2.0, 8)
+    override suspend fun createFareQuote(pickup: Place, dropoff: Place, passenger: PassengerProfile) = FareEstimate(
+        fareAmount = 4000, driverFare = 3400, serviceFee = 600,
+        distanceKm = 2.0, durationMinutes = 8, quoteId = "test-quote",
+        baseFare = 2100, distanceCharge = 1000, timeCharge = 800, surgeCharge = 100,
+    )
+    override suspend fun acceptFareQuote(
+        quote: FareEstimate,
+        pickup: Place,
+        dropoff: Place,
+        passenger: PassengerProfile,
+    ): Result<Trip> = runCatching {
+        requestFailure?.let { throw it }
+        require(quote.quoteId != null)
+        Trip(
+            id = "test-trip", pickupLocation = pickup.detail, destination = dropoff.detail,
+            fare = quote, paymentMethod = RidePaymentMethod.Cash, passenger = passenger,
+            status = TripStatus.FINDING_RIDER, pin = "2468",
+            pickupLatitude = pickup.latitude, pickupLongitude = pickup.longitude,
+            dropoffLatitude = dropoff.latitude, dropoffLongitude = dropoff.longitude,
+        ).also { active.value = it; requests.value = listOf(it) }
+    }
     override suspend fun requestTrip(destination: String, paymentMethod: RidePaymentMethod, passenger: PassengerProfile): Trip {
         requestFailure?.let { throw it }
         val trip = Trip(id = "test-trip", destination = destination, fare = estimateFare(destination), paymentMethod = paymentMethod, passenger = passenger, status = TripStatus.FINDING_RIDER, pin = "2468")

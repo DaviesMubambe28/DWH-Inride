@@ -46,6 +46,18 @@ data class FareEstimate(
     val serviceFee: Int = 0,
     val distanceKm: Double = 0.0,
     val durationMinutes: Int = 0,
+    val quoteId: String? = null,
+    val expiresAt: String? = null,
+    val pricingVersion: Long? = null,
+    val baseFare: Int = 0,
+    val distanceCharge: Int = 0,
+    val timeCharge: Int = 0,
+    val waitingCharge: Int = 0,
+    val surgeCharge: Int = 0,
+    val nightPricing: Boolean = false,
+    val busyPricing: Boolean = false,
+    val rainPricing: Boolean = false,
+    val commissionSettlementStatus: String = "outstanding",
 )
 
 data class RiderProfile(

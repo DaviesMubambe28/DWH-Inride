@@ -176,19 +176,18 @@ class PassengerViewModelTest {
     }
 
     @Test
-    fun `unsupported dynamic pricing blocks booking instead of showing a flat fare`() = runTest {
+    fun `dynamic pricing remains bookable through a trusted server quote`() = runTest {
         chooseBookingLocations()
         repository.pricingMode = PricingMode.DISTANCE_TIME
         viewModel.refreshOnForeground()
         testDispatcher.scheduler.advanceUntilIdle()
 
-        assertEquals(false, viewModel.uiState.value.pilotAvailable)
-        assertEquals(0, viewModel.uiState.value.fareEstimate.fareAmount)
-        assertTrue(viewModel.uiState.value.pilotServiceMessage.contains("fare mode"))
+        assertEquals(true, viewModel.uiState.value.pilotAvailable)
+        assertEquals("test-quote", viewModel.uiState.value.fareEstimate.quoteId)
 
         viewModel.requestRide()
         testDispatcher.scheduler.advanceUntilIdle()
-        assertNull(viewModel.uiState.value.activeTrip)
+        assertNotNull(viewModel.uiState.value.activeTrip)
     }
 
     @Test

@@ -72,7 +72,7 @@ internal fun IncomingRequest(
                     ) {
                         Text(if (selected) "SELECTED REQUEST" else "TAP TO REVIEW", color = if (selected) DhwOrange else DhwMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         Text("${request.pickupLocation} → ${request.destination}", fontWeight = FontWeight.Bold, color = DhwNavy)
-                        Text("K${formatZmw(request.fare.fareAmount)} • ${request.fare.distanceKm} km", color = DhwMuted)
+                        Text("K${formatZmw(request.fare.driverFare)} earnings • ${request.fare.distanceKm} km • ${request.fare.durationMinutes} min", color = DhwMuted)
                     }
                 }
             }
@@ -86,14 +86,16 @@ internal fun IncomingRequest(
                 Text("Pickup", color = DhwOrange, fontWeight = FontWeight.Black)
                 Text(trip?.pickupLocation ?: "Chongwe", fontWeight = FontWeight.Bold, fontSize = 18.sp)
                 Text("Distance: ${fare?.distanceKm ?: 0.0} km", color = DhwMuted)
+                Text("Estimated journey: ${fare?.durationMinutes ?: 0} min", color = DhwMuted)
                 ListDivider()
                 InfoRow("Destination area", trip?.destination ?: "Destination")
+                if ((fare?.surgeCharge ?: 0) > 0) InfoRow("Included surge", "K${formatZmw(fare?.surgeCharge ?: 0)}")
             }
             Surface(color = DhwOrange, shape = RoundedCornerShape(18.dp)) {
                 Column(Modifier.fillMaxWidth().padding(18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("YOUR EARNINGS", color = Color.White.copy(alpha = .8f), fontSize = 12.sp)
                     Text("K${formatZmw(fare?.driverFare ?: 0)}", color = Color.White, fontWeight = FontWeight.Black, fontSize = 32.sp)
-                    Text("${fare?.distanceKm ?: 0.0} km • ${trip?.paymentMethod?.title ?: "Cash"}", color = Color.White)
+                    Text("Passenger pays K${formatZmw(fare?.fareAmount ?: 0)} • platform fee K${formatZmw(fare?.serviceFee ?: 0)}", color = Color.White)
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {

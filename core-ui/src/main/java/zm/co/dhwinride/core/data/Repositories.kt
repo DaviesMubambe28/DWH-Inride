@@ -32,6 +32,11 @@ interface TripRepository {
     suspend fun reverseGeocodeLocation(latitude: Double, longitude: Double): Place
     suspend fun createTrip(pickup: Place, dropoff: Place, paymentMethod: RidePaymentMethod, passenger: PassengerProfile): Result<Trip> =
         runCatching { requestTrip(pickup, dropoff, paymentMethod, passenger) }
+    suspend fun createFareQuote(pickup: Place, dropoff: Place, passenger: PassengerProfile): FareEstimate {
+        throw IntegrationRequiredException("Server fare quotes are not configured.")
+    }
+    suspend fun acceptFareQuote(quote: FareEstimate, pickup: Place, dropoff: Place, passenger: PassengerProfile): Result<Trip> =
+        Result.failure(IntegrationRequiredException("Server fare quote acceptance is not configured."))
     suspend fun getPassengerTrips(passengerId: String): Result<List<Trip>> = runCatching {
         refreshPassengerTrips(passengerId)
         listOfNotNull(getActiveTrip().firstOrNullValue()) + getTripHistory().firstOrNullValue()

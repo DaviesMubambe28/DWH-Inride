@@ -24,11 +24,8 @@ import zm.co.dhwinride.core.model.Trip
 import zm.co.dhwinride.core.model.TripStatus
 import zm.co.dhwinride.core.model.TripLocation
 import zm.co.dhwinride.core.domain.PilotPolicy
-import zm.co.dhwinride.core.domain.FareCalculator
-import zm.co.dhwinride.core.domain.FareConfig
 import zm.co.dhwinride.core.location.LocationResult
 import zm.co.dhwinride.core.location.LocationTracker
-import java.math.BigDecimal
 import java.io.IOException
 import java.net.SocketTimeoutException
 
@@ -71,10 +68,6 @@ class PassengerViewModel(
     private val savedStateHandle: SavedStateHandle = SavedStateHandle(),
     private val locationTracker: LocationTracker? = null,
     private val enableLiveLocationPolling: Boolean = true,
-    // Approved pilot flat fare. Distance is informational and never changes the price.
-    private val fareCalculator: FareCalculator = FareCalculator(FareConfig(
-        baseFareZmw = BigDecimal("20.00"), perKilometerZmw = BigDecimal.ZERO, minimumFareZmw = BigDecimal("20.00"),
-    )),
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(restoreState())
@@ -213,12 +206,9 @@ class PassengerViewModel(
     private suspend fun refreshPilotAvailability() {
         try {
             val status = tripRepository.getPilotServiceStatus()
-            val supportedPricing = status.pricingMode == PricingMode.FLAT_PILOT
-            val bookingAvailable = status.available && supportedPricing
+            val bookingAvailable = status.available
             val message = when {
                 !status.available -> status.message
-                !supportedPricing ->
-                    "This fare mode is not available in the current app. Update the app or contact support."
                 !status.service24x7 ->
                     "Service is currently open. Operating hours are controlled by operations; rider availability may vary."
                 status.ridersAvailable == false ->
@@ -373,14 +363,7 @@ class PassengerViewModel(
                 return@launch
             }
             updateState { it.copy(isLoading = true, errorMessage = null) }
-            runCatching {
-                val kilometers = FareCalculator.haversineKilometers(
-                    current.pickup.latitude, current.pickup.longitude, place.latitude, place.longitude,
-                )
-                require(kilometers > 0.001) { "Choose a drop-off different from the pickup location." }
-                val amount = fareCalculator.calculateNgwee(current.pickup, place).also { require(it <= Int.MAX_VALUE) }
-                FareEstimate(fareAmount = amount.toInt(), distanceKm = kilometers)
-            }.onSuccess { estimate ->
+            runCatching { tripRepository.createFareQuote(current.pickup, place, current.passengerProfile) }.onSuccess { estimate ->
                 updateState { it.copy(dropoff = place, destination = place.detail, fareEstimate = estimate, screen = PassengerNavScreen.Estimate, searchQuery = "", nearbyPlaces = emptyList(), isLoading = false) }
             }.onFailure { error -> updateState { it.copy(errorMessage = error.message, isLoading = false) } }
         }
@@ -466,13 +449,17 @@ class PassengerViewModel(
             updateState { it.copy(errorMessage = "Choose both a pickup and drop-off location before booking.") }
             return
         }
+        if (current.fareEstimate.quoteId == null) {
+            updateState { it.copy(errorMessage = "Request a current server fare quote before booking.") }
+            return
+        }
         if (!PilotPolicy.contains(current.pickup.latitude, current.pickup.longitude) || !PilotPolicy.contains(current.dropoff.latitude, current.dropoff.longitude)) {
             updateState { it.copy(errorMessage = "Pickup and destination must both be within 4 km of Chongwe Town Centre.") }
             return
         }
         viewModelScope.launch {
             updateState { it.copy(isLoading = true, errorMessage = null) }
-            tripRepository.createTrip(current.pickup, current.dropoff, current.paymentMethod, current.passengerProfile).onSuccess { trip ->
+            tripRepository.acceptFareQuote(current.fareEstimate, current.pickup, current.dropoff, current.passengerProfile).onSuccess { trip ->
                 updateState { it.copy(activeTrip = trip, restoredTripId = trip.id, screen = PassengerNavScreen.Finding, isLoading = false) }
             }.onFailure { error -> updateState { it.copy(errorMessage = bookingErrorMessage(error), isLoading = false) } }
         }

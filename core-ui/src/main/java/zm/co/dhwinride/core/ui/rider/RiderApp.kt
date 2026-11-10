@@ -438,6 +438,8 @@ private fun CompleteTrip(trip: Trip?, onContinue: () -> Unit) {
         ScreenTitle("Trip completed", "Collect payment from passenger")
         DhwCard {
             InfoRow("Ride fare to collect", "K${formatZmw(fare?.fareAmount ?: 0)}")
+            InfoRow("Pickup waiting", "K${formatZmw(fare?.waitingCharge ?: 0)}")
+            InfoRow("Surge", "K${formatZmw(fare?.surgeCharge ?: 0)}")
             InfoRow("Platform fee you owe", "-K${formatZmw(fare?.serviceFee ?: 0)}", DhwOrange)
             InfoRow("Net after service fee", "K${formatZmw(fare?.driverFare ?: 0)}", DhwGreen)
             ListDivider()
@@ -464,6 +466,7 @@ private fun CashConfirmation(
             InfoRow("Ride fare collected", "K${formatZmw(fare?.fareAmount ?: 0)}")
             InfoRow("Service fee balance added", "-K${formatZmw(fare?.serviceFee ?: 0)}", DhwOrange)
             InfoRow("Net after service fee", "K${formatZmw(fare?.driverFare ?: 0)}", DhwGreen)
+            InfoRow("Fee status", if (fare?.commissionSettlementStatus == "settled") "Settled" else "Outstanding")
         }
         Surface(
             modifier = Modifier.fillMaxWidth().clickable { onToggleReceived() },
