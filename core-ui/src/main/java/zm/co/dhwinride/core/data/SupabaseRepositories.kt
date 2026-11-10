@@ -68,6 +68,17 @@ import zm.co.dhwinride.core.push.FcmTokenRegistrar
 
 private const val TRIP_DETAIL_COLUMNS = "id,passenger_id,rider_id,status,pickup_lat,pickup_lng,pickup_address,dropoff_lat,dropoff_lng,dropoff_address,fare_amount,driver_fare,service_fee,route_distance_meters,route_duration_seconds,payment_method,payment_status,started_at,completed_at,created_at,passenger_name,passenger_phone,rider_name,rider_phone,accepted_fare_snapshot,final_fare_breakdown,waiting_duration_seconds,commission_settlement_status"
 private const val RIDER_REQUEST_COLUMNS = "id,status,pickup_lat,pickup_lng,pickup_address,dropoff_lat,dropoff_lng,dropoff_address,fare_amount,driver_fare,service_fee,route_distance_meters,route_duration_seconds,created_at,accepted_fare_snapshot"
+private const val LEGACY_TRIP_DETAIL_COLUMNS = "id,passenger_id,rider_id,status,pickup_lat,pickup_lng,pickup_address,dropoff_lat,dropoff_lng,dropoff_address,fare_amount,driver_fare,service_fee,route_distance_meters,route_duration_seconds,payment_method,payment_status,started_at,completed_at,created_at,passenger_name,passenger_phone,rider_name,rider_phone"
+private const val LEGACY_RIDER_REQUEST_COLUMNS = "id,status,pickup_lat,pickup_lng,dropoff_lat,dropoff_lng,created_at"
+
+internal fun Throwable.isMissingDynamicFareSchema(): Boolean {
+    val detail = message.orEmpty().lowercase()
+    return listOf(
+        "accepted_fare_snapshot", "final_fare_breakdown", "waiting_duration_seconds",
+        "commission_settlement_status", "pickup_address", "dropoff_address", "fare_amount",
+        "driver_fare", "service_fee", "route_distance_meters", "route_duration_seconds",
+    ).any(detail::contains) && (detail.contains("does not exist") || detail.contains("column"))
+}
 
 object SupabaseClientProvider {
     fun isConfigured(supabaseUrl: String, supabaseKey: String): Boolean {
@@ -341,10 +352,12 @@ class SupabaseTripRepository(
 
     override suspend fun refreshPassengerTrips(passengerId: String) {
         require(passengerId.isNotBlank()) { "A signed-in passenger is required." }
-        val rows = client.from("authorized_trip_details").select(columns = Columns.list(TRIP_DETAIL_COLUMNS)) {
-            filter { eq("passenger_id", passengerId) }
-            order("created_at", Order.DESCENDING)
-        }.decodeList<DbTrip>()
+        val rows = try {
+            selectPassengerTrips(passengerId, TRIP_DETAIL_COLUMNS)
+        } catch (error: RestException) {
+            if (!error.isMissingDynamicFareSchema()) throw error
+            selectPassengerTrips(passengerId, LEGACY_TRIP_DETAIL_COLUMNS)
+        }
         _tripHistory.value = rows.map(::toDomainTrip).filter { it.status == TripStatus.TRIP_COMPLETED }
         val activeRow = rows.firstOrNull { it.status in ACTIVE_DB_STATUSES }
         _activeTrip.value = activeRow?.let { row ->
@@ -359,16 +372,18 @@ class SupabaseTripRepository(
         val currentRiderId = riderId.ifBlank {
             requireNotNull(client.auth.currentUserOrNull()) { "Sign in before loading ride requests." }.id
         }
-        val available = client.from("rider_available_trips").select(columns = Columns.list(RIDER_REQUEST_COLUMNS)) {
-            filter {
-                eq("status", "requesting")
-            }
-            order("created_at", Order.ASCENDING)
-        }.decodeList<DbTrip>().map(::toDomainTrip)
-        val riderTrips = client.from("authorized_trip_details").select(columns = Columns.list(TRIP_DETAIL_COLUMNS)) {
-            filter { eq("rider_id", currentRiderId) }
-            order("created_at", Order.DESCENDING)
-        }.decodeList<DbTrip>()
+        val available = try {
+            selectAvailableRiderTrips(RIDER_REQUEST_COLUMNS)
+        } catch (error: RestException) {
+            if (!error.isMissingDynamicFareSchema()) throw error
+            selectAvailableRiderTrips(LEGACY_RIDER_REQUEST_COLUMNS)
+        }.map(::toDomainTrip)
+        val riderTrips = try {
+            selectRiderTrips(currentRiderId, TRIP_DETAIL_COLUMNS)
+        } catch (error: RestException) {
+            if (!error.isMissingDynamicFareSchema()) throw error
+            selectRiderTrips(currentRiderId, LEGACY_TRIP_DETAIL_COLUMNS)
+        }
         _tripHistory.value = riderTrips.filter { it.status == "completed" }.map(::toDomainTrip)
         val assigned = riderTrips.firstOrNull {
             it.status in setOf("accepted", "arrived", "in_progress") ||
@@ -377,6 +392,24 @@ class SupabaseTripRepository(
         _availableRequests.value = available
         _activeTrip.value = assigned
     }
+
+    private suspend fun selectPassengerTrips(passengerId: String, columns: String): List<DbTrip> =
+        client.from("authorized_trip_details").select(columns = Columns.list(columns)) {
+            filter { eq("passenger_id", passengerId) }
+            order("created_at", Order.DESCENDING)
+        }.decodeList()
+
+    private suspend fun selectRiderTrips(riderId: String, columns: String): List<DbTrip> =
+        client.from("authorized_trip_details").select(columns = Columns.list(columns)) {
+            filter { eq("rider_id", riderId) }
+            order("created_at", Order.DESCENDING)
+        }.decodeList()
+
+    private suspend fun selectAvailableRiderTrips(columns: String): List<DbTrip> =
+        client.from("rider_available_trips").select(columns = Columns.list(columns)) {
+            filter { eq("status", "requesting") }
+            order("created_at", Order.ASCENDING)
+        }.decodeList()
 
     override suspend fun searchLocations(query: String): List<Place> = withContext(Dispatchers.IO) {
         if (query.isBlank()) return@withContext emptyList()
@@ -481,7 +514,16 @@ class SupabaseTripRepository(
                 val text = stream.bufferedReader().use { it.readText() }
                 if (status !in 200..299) {
                     val error = runCatching { Json.parseToJsonElement(text).jsonObject["error"]?.jsonPrimitive?.content }.getOrNull()
-                    throw IllegalStateException(error ?: "Fare quote failed ($status).")
+                    val safeError = when (status) {
+                        401 -> "Your sign-in expired. Sign in again before requesting a fare."
+                        403 -> "This account is not permitted to request a passenger fare."
+                        404 -> "Fare quoting is being upgraded. Try again after the development backend update."
+                        429 -> "Too many fare requests. Wait briefly and try again."
+                        in 500..599 -> "Fare quoting is temporarily unavailable. Try again shortly."
+                        else -> error?.takeIf { it.length <= 160 && !it.contains("http", ignoreCase = true) }
+                            ?: "The fare request could not be completed."
+                    }
+                    throw IllegalStateException(safeError)
                 }
                 Json.decodeFromString(DbOfficialFareQuoteResponse.serializer(), text).quote
             } finally { connection.disconnect() }
@@ -874,10 +916,17 @@ class SupabaseTripRepository(
         ?.toBooleanStrictOrNull() ?: false
 
     private suspend fun loadAuthorizedTrip(tripId: String): Trip =
+        try {
+            selectAuthorizedTrip(tripId, TRIP_DETAIL_COLUMNS)
+        } catch (error: RestException) {
+            if (!error.isMissingDynamicFareSchema()) throw error
+            selectAuthorizedTrip(tripId, LEGACY_TRIP_DETAIL_COLUMNS)
+        }.let(::toDomainTrip)
+
+    private suspend fun selectAuthorizedTrip(tripId: String, columns: String): DbTrip =
         client.from("authorized_trip_details")
-            .select(columns = Columns.list(TRIP_DETAIL_COLUMNS)) { filter { eq("id", tripId) } }
-            .decodeSingle<DbTrip>()
-            .let(::toDomainTrip)
+            .select(columns = Columns.list(columns)) { filter { eq("id", tripId) } }
+            .decodeSingle()
 
     private fun coordinateLabel(latitude: Double, longitude: Double): String =
         "${"%.5f".format(java.util.Locale.US, latitude)}, ${"%.5f".format(java.util.Locale.US, longitude)}"

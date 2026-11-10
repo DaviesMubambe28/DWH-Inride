@@ -24,6 +24,7 @@ import zm.co.dhwinride.core.model.Trip
 import zm.co.dhwinride.core.model.TripStatus
 import zm.co.dhwinride.core.model.TripLocation
 import zm.co.dhwinride.core.domain.PilotPolicy
+import zm.co.dhwinride.core.ui.userSafeErrorMessage
 import zm.co.dhwinride.core.location.LocationResult
 import zm.co.dhwinride.core.location.LocationTracker
 import java.io.IOException
@@ -86,9 +87,9 @@ class PassengerViewModel(
                     passengerTripsJob = viewModelScope.launch {
                         refreshPilotAvailability()
                         tripRepository.getPassengerTrips(profile.id)
-                            .onFailure { error -> updateState { it.copy(errorMessage = error.message ?: "Could not restore trips.") } }
+                            .onFailure { error -> updateState { it.copy(errorMessage = userSafeErrorMessage(error, "Could not restore trips.")) } }
                         tripRepository.observePassengerTrips(profile.id)
-                            .catch { error -> updateState { it.copy(errorMessage = error.message ?: "Could not watch trip updates.") } }
+                            .catch { error -> updateState { it.copy(errorMessage = userSafeErrorMessage(error, "Could not watch trip updates.")) } }
                             .collect { }
                     }
                 }
@@ -198,7 +199,7 @@ class PassengerViewModel(
         viewModelScope.launch {
             refreshPilotAvailability()
             tripRepository.getPassengerTrips(passengerId).onFailure { error ->
-                updateState { it.copy(errorMessage = error.message ?: "Could not refresh trip status.") }
+                updateState { it.copy(errorMessage = userSafeErrorMessage(error, "Could not refresh trip status.")) }
             }
         }
     }
@@ -365,7 +366,7 @@ class PassengerViewModel(
             updateState { it.copy(isLoading = true, errorMessage = null) }
             runCatching { tripRepository.createFareQuote(current.pickup, place, current.passengerProfile) }.onSuccess { estimate ->
                 updateState { it.copy(dropoff = place, destination = place.detail, fareEstimate = estimate, screen = PassengerNavScreen.Estimate, searchQuery = "", nearbyPlaces = emptyList(), isLoading = false) }
-            }.onFailure { error -> updateState { it.copy(errorMessage = error.message, isLoading = false) } }
+            }.onFailure { error -> updateState { it.copy(errorMessage = userSafeErrorMessage(error, "Could not create a fare quote. Check your connection and try again."), isLoading = false) } }
         }
     }
 
@@ -417,7 +418,7 @@ class PassengerViewModel(
             updateState { it.copy(errorMessage = null) }
             runCatching { tripRepository.searchLocations(query) }
                 .onSuccess { places -> if (_uiState.value.searchQuery == query) updateState { it.copy(nearbyPlaces = places, errorMessage = null, isLoading = false) } }
-                .onFailure { error -> if (_uiState.value.searchQuery == query) updateState { it.copy(nearbyPlaces = emptyList(), errorMessage = error.message ?: "Location search failed.", isLoading = false) } }
+                .onFailure { error -> if (_uiState.value.searchQuery == query) updateState { it.copy(nearbyPlaces = emptyList(), errorMessage = userSafeErrorMessage(error, "Location search failed."), isLoading = false) } }
         }
     }
 
@@ -426,7 +427,7 @@ class PassengerViewModel(
             updateState { it.copy(isLoading = true, errorMessage = null) }
             runCatching { tripRepository.estimateFare(destination) }
                 .onSuccess { estimate -> updateState { it.copy(destination = destination, fareEstimate = estimate, screen = PassengerNavScreen.Estimate, isLoading = false) } }
-                .onFailure { error -> updateState { it.copy(errorMessage = error.message, isLoading = false) } }
+                .onFailure { error -> updateState { it.copy(errorMessage = userSafeErrorMessage(error, "Fare estimation failed."), isLoading = false) } }
         }
     }
 
@@ -485,7 +486,7 @@ class PassengerViewModel(
                 detail.ifBlank { "Check the pickup and drop-off locations and try again." }
             text.contains("500") || text.contains("502") || text.contains("503") || text.contains("server") ->
                 "The booking service is temporarily unavailable. Try again shortly."
-            else -> detail.ifBlank { "Booking failed. Check your connection and try again." }
+            else -> userSafeErrorMessage(error, "Booking failed. Check your connection and try again.")
         }
     }
 
@@ -494,7 +495,7 @@ class PassengerViewModel(
             val tripId = _uiState.value.activeTrip?.id ?: return@launch
             runCatching { tripRepository.cancelTrip(tripId) }
                 .onSuccess { updateState { it.copy(activeTrip = null, restoredTripId = null, screen = PassengerNavScreen.Home, errorMessage = null) } }
-                .onFailure { error -> updateState { it.copy(errorMessage = error.message ?: "Could not cancel this trip. Refresh and try again.") } }
+                .onFailure { error -> updateState { it.copy(errorMessage = userSafeErrorMessage(error, "Could not cancel this trip. Refresh and try again.")) } }
         }
     }
 
@@ -507,7 +508,7 @@ class PassengerViewModel(
                     if (verified) updateState { it.copy(screen = PassengerNavScreen.ActiveTrip, errorMessage = null) }
                     else updateState { it.copy(errorMessage = "That pickup PIN was not accepted. Check the code and try again.") }
                 }
-                .onFailure { error -> updateState { it.copy(errorMessage = error.message ?: "Could not verify the pickup PIN.") } }
+                .onFailure { error -> updateState { it.copy(errorMessage = userSafeErrorMessage(error, "Could not verify the pickup PIN.")) } }
         }
     }
 
@@ -516,7 +517,7 @@ class PassengerViewModel(
             _uiState.value.activeTrip?.id?.let {
                 runCatching { tripRepository.completeTrip(it) }
                     .onSuccess { updateState { state -> state.copy(screen = PassengerNavScreen.Receipt, errorMessage = null) } }
-                    .onFailure { error -> updateState { state -> state.copy(errorMessage = error.message ?: "The server could not complete this trip.") } }
+                    .onFailure { error -> updateState { state -> state.copy(errorMessage = userSafeErrorMessage(error, "The server could not complete this trip.")) } }
             }
         }
     }
@@ -525,7 +526,7 @@ class PassengerViewModel(
         viewModelScope.launch {
             _uiState.value.activeTrip?.id?.let {
                 runCatching { tripRepository.markPassengerPaid(it) }
-                    .onFailure { error -> updateState { state -> state.copy(errorMessage = error.message ?: "Payment confirmation could not be saved.") } }
+                    .onFailure { error -> updateState { state -> state.copy(errorMessage = userSafeErrorMessage(error, "Payment confirmation could not be saved.")) } }
             }
         }
     }
@@ -535,7 +536,7 @@ class PassengerViewModel(
             _uiState.value.activeTrip?.id?.let {
                 runCatching { tripRepository.submitRating(it, rating, listOf("Safe ride")) }
                     .onSuccess { updateState { state -> state.copy(ratingInput = rating, screen = PassengerNavScreen.Home, errorMessage = null) } }
-                    .onFailure { error -> updateState { state -> state.copy(errorMessage = error.message ?: "Could not save your rating.") } }
+                    .onFailure { error -> updateState { state -> state.copy(errorMessage = userSafeErrorMessage(error, "Could not save your rating.")) } }
             }
         }
     }

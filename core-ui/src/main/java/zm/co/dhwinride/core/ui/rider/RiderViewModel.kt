@@ -20,6 +20,7 @@ import zm.co.dhwinride.core.model.RiderProfile
 import zm.co.dhwinride.core.model.RiderServiceFeeAccount
 import zm.co.dhwinride.core.model.Trip
 import zm.co.dhwinride.core.model.TripStatus
+import zm.co.dhwinride.core.ui.userSafeErrorMessage
 import zm.co.dhwinride.core.location.LocationTracker
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -79,7 +80,7 @@ class RiderViewModel(
                             tripRepository.getAvailableTripsForRider().getOrThrow()
                             startServiceFeeFeed()
                         } catch (error: Throwable) {
-                            updateState { it.copy(errorMessage = error.message ?: "Could not restore rider trips.") }
+                            updateState { it.copy(errorMessage = userSafeErrorMessage(error, "Could not restore rider trips.")) }
                         }
                         startRequestFeed()
                     }
@@ -166,7 +167,7 @@ class RiderViewModel(
                         it.copy(
                             availableRequests = emptyList(),
                             isLoadingRequests = false,
-                            errorMessage = error.message ?: "Could not load ride requests. Check your connection and retry.",
+                            errorMessage = userSafeErrorMessage(error, "Could not load ride requests. Check your connection and retry."),
                         )
                     }
                 }
@@ -224,7 +225,7 @@ class RiderViewModel(
         viewModelScope.launch {
             runCatching { riderRepository.refreshRiderState(); tripRepository.refreshRiderTrips() }
                 .onSuccess { syncRiderLocation(_uiState.value.activeTrip); refreshServiceFeeAccount() }
-                .onFailure { error -> updateState { it.copy(availableRequests = emptyList(), errorMessage = error.message ?: "Could not refresh ride requests.") } }
+                .onFailure { error -> updateState { it.copy(availableRequests = emptyList(), errorMessage = userSafeErrorMessage(error, "Could not refresh ride requests.")) } }
         }
     }
 
@@ -244,7 +245,7 @@ class RiderViewModel(
                         else state.copy(isOnline = online, errorMessage = null)
                     }
                 }
-                .onFailure { error -> updateState { it.copy(errorMessage = error.message) } }
+                .onFailure { error -> updateState { it.copy(errorMessage = userSafeErrorMessage(error, "Could not accept this ride request.")) } }
         }
     }
 
@@ -284,7 +285,7 @@ class RiderViewModel(
             val tripId = _uiState.value.activeTrip?.id ?: return@launch
             runCatching { tripRepository.confirmRiderArrival(tripId) }
                 .onSuccess { updateState { it.copy(screen = RiderNavScreen.Arrival, errorMessage = null) } }
-                .onFailure { error -> updateState { it.copy(errorMessage = error.message ?: "Could not confirm rider arrival.") } }
+                .onFailure { error -> updateState { it.copy(errorMessage = userSafeErrorMessage(error, "Could not confirm rider arrival.")) } }
         }
     }
 
@@ -342,7 +343,7 @@ class RiderViewModel(
             val tripId = _uiState.value.activeTrip?.id ?: return@launch
             runCatching { tripRepository.completeTrip(tripId) }
                 .onSuccess { updateState { it.copy(screen = RiderNavScreen.Complete, errorMessage = null) }; refreshServiceFeeAccount() }
-                .onFailure { error -> updateState { it.copy(errorMessage = error.message ?: "The server could not complete this trip.") } }
+                .onFailure { error -> updateState { it.copy(errorMessage = userSafeErrorMessage(error, "The server could not complete this trip.")) } }
         }
     }
 
@@ -355,7 +356,7 @@ class RiderViewModel(
             val tripId = _uiState.value.activeTrip?.id ?: return@launch
             runCatching { tripRepository.confirmRiderPayment(tripId) }
                 .onSuccess { updateState { it.copy(screen = RiderNavScreen.Earnings, paymentReceived = false, errorMessage = null) }; refreshServiceFeeAccount() }
-                .onFailure { error -> updateState { it.copy(errorMessage = error.message ?: "Payment confirmation could not be saved.") } }
+                .onFailure { error -> updateState { it.copy(errorMessage = userSafeErrorMessage(error, "Payment confirmation could not be saved.")) } }
         }
     }
 
@@ -365,7 +366,7 @@ class RiderViewModel(
         viewModelScope.launch {
             runCatching { tripRepository.getRiderServiceFeeAccount() }
                 .onSuccess { account -> updateState { it.copy(serviceFeeAccount = account, serviceFeeLoading = false, errorMessage = null) } }
-                .onFailure { error -> updateState { it.copy(serviceFeeLoading = false, errorMessage = error.message ?: "Could not refresh service-fee balance.") } }
+                .onFailure { error -> updateState { it.copy(serviceFeeLoading = false, errorMessage = userSafeErrorMessage(error, "Could not refresh service-fee balance.")) } }
         }
     }
 
@@ -389,7 +390,7 @@ class RiderViewModel(
                     updateState { it.copy(serviceFeeSubmitting = false, serviceFeeMessage = "Payment submitted for administrator verification. Your balance changes only after verification.") }
                     refreshServiceFeeAccount()
                 }
-                .onFailure { error -> updateState { it.copy(serviceFeeSubmitting = false, errorMessage = error.message ?: "Payment submission could not be saved.") } }
+                .onFailure { error -> updateState { it.copy(serviceFeeSubmitting = false, errorMessage = userSafeErrorMessage(error, "Payment submission could not be saved.")) } }
         }
     }
 
@@ -402,7 +403,7 @@ class RiderViewModel(
                 tripRepository.cancelRiderTrip(trip.id, reason)
                 updateState { it.copy(activeTrip = null, selectedRequest = null, screen = RiderNavScreen.Home) }
             } catch (cancelled: CancellationException) { throw cancelled }
-            catch (error: Exception) { updateState { it.copy(errorMessage = error.message ?: "Cancellation could not be confirmed. Refresh trip details.") } }
+            catch (error: Exception) { updateState { it.copy(errorMessage = userSafeErrorMessage(error, "Cancellation could not be confirmed. Refresh trip details.")) } }
             finally { updateState { it.copy(cancellingTrip = false) } }
         }
     }
@@ -421,7 +422,7 @@ class RiderViewModel(
                 updateState { it.copy(errorMessage = null) }
                 onSaved()
             }.onFailure { error ->
-                updateState { it.copy(errorMessage = error.message ?: "Could not save motorcycle details.") }
+                updateState { it.copy(errorMessage = userSafeErrorMessage(error, "Could not save motorcycle details.")) }
             }
         }
     }
@@ -433,7 +434,7 @@ class RiderViewModel(
                     updateState { it.copy(submittedDocuments = it.submittedDocuments + documentType, errorMessage = null) }
                 }
                 .onFailure { error ->
-                    updateState { it.copy(errorMessage = error.message ?: "Could not submit document.") }
+                    updateState { it.copy(errorMessage = userSafeErrorMessage(error, "Could not submit document.")) }
                 }
         }
     }
