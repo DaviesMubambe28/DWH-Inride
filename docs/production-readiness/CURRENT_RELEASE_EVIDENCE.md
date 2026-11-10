@@ -1,4 +1,22 @@
-> **Historical evidence log.** The canonical current matrix is [CURRENT_RELEASE_SNAPSHOT.md](CURRENT_RELEASE_SNAPSHOT.md), dated 10 November 2026 and tied to the current engineering commit. Entries below remain immutable receipts and may describe older migration counts, URLs, hashes, or blockers.
+> **Historical evidence log.** The canonical current matrix is [CURRENT_RELEASE_SNAPSHOT.md](CURRENT_RELEASE_SNAPSHOT.md), dated 11 November 2026 and tied to the current engineering commit. Entries below remain immutable receipts and may describe older migration counts, URLs, hashes, or blockers.
+
+# Official dynamic fare implementation — 11 November 2026 (CAT)
+
+Verdict remains **5.0/10 — NOT READY**. The software-controlled official fare path is implemented and locally verified, but its migration and `fare-quote` Function are not deployed to the authorized development project. No production deployment, booking enablement, APK publication, or merge occurred.
+
+| Check | Result | Scope and limitation |
+|---|---|---|
+| Official calculation | **PASS local** | K21 base, K5/km, K1/journey minute, three free waiting minutes then K1 per started minute, K21 minimum, fixed Lusaka night/busy/rain additions and K15 cap use integer ngwee accounting. The K70 worked example produces K59.50 rider earnings and K10.50 commission. |
+| Quote and completion integrity | **PASS local** | Server Mapbox metrics feed a service-only quote RPC. Authenticated passengers explicitly accept an expiring quote with idempotency; immutable snapshots include their breakdown. Completion uses trusted arrival/start/completion timestamps, preserves quote-time surge, creates one ledger charge, and rejects duplicate completion/settlement effects. |
+| Database | **PASS local** | All 35 migrations replayed on isolated PostgreSQL. `supabase db test --local supabase/tests/database`: **19 files / 370 assertions / PASS**. The suite is stable during active night/rain surge and includes missing routes, midnight, exact waiting boundaries, authorization, cancellations and existing workflows. |
+| Passenger and rider Android | **PASS development build/unit** | Shared core: **81 tests / 0 failures**. Both development APKs assemble and both development lint tasks pass. Passenger sees and accepts the server breakdown; rider sees pre-accept route/earnings and final waiting/surge/commission status. No physical install or hosted journey was performed. |
+| Admin | **PASS local static/unit** | Four unit tests, lint, typecheck and production build pass. Authorized controls use audited/versioned RPCs; revenue and completed-trip allocations come from database records, with no sample financial data. Hosted authorization remains unverified. |
+| Edge Function | **PASS local type/unit** | `fare-quote` frozen Deno type-check passes. All five existing Edge test files pass. Actual Mapbox origin authentication and hosted JWT/RPC behavior remain unverified until deployment. |
+| Development APKs | **PASS as development only** | Passenger SHA-256 `b57d780ef3b341cd36c6c1359207fd5a485dcb4218119fbdbb326fdb7f222cac`; rider SHA-256 `acb48170ea88f844f41afd9cf18dc57c37638bb1a8547652d8b850b5d77d9be1`. These are debug-signed development artifacts and are not public release candidates. |
+
+The next engineering gate is the already-required verified source backup and isolated restore, followed by authorized deployment of the pending development migration and `fare-quote` Function. Then run real Mapbox quote, passenger/rider/admin authorization, boundary-time, completion, commission, network interruption and two-phone journeys. Production remains disabled.
+
+---
 
 # Fare-quote recovery and complete local trip rehearsal — 10 November 2026 (CAT)
 
