@@ -1,4 +1,12 @@
-> **Historical evidence log.** The canonical current matrix is [CURRENT_RELEASE_SNAPSHOT.md](CURRENT_RELEASE_SNAPSHOT.md), dated 11 November 2026 and tied to the current engineering commit. Entries below remain immutable receipts and may describe older migration counts, URLs, hashes, or blockers.
+> **Historical evidence log.** The canonical current matrix is [CURRENT_RELEASE_SNAPSHOT.md](CURRENT_RELEASE_SNAPSHOT.md), dated 12 November 2026 and tied to the current engineering commit. Entries below remain immutable receipts and may describe older migration counts, URLs, hashes, or blockers.
+
+# Android fare-response contract correction — 12 November 2026 (CAT)
+
+A physical-phone report exposed a client decoding failure after the hosted Function successfully created a quote. Android's strict response model omitted the server's `pricing_mode` field and the fare breakdown's `free_waiting_minutes` and `rounding_policy` fields. The valid response was therefore rejected as unknown JSON rather than shown as an estimate. The client model now declares the complete deployed contract, and a regression fixture shaped like the hosted response proves those fields decode.
+
+Shared Android tests pass **91/91**, and both development APKs rebuild successfully. This correction requires installing the newly built passenger APK; the backend remains active and unchanged at `fare-quote` version 3. Physical confirmation of a displayed quote is still required before the phone journey is marked passed.
+
+---
 
 # Permanent fare-quote failure handling — 11 November 2026 (CAT)
 

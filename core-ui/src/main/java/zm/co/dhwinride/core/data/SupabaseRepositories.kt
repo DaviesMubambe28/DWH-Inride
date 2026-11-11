@@ -278,7 +278,7 @@ private data class RequestTripResult(
 )
 
 @Serializable
-private data class DbFareBreakdown(
+internal data class DbFareBreakdown(
     @SerialName("base_fare_zmw") val baseFare: Double,
     @SerialName("distance_charge_zmw") val distanceCharge: Double,
     @SerialName("time_charge_zmw") val timeCharge: Double,
@@ -287,23 +287,29 @@ private data class DbFareBreakdown(
     @SerialName("night_applied") val nightApplied: Boolean = false,
     @SerialName("busy_applied") val busyApplied: Boolean = false,
     @SerialName("rain_applied") val rainApplied: Boolean = false,
+    @SerialName("free_waiting_minutes") val freeWaitingMinutes: Int,
+    @SerialName("rounding_policy") val roundingPolicy: String,
 )
 
 @Serializable
-private data class DbOfficialFareQuote(
+internal data class DbOfficialFareQuote(
     @SerialName("quote_id") val quoteId: String,
     @SerialName("fare_amount") val fareAmount: Double,
     @SerialName("driver_fare") val driverFare: Double,
     @SerialName("service_fee") val serviceFee: Double,
     @SerialName("route_distance_meters") val distanceMeters: Int,
     @SerialName("route_duration_seconds") val durationSeconds: Int,
+    @SerialName("pricing_mode") val pricingMode: String,
     @SerialName("pricing_version") val pricingVersion: Long,
     @SerialName("expires_at") val expiresAt: String,
     @SerialName("fare_breakdown") val breakdown: DbFareBreakdown,
 )
 
 @Serializable
-private data class DbOfficialFareQuoteResponse(val quote: DbOfficialFareQuote)
+internal data class DbOfficialFareQuoteResponse(val quote: DbOfficialFareQuote)
+
+internal fun decodeOfficialFareQuoteResponse(text: String): DbOfficialFareQuote =
+    Json.decodeFromString(DbOfficialFareQuoteResponse.serializer(), text).quote
 
 @Serializable
 private data class FunctionErrorResponse(val code: String? = null, val error: String? = null)
@@ -560,7 +566,7 @@ class SupabaseTripRepository(
                         }.getOrNull()
                         throw IllegalStateException(fareQuoteFailureMessage(status, code))
                     }
-                    Json.decodeFromString(DbOfficialFareQuoteResponse.serializer(), text).quote
+                    decodeOfficialFareQuoteResponse(text)
                 } finally { connection.disconnect() }
             }
         } catch (cancelled: CancellationException) {
