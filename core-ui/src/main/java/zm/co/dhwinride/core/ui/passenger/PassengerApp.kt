@@ -216,6 +216,7 @@ fun PassengerApp(viewModel: PassengerViewModel, authRepository: AuthRepository) 
                         isSearching = uiState.isLoading && uiState.searchQuery.isNotBlank(),
                         mapSelection = uiState.mapSelection,
                         isResolvingMapSelection = uiState.isResolvingMapSelection,
+                        isCreatingFareQuote = uiState.isCreatingFareQuote,
                         initialLatitude = uiState.pickup?.latitude ?: -15.3292,
                         initialLongitude = uiState.pickup?.longitude ?: 28.6821,
                         isFetchingLocation = uiState.isFetchingLocation,

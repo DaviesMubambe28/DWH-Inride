@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readBookingInput, routeMetrics, bookingAvailability, bookingFailure } from '../_shared/booking-input.ts';
+import { readBookingInput, routeMetrics, bookingAvailability, bookingFailure, fareQuoteFailure } from '../_shared/booking-input.ts';
 
 const valid={pickup:{latitude:-15.3292,longitude:28.6821,address:' Market '},dropoff:{latitude:-15.33,longitude:28.69,address:' Clinic '},paymentMethod:'cash'};
 const request=value=>new Request('http://localhost/request-trip',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(value)});
@@ -40,4 +40,10 @@ test('pilot denials become useful errors without leaking database details',()=>{
   assert.equal(bookingFailure({message:'PILOT_OUTSIDE_SERVICE_AREA'}).status,422);
   assert.equal(bookingFailure({code:'23505'}).status,409);
   assert.equal(bookingFailure({message:'private SQL detail'}).error,'The trip could not be created.');
+  assert.deepEqual(fareQuoteFailure({message:'PILOT_OUTSIDE_SERVICE_AREA'}),{
+    status:422,code:'INVALID_LOCATION',error:'Choose pickup and destination points inside Chongwe District.',
+  });
+  assert.deepEqual(fareQuoteFailure({message:'private SQL detail'}),{
+    status:500,code:'FARE_QUOTE_CREATION_FAILED',error:'The fare quote could not be created.',
+  });
 });

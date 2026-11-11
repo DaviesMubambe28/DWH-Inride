@@ -52,6 +52,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName
+import kotlinx.serialization.SerializationException
 import zm.co.dhwinride.core.model.FareEstimate
 import zm.co.dhwinride.core.model.PassengerProfile
 import zm.co.dhwinride.core.model.Place
@@ -86,6 +87,37 @@ internal fun userFunctionHeaders(accessToken: String): Map<String, String> {
         "Content-Type" to "application/json",
         "Authorization" to "Bearer $accessToken",
     )
+}
+
+internal fun fareQuoteFailureMessage(status: Int, code: String?): String = when (code) {
+    "AUTHENTICATION_FAILED" -> "Your sign-in expired. Sign in again before requesting a fare."
+    "PASSENGER_REQUIRED" -> "This account is not permitted to request a passenger fare."
+    "INVALID_LOCATION" -> "Choose pickup and destination points inside Chongwe District."
+    "ROUTE_NOT_FOUND" -> "No usable road route was found between these locations."
+    "ROUTING_SERVICE_ERROR" -> "Routing is temporarily unavailable. Try again shortly."
+    "SERVICE_UNAVAILABLE" -> "New bookings are temporarily paused or unavailable. Try again later."
+    "FARE_QUOTE_CREATION_FAILED" -> "The fare could not be saved. Try again shortly."
+    else -> when (status) {
+        401 -> "Your sign-in expired. Sign in again before requesting a fare."
+        403 -> "This account is not permitted to request a passenger fare."
+        404 -> "Fare quoting is being upgraded. Try again after the development backend update."
+        408 -> "The fare request timed out. Check your connection and try again."
+        422 -> "The pickup or destination could not be used for this fare."
+        429 -> "Too many fare requests. Wait briefly and try again."
+        in 500..599 -> "Fare quoting is temporarily unavailable. Try again shortly."
+        else -> "The fare request could not be completed."
+    }
+}
+
+internal fun fareQuoteTransportMessage(error: Throwable): String {
+    val causes = generateSequence(error as Throwable?) { it.cause }.toList()
+    return when {
+        causes.any { it is SocketTimeoutException } -> "The fare request timed out. Check your connection and try again."
+        causes.any { it is UnknownHostException || it is ConnectException } -> "No internet connection. Reconnect and try again."
+        causes.any { it is SSLException } -> "A secure connection to the fare service could not be established."
+        error is SerializationException -> "The fare service returned an invalid response. Try again."
+        else -> "Could not reach the fare service. Check your connection and try again."
+    }
 }
 
 object SupabaseClientProvider {
@@ -272,6 +304,9 @@ private data class DbOfficialFareQuote(
 
 @Serializable
 private data class DbOfficialFareQuoteResponse(val quote: DbOfficialFareQuote)
+
+@Serializable
+private data class FunctionErrorResponse(val code: String? = null, val error: String? = null)
 
 class SupabaseTripRepository(
     private val client: SupabaseClient,
@@ -505,34 +540,37 @@ class SupabaseTripRepository(
             pickup = RequestCoordinate(pickup.latitude, pickup.longitude, pickup.detail),
             dropoff = RequestCoordinate(dropoff.latitude, dropoff.longitude, dropoff.detail),
         )
-        val quote = withContext(Dispatchers.IO) {
-            require(supabaseUrl.startsWith("https://") && supabaseAnonKey.isNotBlank()) { "Supabase configuration is incomplete." }
-            val connection = URL("${supabaseUrl.trimEnd('/')}/functions/v1/fare-quote").openConnection() as HttpURLConnection
-            connection.connectTimeout = 12_000
-            connection.readTimeout = 12_000
-            connection.requestMethod = "POST"
-            connection.doOutput = true
-            userFunctionHeaders(session.accessToken).forEach(connection::setRequestProperty)
-            try {
-                connection.outputStream.use { it.write(Json.encodeToString(RequestTripBody.serializer(), body).toByteArray(Charsets.UTF_8)) }
-                val status = connection.responseCode
-                val stream = if (status in 200..299) connection.inputStream else connection.errorStream
-                val text = stream.bufferedReader().use { it.readText() }
-                if (status !in 200..299) {
-                    val error = runCatching { Json.parseToJsonElement(text).jsonObject["error"]?.jsonPrimitive?.content }.getOrNull()
-                    val safeError = when (status) {
-                        401 -> "Your sign-in expired. Sign in again before requesting a fare."
-                        403 -> "This account is not permitted to request a passenger fare."
-                        404 -> "Fare quoting is being upgraded. Try again after the development backend update."
-                        429 -> "Too many fare requests. Wait briefly and try again."
-                        in 500..599 -> "Fare quoting is temporarily unavailable. Try again shortly."
-                        else -> error?.takeIf { it.length <= 160 && !it.contains("http", ignoreCase = true) }
-                            ?: "The fare request could not be completed."
+        val quote = try {
+            withContext(Dispatchers.IO) {
+                require(supabaseUrl.startsWith("https://") && supabaseAnonKey.isNotBlank()) { "Supabase configuration is incomplete." }
+                val connection = URL("${supabaseUrl.trimEnd('/')}/functions/v1/fare-quote").openConnection() as HttpURLConnection
+                connection.connectTimeout = 12_000
+                connection.readTimeout = 12_000
+                connection.requestMethod = "POST"
+                connection.doOutput = true
+                userFunctionHeaders(session.accessToken).forEach(connection::setRequestProperty)
+                try {
+                    connection.outputStream.use { it.write(Json.encodeToString(RequestTripBody.serializer(), body).toByteArray(Charsets.UTF_8)) }
+                    val status = connection.responseCode
+                    val stream = if (status in 200..299) connection.inputStream else connection.errorStream
+                    val text = stream.bufferedReader().use { it.readText() }
+                    if (status !in 200..299) {
+                        val code = runCatching {
+                            Json.decodeFromString(FunctionErrorResponse.serializer(), text).code
+                        }.getOrNull()
+                        throw IllegalStateException(fareQuoteFailureMessage(status, code))
                     }
-                    throw IllegalStateException(safeError)
-                }
-                Json.decodeFromString(DbOfficialFareQuoteResponse.serializer(), text).quote
-            } finally { connection.disconnect() }
+                    Json.decodeFromString(DbOfficialFareQuoteResponse.serializer(), text).quote
+                } finally { connection.disconnect() }
+            }
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: IllegalStateException) {
+            throw error
+        } catch (error: IOException) {
+            throw IllegalStateException(fareQuoteTransportMessage(error), error)
+        } catch (error: SerializationException) {
+            throw IllegalStateException(fareQuoteTransportMessage(error), error)
         }
         return FareEstimate(
             fareAmount = toNgwee(quote.fareAmount), driverFare = toNgwee(quote.driverFare),

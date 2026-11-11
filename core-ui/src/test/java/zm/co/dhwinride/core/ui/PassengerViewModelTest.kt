@@ -8,6 +8,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.CompletableDeferred
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -109,6 +110,28 @@ class PassengerViewModelTest {
         assertTrue(viewModel.uiState.value.nearbyPlaces.isEmpty())
         assertEquals(false, viewModel.uiState.value.isLoading)
         assertEquals(destination, viewModel.uiState.value.dropoff)
+        assertEquals(PassengerNavScreen.Estimate, viewModel.uiState.value.screen)
+    }
+
+    @Test
+    fun `repeated destination taps create only one fare quote while request is active`() = runTest {
+        val pickup = Place("Market", "Chongwe Market", "", -15.3292, 28.6820)
+        val destination = Place("Hospital", "Chongwe Hospital", "", -15.3275, 28.6813)
+        val gate = CompletableDeferred<Unit>()
+        repository.fareQuoteGate = gate
+
+        viewModel.choosePlace(pickup)
+        testDispatcher.scheduler.advanceUntilIdle()
+        viewModel.choosePlace(destination)
+        viewModel.choosePlace(destination)
+        testDispatcher.scheduler.runCurrent()
+
+        assertEquals(1, repository.createFareQuoteCalls)
+        assertTrue(viewModel.uiState.value.isCreatingFareQuote)
+
+        gate.complete(Unit)
+        testDispatcher.scheduler.advanceUntilIdle()
+        assertEquals(false, viewModel.uiState.value.isCreatingFareQuote)
         assertEquals(PassengerNavScreen.Estimate, viewModel.uiState.value.screen)
     }
 

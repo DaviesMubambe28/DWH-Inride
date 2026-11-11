@@ -113,6 +113,7 @@ internal fun DestinationScreen(
     isSearching: Boolean,
     mapSelection: Place?,
     isResolvingMapSelection: Boolean,
+    isCreatingFareQuote: Boolean,
     initialLatitude: Double,
     initialLongitude: Double,
     isFetchingLocation: Boolean,
@@ -251,9 +252,9 @@ internal fun DestinationScreen(
                         }
                     }
                     PrimaryButton(
-                        text = if (choosingPickup) "Use this pickup" else "Use this destination",
+                        text = if (isCreatingFareQuote) "Calculating fare…" else if (choosingPickup) "Use this pickup" else "Use this destination",
                         onClick = { mapSelection?.let(onChoose) },
-                        enabled = mapSelection != null && !isResolvingMapSelection,
+                        enabled = mapSelection != null && !isResolvingMapSelection && !isCreatingFareQuote,
                     )
                 }
             }

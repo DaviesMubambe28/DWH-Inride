@@ -82,3 +82,15 @@ export function bookingFailure(error: { message?: string; code?: string }): { st
   if (error.code === "23505") return { status: 409, error: "You already have an active trip." };
   return { status: 500, error: "The trip could not be created." };
 }
+
+export function fareQuoteFailure(error: { message?: string; code?: string }): { status: number; code: string; error: string } {
+  if (error.message === "PILOT_UNAVAILABLE") return {
+    status: 503, code: "SERVICE_UNAVAILABLE",
+    error: "New bookings are temporarily paused or unavailable. Please try again later.",
+  };
+  if (error.message === "PILOT_OUTSIDE_SERVICE_AREA") return {
+    status: 422, code: "INVALID_LOCATION",
+    error: "Choose pickup and destination points inside Chongwe District.",
+  };
+  return { status: 500, code: "FARE_QUOTE_CREATION_FAILED", error: "The fare quote could not be created." };
+}

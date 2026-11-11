@@ -54,6 +54,7 @@ data class PassengerUiState(
     val pinInput: String = "",
     val ratingInput: Int = 5,
     val isLoading: Boolean = false,
+    val isCreatingFareQuote: Boolean = false,
     val isFetchingLocation: Boolean = false,
     val locationError: String? = null,
     val errorMessage: String? = null,
@@ -363,10 +364,11 @@ class PassengerViewModel(
                 }
                 return@launch
             }
-            updateState { it.copy(isLoading = true, errorMessage = null) }
+            if (current.isCreatingFareQuote) return@launch
+            updateState { it.copy(isLoading = true, isCreatingFareQuote = true, errorMessage = null) }
             runCatching { tripRepository.createFareQuote(current.pickup, place, current.passengerProfile) }.onSuccess { estimate ->
-                updateState { it.copy(dropoff = place, destination = place.detail, fareEstimate = estimate, screen = PassengerNavScreen.Estimate, searchQuery = "", nearbyPlaces = emptyList(), isLoading = false) }
-            }.onFailure { error -> updateState { it.copy(errorMessage = userSafeErrorMessage(error, "Could not create a fare quote. Check your connection and try again."), isLoading = false) } }
+                updateState { it.copy(dropoff = place, destination = place.detail, fareEstimate = estimate, screen = PassengerNavScreen.Estimate, searchQuery = "", nearbyPlaces = emptyList(), isLoading = false, isCreatingFareQuote = false) }
+            }.onFailure { error -> updateState { it.copy(errorMessage = userSafeErrorMessage(error, "Could not create a fare quote. Check your connection and try again."), isLoading = false, isCreatingFareQuote = false) } }
         }
     }
 

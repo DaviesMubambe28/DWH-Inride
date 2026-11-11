@@ -1,5 +1,15 @@
 > **Historical evidence log.** The canonical current matrix is [CURRENT_RELEASE_SNAPSHOT.md](CURRENT_RELEASE_SNAPSHOT.md), dated 11 November 2026 and tied to the current engineering commit. Entries below remain immutable receipts and may describe older migration counts, URLs, hashes, or blockers.
 
+# Permanent fare-quote failure handling — 11 November 2026 (CAT)
+
+The complete passenger quote path was traced from the destination action through Android, the deployed Edge Function, Mapbox routing and `create_official_fare_quote`. Expected validation failures now return stable machine-readable codes, while Android distinguishes invalid locations, unavailable routing, authentication, persistence, timeout, connectivity, TLS and malformed server responses without exposing raw URLs, headers or tokens. The destination action disables itself while a quote is pending, and its ViewModel rejects repeated taps.
+
+Migration `20261111150000_idempotent_fare_quotes` serializes quote creation per passenger and reuses the matching unexpired, unaccepted quote. This protects a retry after a lost response without merging different destinations. A clean isolated replay of all **37** migrations and the full database suite passed **21 files / 386 assertions**. Edge tests passed **20/20** and Android passed **90 tests**; both development APKs assembled and linted.
+
+The migration was applied transactionally and recorded in the authorized development project. Active `fare-quote` version 3 was exercised with a fresh synthetic passenger: the first in-district request returned HTTP 201, an identical retry returned HTTP 201 with the same quote ID, an outside-district request returned HTTP 422 `INVALID_LOCATION`, malformed coordinates returned HTTP 400 `INVALID_LOCATION`, and cleanup deleted the synthetic Auth identity and cascading quote. No credential value was displayed or retained. This is hosted fare-path evidence, not a complete trip or physical-phone verification. The missing recoverable backup remains a release blocker.
+
+---
+
 # Chongwe District service-area preparation — 11 November 2026 (CAT)
 
 The existing hosted geofence is a 4 km circle around Chongwe town and does not represent the requested whole-district boundary. A new additive migration stores a 170-point Chongwe ADM2 polygon sourced from the pinned geoBoundaries Zambia ADM2 release (`9469f09`, shape ID `96606910B32717004733154`, upstream GRID3) and makes polygon membership authoritative while retaining the circle as a fail-closed fallback. Regression coverage includes Chongwe town/hospital, two district locations beyond the old circle, Lusaka city, a neighboring eastern point, invalid coordinates and null-polygon fallback.

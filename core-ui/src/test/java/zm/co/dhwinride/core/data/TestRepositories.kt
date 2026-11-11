@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.CompletableDeferred
 import zm.co.dhwinride.core.model.FareEstimate
 import zm.co.dhwinride.core.model.PassengerProfile
 import zm.co.dhwinride.core.model.Place
@@ -22,6 +23,9 @@ class TestTripRepository : TripRepository {
     var pricingMode = PricingMode.FLAT_PILOT
     var locationSearchResults: List<Place> = emptyList()
     var lastLocationQuery: String? = null
+    var createFareQuoteCalls = 0
+    var fareQuoteGate: CompletableDeferred<Unit>? = null
+    var fareQuoteFailure: Throwable? = null
     override suspend fun getPilotServiceStatus() = zm.co.dhwinride.core.model.PilotServiceStatus(
         pilotAvailable,
         if (pilotAvailable && ridersAvailable == false) "Service available 24/7. No riders are currently available; requests may remain pending."
@@ -52,11 +56,16 @@ class TestTripRepository : TripRepository {
     override suspend fun reverseGeocodeLocation(latitude: Double, longitude: Double) =
         Place("Pinned location", "Test address", "", latitude, longitude)
     override suspend fun estimateFare(destination: String) = FareEstimate(4000, 3400, 600, 2.0, 8)
-    override suspend fun createFareQuote(pickup: Place, dropoff: Place, passenger: PassengerProfile) = FareEstimate(
-        fareAmount = 4000, driverFare = 3400, serviceFee = 600,
-        distanceKm = 2.0, durationMinutes = 8, quoteId = "test-quote",
-        baseFare = 2100, distanceCharge = 1000, timeCharge = 800, surgeCharge = 100,
-    )
+    override suspend fun createFareQuote(pickup: Place, dropoff: Place, passenger: PassengerProfile): FareEstimate {
+        createFareQuoteCalls++
+        fareQuoteGate?.await()
+        fareQuoteFailure?.let { throw it }
+        return FareEstimate(
+            fareAmount = 4000, driverFare = 3400, serviceFee = 600,
+            distanceKm = 2.0, durationMinutes = 8, quoteId = "test-quote",
+            baseFare = 2100, distanceCharge = 1000, timeCharge = 800, surgeCharge = 100,
+        )
+    }
     override suspend fun acceptFareQuote(
         quote: FareEstimate,
         pickup: Place,
