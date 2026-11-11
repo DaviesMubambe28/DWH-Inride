@@ -80,6 +80,14 @@ internal fun Throwable.isMissingDynamicFareSchema(): Boolean {
     ).any(detail::contains) && (detail.contains("does not exist") || detail.contains("column"))
 }
 
+internal fun userFunctionHeaders(accessToken: String): Map<String, String> {
+    require(accessToken.isNotBlank()) { "A user access token is required." }
+    return mapOf(
+        "Content-Type" to "application/json",
+        "Authorization" to "Bearer $accessToken",
+    )
+}
+
 object SupabaseClientProvider {
     fun isConfigured(supabaseUrl: String, supabaseKey: String): Boolean {
         return supabaseUrl.startsWith("https://") &&
@@ -504,9 +512,7 @@ class SupabaseTripRepository(
             connection.readTimeout = 12_000
             connection.requestMethod = "POST"
             connection.doOutput = true
-            connection.setRequestProperty("Content-Type", "application/json")
-            connection.setRequestProperty("apikey", supabaseAnonKey)
-            connection.setRequestProperty("Authorization", "Bearer ${session.accessToken}")
+            userFunctionHeaders(session.accessToken).forEach(connection::setRequestProperty)
             try {
                 connection.outputStream.use { it.write(Json.encodeToString(RequestTripBody.serializer(), body).toByteArray(Charsets.UTF_8)) }
                 val status = connection.responseCode
@@ -598,9 +604,7 @@ class SupabaseTripRepository(
             connection.readTimeout = 12_000
             connection.requestMethod = "POST"
             connection.doOutput = true
-            connection.setRequestProperty("Content-Type", "application/json")
-            connection.setRequestProperty("apikey", supabaseAnonKey)
-            connection.setRequestProperty("Authorization", "Bearer ${session.accessToken}")
+            userFunctionHeaders(session.accessToken).forEach(connection::setRequestProperty)
             try {
                 connection.outputStream.use { it.write(Json.encodeToString(RequestTripBody.serializer(), requestBody).toByteArray(Charsets.UTF_8)) }
                 val statusCode = connection.responseCode
