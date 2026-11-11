@@ -1,5 +1,13 @@
 > **Historical evidence log.** The canonical current matrix is [CURRENT_RELEASE_SNAPSHOT.md](CURRENT_RELEASE_SNAPSHOT.md), dated 11 November 2026 and tied to the current engineering commit. Entries below remain immutable receipts and may describe older migration counts, URLs, hashes, or blockers.
 
+# Chongwe District service-area preparation — 11 November 2026 (CAT)
+
+The existing hosted geofence is a 4 km circle around Chongwe town and does not represent the requested whole-district boundary. A new additive migration stores a 170-point Chongwe ADM2 polygon sourced from the pinned geoBoundaries Zambia ADM2 release (`9469f09`, shape ID `96606910B32717004733154`, upstream GRID3) and makes polygon membership authoritative while retaining the circle as a fail-closed fallback. Regression coverage includes Chongwe town/hospital, two district locations beyond the old circle, Lusaka city, a neighboring eastern point, invalid coordinates and null-polygon fallback.
+
+All **36** migrations replayed in the isolated local stack and the full database suite passed **20 files / 382 assertions**. Hosted deployment was rejected before execution because the required full backup and isolated restore remain unverified. The development project therefore remains at 35 hosted migrations and continues using the 4 km circle.
+
+---
+
 # Hosted fare-quote diagnosis and validation — 11 November 2026 (CAT)
 
 The development project now records all **35** repository migrations and hosts active `fare-quote` version 2. A credential-safe synthetic passenger check reproduced the phone failure as `PILOT_OUTSIDE_SERVICE_AREA`: the selected Lusaka points were outside the configured Chongwe pilot center (`-15.3292, 28.6820`, 4 km radius). The handler had incorrectly converted that expected denial to HTTP 500. It now reuses the sanitized booking failure mapping.

@@ -11,8 +11,8 @@ select is((select support_phone from private.pilot_service_settings), '+26077000
 select is((select support_secondary_phone from private.pilot_service_settings), '+260975461121', 'secondary monitored support number is installed');
 select is((select support_email from private.pilot_service_settings), 'gershmukuka1@gmail.com', 'monitored support email is installed');
 select is((select enabled from private.pilot_service_settings), false, 'approved parameters do not automatically enable real trips');
-select ok(private.pilot_point_allowed(-15.3292 + degrees(3.999 / 6371.0088), 28.6820), 'point just inside four kilometres is allowed');
-select is(private.pilot_point_allowed(-15.3292 + degrees(4.001 / 6371.0088), 28.6820), false, 'point just outside four kilometres is denied');
+select ok(private.pilot_point_allowed(-15.327476, 28.681337), 'Chongwe town and hospital area is allowed');
+select ok(private.pilot_point_allowed(-15.4473, 28.7732), 'Chongwe District point beyond the former four kilometre circle is allowed');
 select has_function('public', 'cancel_pilot_trip', array['uuid','text'], 'reasoned cancellation RPC exists');
 select is(has_function_privilege('anon', 'public.cancel_pilot_trip(uuid,text)', 'EXECUTE'), false, 'anonymous cancellation is denied');
 select * from finish();

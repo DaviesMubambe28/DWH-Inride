@@ -62,7 +62,7 @@ set local role service_role;
 select * from public.create_routed_trip(
   '00000000-0000-0000-0000-000000000001',
   -15.3292, 28.6821, 'Chongwe Market',
-  -15.3875, 28.3228, 'Lusaka CBD',
+  -15.4473, 28.7732, 'Chongwe District destination',
   4000, 600, 'cash'
 );
 reset role;
