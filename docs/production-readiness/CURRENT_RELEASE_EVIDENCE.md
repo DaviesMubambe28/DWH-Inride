@@ -4,7 +4,7 @@
 
 The existing hosted geofence is a 4 km circle around Chongwe town and does not represent the requested whole-district boundary. A new additive migration stores a 170-point Chongwe ADM2 polygon sourced from the pinned geoBoundaries Zambia ADM2 release (`9469f09`, shape ID `96606910B32717004733154`, upstream GRID3) and makes polygon membership authoritative while retaining the circle as a fail-closed fallback. Regression coverage includes Chongwe town/hospital, two district locations beyond the old circle, Lusaka city, a neighboring eastern point, invalid coordinates and null-polygon fallback.
 
-All **36** migrations replayed in the isolated local stack and the full database suite passed **20 files / 382 assertions**. Hosted deployment was rejected before execution because the required full backup and isolated restore remain unverified. The development project therefore remains at 35 hosted migrations and continues using the 4 km circle.
+All **36** migrations replayed in the isolated local stack and the full database suite passed **20 files / 382 assertions**. After the owner explicitly accepted deployment despite the missing verified recovery rehearsal, migration `20261111120000` was applied transactionally to the development project and recorded in migration history. Hosted checks confirm the 170-point polygon allows Chongwe Hospital and a district location beyond the former circle while denying Lusaka city and an eastern outside point. A fresh synthetic passenger received HTTP 201 for a Chongwe Hospital fare quote; its Auth identity and quote were deleted after verification. The absence of a verified full backup and isolated restore remains a release blocker.
 
 ---
 
