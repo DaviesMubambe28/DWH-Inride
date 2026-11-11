@@ -1,5 +1,15 @@
 > **Historical evidence log.** The canonical current matrix is [CURRENT_RELEASE_SNAPSHOT.md](CURRENT_RELEASE_SNAPSHOT.md), dated 11 November 2026 and tied to the current engineering commit. Entries below remain immutable receipts and may describe older migration counts, URLs, hashes, or blockers.
 
+# Hosted fare-quote diagnosis and validation — 11 November 2026 (CAT)
+
+The development project now records all **35** repository migrations and hosts active `fare-quote` version 2. A credential-safe synthetic passenger check reproduced the phone failure as `PILOT_OUTSIDE_SERVICE_AREA`: the selected Lusaka points were outside the configured Chongwe pilot center (`-15.3292, 28.6820`, 4 km radius). The handler had incorrectly converted that expected denial to HTTP 500. It now reuses the sanitized booking failure mapping.
+
+After deployment, a fresh hosted synthetic passenger received **HTTP 201** and a server quote for two in-area points. The same identity received **HTTP 422** and `Choose pickup and destination points inside the pilot service area.` for Lusaka points. The synthetic Auth identity and fare quotes were deleted after both checks. `MAPBOX_SERVER_TOKEN` is configured; no value was displayed. This verifies hosted quote authentication, Mapbox routing, the official quote RPC, success serialization and the out-of-area denial. It does not verify the complete trip lifecycle or physical-device behavior.
+
+Android user Function requests also stopped sending an `apikey` header rejected by `@supabase/server` user authentication. Shared Android tests now pass **87 tests**, and both development APKs assemble and lint. Production bookings and APK publication remain disabled.
+
+---
+
 # Official dynamic fare implementation — 11 November 2026 (CAT)
 
 Verdict remains **5.0/10 — NOT READY**. The software-controlled official fare path is implemented and locally verified, but its migration and `fare-quote` Function are not deployed to the authorized development project. No production deployment, booking enablement, APK publication, or merge occurred.

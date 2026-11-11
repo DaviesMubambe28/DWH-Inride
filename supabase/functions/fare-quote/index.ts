@@ -1,5 +1,5 @@
 import { withSupabase } from "@supabase/server";
-import { readBookingInput, routeMetrics, BookingInputError } from "../_shared/booking-input.ts";
+import { readBookingInput, routeMetrics, bookingFailure, BookingInputError } from "../_shared/booking-input.ts";
 import { reportError } from "../_shared/monitoring.ts";
 
 function json(value: unknown, status = 200): Response {
@@ -53,7 +53,12 @@ export default {
       p_route_distance_meters: metrics.distanceMeters,
       p_route_duration_seconds: metrics.durationSeconds,
     });
-    if (quoteError) return json({ error: "The fare quote could not be created." }, 500);
+    if (quoteError) {
+      const failure = bookingFailure(quoteError);
+      return json({
+        error: failure.status === 500 ? "The fare quote could not be created." : failure.error,
+      }, failure.status);
+    }
     return json({ quote }, 201);
   }),
 };
