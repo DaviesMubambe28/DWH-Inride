@@ -44,6 +44,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.semantics
@@ -336,11 +337,21 @@ private fun EstimateScreen(
         Column(Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             DhwCard {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Column {
+                    Column(Modifier.weight(1f).padding(end = 12.dp)) {
                         Text("Boda ride", fontWeight = FontWeight.Black, fontSize = 18.sp)
-                        Text("Server fare quote • ${"%.1f".format(estimate.distanceKm)} km • ${estimate.durationMinutes} min", color = DhwMuted)
+                        Text(
+                            "Server fare quote • ${"%.1f".format(estimate.distanceKm)} km • ${estimate.durationMinutes} min",
+                            color = DhwMuted,
+                        )
                     }
-                    Text(fareText, color = if (pilotAvailable) DhwOrange else DhwMuted, fontWeight = FontWeight.Black, fontSize = 25.sp)
+                    Text(
+                        fareText,
+                        color = if (pilotAvailable) DhwOrange else DhwMuted,
+                        fontWeight = FontWeight.Black,
+                        fontSize = 25.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Clip,
+                    )
                 }
                 ListDivider()
                 if (pilotAvailable) {
@@ -374,7 +385,7 @@ private fun EstimateScreen(
                             ) {
                                 if (selectedPayment == method) Text("✓", color = Color.White, fontWeight = FontWeight.Black, modifier = Modifier.clearAndSetSemantics { })
                             }
-                            Column(Modifier.padding(start = 12.dp)) {
+                            Column(Modifier.weight(1f).padding(start = 12.dp)) {
                                 Text(method.title, fontWeight = FontWeight.Bold)
                                 Text(method.description, color = DhwMuted, fontSize = 12.sp)
                             }

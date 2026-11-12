@@ -210,14 +210,23 @@ private data class DbTrip(
 )
 
 @Serializable
-private data class DbPilotServiceStatus(
+internal data class DbPilotServiceStatus(
     val available: Boolean,
     val message: String,
     @SerialName("riders_available") val ridersAvailable: Boolean? = null,
     @SerialName("service_24_7") val service24x7: Boolean = false,
     @SerialName("pricing_mode") val pricingMode: String? = null,
-    @SerialName("minimum_fare_zmw") val minimumFareZmw: Int? = null,
-)
+    @SerialName("minimum_fare_zmw") val minimumFareZmw: Double? = null,
+) {
+    val minimumFareNgwee: Int
+        get() = minimumFareZmw?.let(::zmwToNgwee) ?: 2_000
+}
+
+internal fun decodePilotServiceStatusResponse(body: String): DbPilotServiceStatus =
+    Json.decodeFromString(DbPilotServiceStatus.serializer(), body)
+
+internal fun zmwToNgwee(kwacha: Double): Int = BigDecimal.valueOf(kwacha)
+    .setScale(2, RoundingMode.HALF_UP).movePointRight(2).intValueExact()
 
 @Serializable
 private data class DbServiceFeePayment(
@@ -811,7 +820,7 @@ class SupabaseTripRepository(
             ridersAvailable = status.ridersAvailable,
             service24x7 = status.service24x7,
             pricingMode = PricingMode.fromServer(status.pricingMode),
-            minimumFareZmw = status.minimumFareZmw ?: 2000,
+            minimumFareZmw = status.minimumFareNgwee,
         )
     }
 
@@ -902,8 +911,7 @@ class SupabaseTripRepository(
     private fun Place.isValidLocation() = latitude.isFinite() && longitude.isFinite() &&
         latitude in -90.0..90.0 && longitude in -180.0..180.0 && detail.isNotBlank()
 
-    private fun toNgwee(kwacha: Double): Int = BigDecimal.valueOf(kwacha)
-        .setScale(2, RoundingMode.HALF_UP).movePointRight(2).intValueExact()
+    private fun toNgwee(kwacha: Double): Int = zmwToNgwee(kwacha)
 
     private fun toDomainTrip(row: DbTrip): Trip {
         val status = when (row.status) {

@@ -49,7 +49,7 @@ internal fun IncomingRequest(
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         Surface(color = DhwOrange) {
             Row(Modifier.fillMaxWidth().padding(18.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Column {
+                Column(Modifier.weight(1f).padding(end = 12.dp)) {
                     Text("NEW RIDE REQUEST", color = Color.White, fontWeight = FontWeight.Black, fontSize = 20.sp)
                     Text("Incoming request", color = Color.White.copy(alpha = .85f))
                 }
@@ -95,7 +95,8 @@ internal fun IncomingRequest(
                 Column(Modifier.fillMaxWidth().padding(18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("YOUR EARNINGS", color = Color.White.copy(alpha = .8f), fontSize = 12.sp)
                     Text("K${formatZmw(fare?.driverFare ?: 0)}", color = Color.White, fontWeight = FontWeight.Black, fontSize = 32.sp)
-                    Text("Passenger pays K${formatZmw(fare?.fareAmount ?: 0)} • platform fee K${formatZmw(fare?.serviceFee ?: 0)}", color = Color.White)
+                    Text("Passenger pays K${formatZmw(fare?.fareAmount ?: 0)}", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text("Platform fee K${formatZmw(fare?.serviceFee ?: 0)}", color = Color.White.copy(alpha = .85f), fontSize = 12.sp)
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {

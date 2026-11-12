@@ -353,8 +353,11 @@ private fun PickupNavigation(trip: Trip?, onArrive: () -> Unit, cancelling: Bool
             DhwCard {
                 Text("Passenger pickup", fontWeight = FontWeight.Black, fontSize = 18.sp)
                 Text(passenger?.name ?: "Passenger", color = DhwMuted)
+                InfoRow("Passenger phone", passenger?.phone?.ifBlank { "Not provided" } ?: "Not provided")
                 InfoRow("Pickup location", trip?.pickupLocation ?: "Chongwe")
+                InfoRow("Destination", trip?.destination ?: "Destination")
                 InfoRow("Your earnings", "K${formatZmw(trip?.fare?.driverFare ?: 0)}", DhwGreen)
+                InfoRow("Passenger pays", "K${formatZmw(trip?.fare?.fareAmount ?: 0)}", DhwOrange)
                 Text("Wait at the agreed pickup point before verifying the passenger PIN.", color = DhwNavy)
             }
             PrimaryButton("I have arrived", onArrive, enabled = !cancelling)
@@ -373,7 +376,10 @@ private fun ArrivalScreen(trip: Trip?, onContinue: () -> Unit, cancelling: Boole
         ScreenTitle("Arrival confirmed", "Wait at pickup and verify passenger’s trip PIN")
         DhwCard {
             InfoRow("Passenger", trip?.passenger?.name ?: "Passenger")
+            InfoRow("Passenger phone", trip?.passenger?.phone?.ifBlank { "Not provided" } ?: "Not provided")
             InfoRow("Pickup", trip?.pickupLocation ?: "Chongwe")
+            InfoRow("Destination", trip?.destination ?: "Destination")
+            InfoRow("Passenger pays", "K${formatZmw(trip?.fare?.fareAmount ?: 0)}", DhwOrange)
         }
         PrimaryButton("Enter trip PIN", onContinue, enabled = !cancelling)
         RiderCancellation(atPickup = true, busy = cancelling, onCancel = onCancel)
