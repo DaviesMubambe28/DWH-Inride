@@ -1,5 +1,15 @@
 > **Historical evidence log.** The canonical current matrix is [CURRENT_RELEASE_SNAPSHOT.md](CURRENT_RELEASE_SNAPSHOT.md), dated 12 November 2026 and tied to the current engineering commit. Entries below remain immutable receipts and may describe older migration counts, URLs, hashes, or blockers.
 
+# Android service-status and responsive fare correction — 12 November 2026 (CAT)
+
+A physical-phone report showed that a valid server fare was calculated but replaced by “Unavailable” and a service-verification warning. The hosted `pilot_service_status` contract represents `minimum_fare_zmw` as a decimal (`21.0`), while Android required an integer. The strict decode failed before availability could be applied. Android now accepts the decimal ZMW contract, converts it to integer ngwee (`21.0` → `2100`), and retains the K20 safe default only when the field is absent. Two regression fixtures cover both cases.
+
+The passenger fare header now reserves width for a single-line amount and lets descriptive copy use the remaining width, preventing the vertical text seen on a narrow phone. Payment copy is similarly constrained. The rider request screen separately presents rider earnings, passenger fare and platform fee; after acceptance, pickup/arrival cards explicitly show passenger phone, pickup, destination and passenger fare. Passenger contact remains hidden before acceptance.
+
+Shared Android tests pass **93/93**, shared lint passes, and both development APKs assemble. Passenger SHA-256 is `898729eddf2b63ef1551d8f159a1bb86a3d86347a0fb189d5a8b6267daaf2a22`; rider SHA-256 is `908657bd0d8ae2677bff9a702411d80d0e59b7a050a8d916fa238c68041fefc0`. These are development-only artifacts. A physical-phone reinstall and live two-phone request remain required; no production booking, deployment or APK publication occurred.
+
+---
+
 # Android fare-response contract correction — 12 November 2026 (CAT)
 
 A physical-phone report exposed a client decoding failure after the hosted Function successfully created a quote. Android's strict response model omitted the server's `pricing_mode` field and the fare breakdown's `free_waiting_minutes` and `rounding_policy` fields. The valid response was therefore rejected as unknown JSON rather than shown as an estimate. The client model now declares the complete deployed contract, and a regression fixture shaped like the hosted response proves those fields decode.
