@@ -1,5 +1,13 @@
 > **Historical evidence log.** The canonical current matrix is [CURRENT_RELEASE_SNAPSHOT.md](CURRENT_RELEASE_SNAPSHOT.md), dated 12 November 2026 and tied to the current engineering commit. Entries below remain immutable receipts and may describe older migration counts, URLs, hashes, or blockers.
 
+# Isolated complete ride lifecycle — 12 November 2026 (CAT)
+
+The current booking architecture was exercised through real local Auth/PostgREST and the actual `fare-quote` handler with live Mapbox routing. Authenticated quote acceptance, idempotent retry, two-rider dispatch and atomic acceptance, offline denial, assigned-rider location, arrival, PIN/start, completion, dynamic final fare, two-party cash acknowledgement, passenger/rider histories and admin visibility all passed. Authorization denials, nine concurrent lifecycle calls and six concurrent wrong-PIN calls also passed, and labelled synthetic fixtures were removed. The full database suite remains green at **21 files / 386 assertions**. See [END_TO_END_RIDE_VERIFICATION.md](END_TO_END_RIDE_VERIFICATION.md).
+
+This is isolated software evidence, not a hosted, Realtime reconnect, FCM, Android-device, real-GPS or physical-ride pass. Public bookings, production deployment and APK publication remain disabled.
+
+---
+
 # Android service-status and responsive fare correction — 12 November 2026 (CAT)
 
 A physical-phone report showed that a valid server fare was calculated but replaced by “Unavailable” and a service-verification warning. The hosted `pilot_service_status` contract represents `minimum_fare_zmw` as a decimal (`21.0`), while Android required an integer. The strict decode failed before availability could be applied. Android now accepts the decimal ZMW contract, converts it to integer ngwee (`21.0` → `2100`), and retains the K20 safe default only when the field is absent. Two regression fixtures cover both cases.

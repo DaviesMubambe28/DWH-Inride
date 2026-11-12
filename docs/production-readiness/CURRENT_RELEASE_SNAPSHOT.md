@@ -1,7 +1,7 @@
 # DHW-inRide current release snapshot
 
 - Evidence time: **12 November 2026 (CAT)**
-- Engineering source: Android service-status, responsive fare and accepted-rider detail correction at `3514ef1` on `feat/release-operations`; evidence commit follows
+- Engineering source: Android service-status correction at `3514ef1` plus the current end-to-end rehearsal update on `feat/release-operations`; evidence commit follows
 - GitHub main: `49ee408` (PR #10 merged); feature branch is pushed through `73a7903`, and this hosted deployment evidence update follows
 - Authorized Supabase target: development-only project `vhckkmzyabbsbgjuhjmq`
 - Verdict: **5.0/10 — Not ready**
@@ -25,7 +25,7 @@ The current cross-surface design findings are recorded in [UI_REVIEW_20261109.md
 | Monitoring | **BLOCKED** | Structured local error paths exist; `SENTRY_DSN` and alert ownership are absent. No remote event or alert receipt was observed. | Configure the development DSN and worker token, send a sanitized probe, and witness the event and operator alert. |
 | Android development artifacts | **PASS as development only** | Both `0.1.0-development-no-push` APKs assemble, shared lint passes, and shared Android source passes **93 unit tests**. The client now decodes both the deployed fare response and decimal pilot-status minimum fare, preserves the visible amount on narrow screens, and exposes accepted-trip contact/destination/fare details to the rider. They remain minSdk 26/target 37 development builds. | Install the newest development APKs and confirm the amount and rider details on two phones; they are not public candidates. |
 | Android release candidates | **BLOCKED** | Real Firebase files, established release signing bindings, expected certificate fingerprint, and protected owner config are missing. | Recover the existing signing identity and Firebase files, then run the protected signed/minified candidate workflow. |
-| Hosted trip journey | **PARTIAL** | Hosted synthetic Auth plus `fare-quote` passed in-area creation, identical retry idempotency, structured invalid-location denials and verified cleanup. The complete hosted rider approval, booking, competing acceptance, arrival, PIN/start/completion and cash journey has not run. | Run and clean up the remaining hosted journey with separate passenger, rider and admin identities. |
+| Trip journey | **PASS isolated / PARTIAL hosted** | The isolated current path passed real local Auth/PostgREST, live Mapbox `fare-quote`, idempotent acceptance, two-rider dispatch/race, offline denial, authorized location, arrival, PIN/start, completion, dynamic final fare, cash acknowledgement, histories and admin visibility. Nine lifecycle races and six concurrent wrong-PIN calls retained one legal durable state. Hosted evidence still stops after quote creation. See `END_TO_END_RIDE_VERIFICATION.md`. | After the backup/restore gate, run and clean up the same hosted journey with separate passenger, rider and admin identities, then perform the two-phone rehearsal. |
 | Full-service recovery | **BLOCKED** | Database procedures exist, but Auth, Storage objects, Functions, secrets, schedules, Realtime, Firebase, monitoring, and Cloudflare restore have not been rehearsed together. | Restore each service into an isolated target and retain redacted component receipts and recovery time. |
 | Two-phone rehearsal | **NOT VERIFIED** | The managed emulator did not complete boot without hardware virtualization. No physical install, GPS, push, background, upgrade, or full-trip result is claimed. | Follow `DEVICE_REHEARSAL.md` on two Android phones and record actual observations. |
 | Operator/legal/privacy | **BLOCKED** | Policy placeholders and accountable approvals remain unresolved. Retention purge remains disabled. | Approve legal entity/PACRA details, transport and insurance evidence, rider verification, retention/hold/backup periods, incident owner, support coverage, and release decision. |
@@ -34,8 +34,8 @@ The current cross-surface design findings are recorded in [UI_REVIEW_20261109.md
 
 | App | Type | Package | Version | APK | SHA-256 |
 |---|---|---|---|---|---|
-| Passenger | Development, no push | `zm.co.dhwinride.passenger.development` | `0.1.0-development-no-push` (1) | `passenger-app/build/outputs/apk/development/passenger-app-development.apk` | `898729eddf2b63ef1551d8f159a1bb86a3d86347a0fb189d5a8b6267daaf2a22` |
-| Rider | Development, no push | `zm.co.dhwinride.rider.development` | `0.1.0-development-no-push` (1) | `rider-app/build/outputs/apk/development/rider-app-development.apk` | `908657bd0d8ae2677bff9a702411d80d0e59b7a050a8d916fa238c68041fefc0` |
+| Passenger | Development, no push | `zm.co.dhwinride.passenger.development` | `0.1.0-development-no-push` (1) | `passenger-app/build/outputs/apk/development/passenger-app-development.apk` | `4aabc374bf2e1eb83936f82a128cfff5224b73e4589a9cf6cd5c3b891e5b5dac` |
+| Rider | Development, no push | `zm.co.dhwinride.rider.development` | `0.1.0-development-no-push` (1) | `rider-app/build/outputs/apk/development/rider-app-development.apk` | `babaad956a4a105ead7bd09eeeb61544daf514c444f986dab8b53f5c4b3bf57a` |
 
 Both artifacts use the local debug certificate SHA-256 `1b6488a0186c81ca769a0c47a41135cdf7a950ff856d59d5685ea396eb6fd14f`. This does not establish the release identity or upgrade compatibility with a published app.
 
