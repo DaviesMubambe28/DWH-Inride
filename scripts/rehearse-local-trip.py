@@ -30,7 +30,8 @@ def sql(statement):
         input=statement, capture_output=True, text=True, check=False,
     )
     if result.returncode:
-        raise RuntimeError("Local fixture SQL failed; inspect the protected local database log")
+        detail = next((line for line in reversed(result.stderr.splitlines()) if line.strip()), "unknown database error")
+        raise RuntimeError("Local fixture SQL failed: " + detail)
     return result.stdout.strip()
 
 
@@ -40,15 +41,20 @@ def main():
                         help="Keep successful synthetic fixtures and write credentials outside Git (0600)")
     parser.add_argument("--cleanup-browser-fixture", type=Path,
                         help="Remove the synthetic fixtures from a previous private receipt")
+    parser.add_argument("--cleanup-stale-synthetic", action="store_true",
+                        help="Remove only labelled sprint-*@test.invalid fixtures left by interrupted local rehearsals")
     parser.add_argument("--live-request-trip", action="store_true",
                         help="Book through the real current handler on fixed loopback port 8003, including live routing")
+    parser.add_argument("--live-fare-quote", action="store_true",
+                        help="Quote on loopback port 8004 and accept through the authenticated current RPC")
     parser.add_argument("--race-checks", action="store_true",
                         help="Exercise real concurrent local cancellation/start/completion and PIN-lock calls")
     args = parser.parse_args()
     if args.race_checks and args.keep_browser_fixture:
         parser.error("Race fixtures must be cleaned, not retained for browser use")
-    if args.keep_browser_fixture and args.cleanup_browser_fixture:
-        parser.error("Choose fixture creation or cleanup")
+    if sum(bool(value) for value in (args.keep_browser_fixture, args.cleanup_browser_fixture,
+                                     args.cleanup_stale_synthetic)) > 1:
+        parser.error("Choose fixture creation or one cleanup mode")
     if args.keep_browser_fixture and (args.keep_browser_fixture.resolve().is_relative_to(ROOT)
                                       or args.keep_browser_fixture.exists()):
         parser.error("Private fixture output must be a new file outside the checkout")
@@ -70,7 +76,8 @@ def main():
     def request(path, body=None, *, token=None, method=None, expected=(200,), extra=None, edge=False):
         if not path.startswith("/") or path.startswith("//"):
             raise ValueError("A local relative API path is required")
-        req = Request(("http://127.0.0.1:8003" if edge else ORIGIN) + path,
+        edge_origin = "http://127.0.0.1:8004" if args.live_fare_quote else "http://127.0.0.1:8003"
+        req = Request((edge_origin if edge else ORIGIN) + path,
                       data=json.dumps(body).encode() if body is not None else None,
                       method=method or ("POST" if body is not None else "GET"),
                       headers={"apikey": config["ANON_KEY"], "Authorization": "Bearer " + (token or config["ANON_KEY"]),
@@ -109,10 +116,11 @@ def main():
             "or reporter_id in (" + quoted + ") or recorded_by in (" + quoted + ") or assigned_admin_id in (" + quoted + ");"
             "delete from public.pilot_cancellation_reviews where actor_id in (" + quoted + ") or reviewed_by in (" + quoted + ") "
             "or trip_id in (select id from public.trips where passenger_id in (" + quoted + "));"
-            "delete from private.fare_quotes where passenger_id in (" + quoted + ");"
             "delete from public.trips where passenger_id in (" + quoted + ");"
+            "delete from private.fare_quotes where passenger_id in (" + quoted + ");"
             "delete from private.pilot_operations_audit where actor_id in (" + quoted + ") or subject_id in (" + quoted + ");"
             "delete from private.pilot_rider_checks where rider_id in (" + quoted + ") or reviewed_by in (" + quoted + ");"
+            "delete from public.rider_applications where applicant_id in (" + quoted + ") or reviewed_by in (" + quoted + ");"
             "delete from public.motorcycles where rider_id in (" + quoted + ");"
             "delete from public.profiles where id in (" + quoted + ");commit;")
         for identity in identities:
@@ -123,6 +131,15 @@ def main():
         ).splitlines()
         if remaining != ["0", "0"]:
             raise RuntimeError("Local synthetic fixture cleanup did not remove every generated identity")
+
+    if args.cleanup_stale_synthetic:
+        identities = sql(
+            "select id from auth.users where email like 'sprint-%@test.invalid' "
+            "and raw_user_meta_data->>'full_name' like 'Synthetic Sprint %'"
+        ).splitlines()
+        cleanup(identities)
+        passed("interrupted local rehearsal fixtures removed")
+        return
 
     if args.cleanup_browser_fixture:
         fixture = json.loads(args.cleanup_browser_fixture.read_text())
@@ -186,11 +203,11 @@ def main():
         edge_booking = {"pickup": {"latitude": -15.3292, "longitude": 28.6820, "address": "Synthetic pickup"},
                         "dropoff": {"latitude": -15.3300, "longitude": 28.6900, "address": "Synthetic destination"},
                         "paymentMethod": "cash"}
-        if args.live_request_trip:
+        if args.live_request_trip or args.live_fare_quote:
             request("/", edge_booking, token="invalid-jwt", expected=(401,), edge=True)
             request("/", edge_booking, token=tokens["rider1"], expected=(403,), edge=True)
             request("/", edge_booking, token=tokens["passenger"], expected=(503,), edge=True)
-            passed("real request-trip handler rejects invalid JWT/rider booking and paused service")
+            passed("real booking handler rejects invalid JWT/rider booking and paused service")
         sql("""update private.pilot_service_settings set enabled=true, opens='00:00', closes='23:59:59.999999',
             weekdays=array[1,2,3,4,5,6,7] where singleton;""")
         booking = {"p_passenger_id": ids["passenger"], "p_pickup_lat": -15.3292, "p_pickup_lng": 28.6820,
@@ -198,22 +215,45 @@ def main():
                    "p_dropoff_address": "Synthetic destination", "p_route_distance_meters": 1000,
                    "p_route_duration_seconds": 300, "p_payment_method": "cash"}
         rpc("create_routed_trip", booking, tokens["passenger"], expected=(401, 403, 404))
-        if args.live_request_trip:
+        if args.live_fare_quote:
+            quote = request("/", edge_booking, token=tokens["passenger"], expected=(201,), edge=True)["quote"]
+            quote_id = str(uuid.UUID(quote["quote_id"]))
+            trip = rpc("accept_fare_quote", {"p_quote_id": quote_id, "p_idempotency_key": quote_id}, tokens["passenger"])[0]
+        elif args.live_request_trip:
             trip = request("/", edge_booking, token=tokens["passenger"], expected=(201,), edge=True)["trip"]
         else:
             trip = rpc("create_routed_trip", booking, config["SERVICE_ROLE_KEY"])[0]
         trip_id = str(uuid.UUID(trip["trip_id"]))
-        passed(("current request-trip handler, actual local Auth/PostgREST and live Mapbox route" if args.live_request_trip else "trusted booking RPC via local HTTP")
+        passed(("current fare-quote handler plus authenticated quote acceptance, actual local Auth/PostgREST and live Mapbox route" if args.live_fare_quote
+                else "current request-trip handler, actual local Auth/PostgREST and live Mapbox route" if args.live_request_trip
+                else "trusted booking RPC via local HTTP")
                + "; passenger cannot call trusted route-metrics RPC")
+        if args.live_fare_quote:
+            repeated = rpc("accept_fare_quote", {"p_quote_id": quote_id, "p_idempotency_key": quote_id}, tokens["passenger"])[0]
+            assert repeated["trip_id"] == trip_id
         rpc("create_routed_trip", booking, config["SERVICE_ROLE_KEY"], expected=(409,))
         assert sql("select count(*) from public.trips where passenger_id='" + ids["passenger"] + "' and status in ('requesting','accepted','arrived','in_progress')") == "1"
         passed("duplicate booking rejected with one active trip")
+        for name in ("rider1", "rider2"):
+            feed = request("/rest/v1/rider_available_trips?select=id&id=eq." + trip_id, token=tokens[name])
+            assert [row["id"] for row in feed] == [trip_id]
+        assert rpc("set_driver_online", {"p_online": False}, tokens["rider2"]) is False
+        assert request("/rest/v1/rider_available_trips?select=id&id=eq." + trip_id, token=tokens["rider2"]) == []
+        rpc("accept_trip", {"p_trip_id": trip_id}, tokens["rider2"], expected=(403,))
+        assert rpc("set_driver_online", {"p_online": True}, tokens["rider2"]) is True
+        passed("request reaches both eligible riders; offline rider loses feed and acceptance access")
         details = request("/rest/v1/authorized_trip_details?select=id,fare_amount,service_fee,driver_fare&id=eq." + trip_id,
                           token=tokens["passenger"])[0]
-        assert float(details["fare_amount"]) == 20 and float(details["service_fee"]) == 3 and float(details["driver_fare"]) == 17
+        expected_fare = float(trip["fare_amount"])
+        expected_fee = float(trip["service_fee"])
+        expected_driver_fare = float(trip["driver_fare"])
+        assert float(details["fare_amount"]) == expected_fare
+        assert float(details["service_fee"]) == expected_fee
+        assert float(details["driver_fare"]) == expected_driver_fare
+        assert round(expected_driver_fare + expected_fee, 2) == expected_fare
         assert request("/rest/v1/authorized_trip_details?select=id&id=eq." + trip_id, token=tokens["outsider"]) == []
         request("/rest/v1/trips?id=eq." + trip_id, {"fare_amount": 1}, method="PATCH", token=tokens["passenger"], expected=(403,))
-        passed("cross-user trip privacy and server ZMW20/3/17 fare protection")
+        passed("cross-user trip privacy and server dynamic-fare/commission protection")
         def accept(name):
             return name, rpc("accept_trip", {"p_trip_id": trip_id}, tokens[name])
         with ThreadPoolExecutor(max_workers=2) as pool:
@@ -221,6 +261,15 @@ def main():
         assert sorted(result for _, result in accepted) == [False, True]
         winner = next(name for name, result in accepted if result)
         loser = next(name for name, result in accepted if not result)
+        location = {"trip_id": trip_id, "rider_id": ids[winner], "lat": -15.3290, "lng": 28.6840}
+        request("/rest/v1/trip_locations", location, method="POST", token=tokens[loser], expected=(403,))
+        request("/rest/v1/trip_locations", location, method="POST", token=tokens[winner], expected=(201,))
+        passenger_location = request("/rest/v1/trip_locations?select=trip_id,rider_id,lat,lng&trip_id=eq." + trip_id,
+                                     token=tokens["passenger"])
+        assert len(passenger_location) == 1 and passenger_location[0]["rider_id"] == ids[winner]
+        assert request("/rest/v1/trip_locations?select=trip_id&trip_id=eq." + trip_id,
+                       token=tokens["outsider"]) == []
+        passed("assigned rider location reaches passenger; losing rider and outsider are denied")
         assert rpc("mark_trip_arrived", {"p_trip_id": trip_id}, tokens[loser]) is False
         assert rpc("mark_trip_arrived", {"p_trip_id": trip_id}, tokens[winner]) is True
         assert rpc("accept_trip", {"p_trip_id": trip_id}, tokens[winner]) is False
@@ -245,14 +294,29 @@ def main():
         assert rpc("mark_passenger_paid", {"p_trip_id": trip_id}, tokens["passenger"]) is True
         assert rpc("confirm_rider_payment", {"p_trip_id": trip_id}, tokens[loser]) is False
         assert rpc("confirm_rider_payment", {"p_trip_id": trip_id}, tokens[winner]) is True
-        final = request("/rest/v1/authorized_trip_details?select=status,payment_status,fare_amount&id=eq." + trip_id,
+        final = request("/rest/v1/authorized_trip_details?select=status,payment_status,fare_amount,service_fee,driver_fare,accepted_fare_snapshot,final_fare_breakdown&id=eq." + trip_id,
                         token=tokens["passenger"])[0]
-        assert final == {"status": "completed", "payment_status": "rider_confirmed", "fare_amount": 20.0}
+        assert final["status"] == "completed"
+        assert final["payment_status"] == "rider_confirmed"
+        final_fare = float(final["fare_amount"])
+        assert final_fare > 0
+        assert round(float(final["driver_fare"]) + float(final["service_fee"]), 2) == final_fare
+        assert float(final["accepted_fare_snapshot"]["fare_amount_zmw"]) == expected_fare
+        assert final["final_fare_breakdown"]["pricing_version"] == final["accepted_fare_snapshot"]["pricing_version"]
         assert rpc("complete_trip", {"p_trip_id": trip_id}, tokens[winner]) is False
         assert rpc("mark_passenger_paid", {"p_trip_id": trip_id}, tokens["passenger"]) is False
         assert rpc("confirm_rider_payment", {"p_trip_id": trip_id}, tokens[winner]) is False
         passed("duplicate arrival/start/completion/payment are harmless; approval revocation blocks start")
         passed("cash recording by correct passenger and assigned rider; completed state persisted")
+        for name in ("passenger", winner, "admin"):
+            history = request("/rest/v1/authorized_trip_details?select=id,status,payment_status&id=eq." + trip_id,
+                              token=tokens[name])
+            assert history == [{"id": trip_id, "status": "completed", "payment_status": "rider_confirmed"}]
+        assert request("/rest/v1/authorized_trip_details?select=id&id=eq." + trip_id,
+                       token=tokens["outsider"]) == []
+        availability = request("/rest/v1/profiles?select=is_online&id=eq." + ids[winner], token=tokens[winner])
+        assert availability == [{"is_online": True}]
+        passed("passenger/rider histories and admin view agree; outsider is denied; rider remains eligible")
         if args.race_checks:
             def race_trip():
                 row = rpc("create_routed_trip", booking, config["SERVICE_ROLE_KEY"])[0]
@@ -302,7 +366,9 @@ def main():
                     return rpc("cancel_pilot_trip", {"p_trip_id": identity, "p_reason": "passenger_cancelled"}, tokens["passenger"])
                 assert sorted(parallel(cancel_once, cancel_once)) == [False, True]
                 assert sql("select count(*) from public.pilot_cancellation_reviews where trip_id='" + identity + "'") == "1"
-                assert float(sql("select fare_amount from public.trips where id='" + identity + "'")) == 20
+                race_fare = json.loads(sql("select json_build_object('fare',fare_amount,'fee',service_fee,'driver',driver_fare) from public.trips where id='" + identity + "'"))
+                assert float(race_fare["fare"]) > 0
+                assert round(float(race_fare["driver"]) + float(race_fare["fee"]), 2) == float(race_fare["fare"])
             passed("nine concurrent local HTTP cancellation/start/completion races; one durable outcome/review; observed " + json.dumps(outcomes, sort_keys=True))
 
             identity, pickup_code = race_trip()
@@ -333,7 +399,7 @@ def main():
             cleanup(created)
         assert sql("select enabled from private.pilot_service_settings where singleton") == "f"
         passed("original paused local service settings restored; fixtures " + ("retained for browser check" if keep_fixture else "removed"))
-    passed("local HTTP lifecycle" + (" plus live routing" if args.live_request_trip else "; Edge routing untested")
+    passed("local HTTP lifecycle" + (" plus live routing" if args.live_request_trip or args.live_fare_quote else "; Edge routing untested")
            + "; hosted/device/FCM/email checks remain separate")
 
 
